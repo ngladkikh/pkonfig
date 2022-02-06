@@ -74,3 +74,15 @@ def test_descriptor_no_default():
     storage = dict()
     with pytest.raises(KeyError):
         TestConfig(storage)
+
+
+def test_methods_ignored():
+    class TestConfig(BaseConfig):
+        i = 1
+
+        def m(self):
+            return 10
+
+    config = TestConfig({"m": 1})
+    assert config.i == 1
+    assert callable(config.m)

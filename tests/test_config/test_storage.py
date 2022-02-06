@@ -1,6 +1,6 @@
 import pytest
 
-from src.config import EnvConfigStorage
+from pkonfig.storage import EnvConfigStorage
 
 
 @pytest.fixture
