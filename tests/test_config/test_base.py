@@ -1,6 +1,7 @@
 import pytest
 
-from pkonfig.config import BaseConfig, IntParam, StrParam
+from pkonfig.config import BaseConfig
+from pkonfig.fields import IntParam, StrParam
 
 
 def test_outer_config():
