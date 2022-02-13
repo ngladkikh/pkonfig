@@ -1,34 +1,21 @@
 from pathlib import Path
-from typing import Any, Dict, Mapping, Type, Union, get_type_hints
+from typing import Any, Dict, Mapping, Type, TypeVar, Union, get_type_hints
+
+from pkonfig.base import BaseConfig
 
 Values = Union[str, int, float, Path]
 ConfigStorage = Mapping[str, Any]
+Config = Union["OuterMostConfig", "EmbeddedConfig"]
+TEmbedded = TypeVar("TEmbedded", bound="EmbeddedConfig")
+Annotations = Dict[str, Type]
 
 
-class MetaConfig(type):
-    def __new__(mcs, name, parents, attributes):
-        annotations = attributes.get("__annotations__", {})
-        attributes_with_defaults = {
-            k: annotations.get(k, type(v))
-            for k, v in attributes.items()
-            if MetaConfig.is_user_attr(k, v)
-        }
-        attributes["_attributes_with_defaults"] = attributes_with_defaults
-        cls = super().__new__(mcs, name, parents, attributes)
-        return cls
-
-    @staticmethod
-    def is_user_attr(name: str, attr: Any) -> bool:
-        if not name.startswith("__"):
-            return not callable(attr)
-        return False
-
-
-class BaseConfig(metaclass=MetaConfig):
+class OuterMostConfig(BaseConfig):
     _attributes_with_defaults: Dict[str, Type]
+    _name: str
 
-    def __init__(self, storage: ConfigStorage):
-        self.__storage = storage
+    def __init__(self, storage: Mapping):
+        self._storage = storage
         self._hints = get_type_hints(self)
         for name, type_ in self._attributes_with_defaults.items():
             self._set_validates_attribute(name, type_)
@@ -52,8 +39,23 @@ class BaseConfig(metaclass=MetaConfig):
 
     def __get_raw_value(self, name: str) -> Values:
         try:
-            return self.__storage[name]
+            return self._storage[name]
         except KeyError:
             if hasattr(self, name):
                 return getattr(self, name)
         raise KeyError(name)
+
+
+class EmbeddedConfig(BaseConfig):
+
+    def __init__(self):
+        self._storage = None
+        self._name = None
+
+    def __set_name__(self, _, name):
+        self._name = name
+
+    def __get__(self, instance: Config, _=None) -> TEmbedded:
+        if self._storage is None:
+            self._storage = instance.get_storage()[self._name]
+        return self
