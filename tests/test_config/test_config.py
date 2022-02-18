@@ -1,11 +1,11 @@
 import pytest
 
-from pkonfig.config import EmbeddedConfig, OuterMostConfig
+from pkonfig.config import BaseConfig
 from pkonfig.fields import IntParam, StrParam
 
 
 def test_outer_config():
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         s: str
         i: int = 1
 
@@ -16,7 +16,7 @@ def test_outer_config():
 
 
 def test_raises_key_error():
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         s: str
 
     with pytest.raises(KeyError):
@@ -24,7 +24,7 @@ def test_raises_key_error():
 
 
 def test_raises_value_error():
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         s: int
 
     storage = dict(s='a')
@@ -33,10 +33,10 @@ def test_raises_value_error():
 
 
 def test_inner_config():
-    class Inner(EmbeddedConfig):
+    class Inner(BaseConfig):
         f: float
 
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         inner = Inner()
     storage = dict(inner={"f": 0.1})
     config = TestConfig(storage)
@@ -44,14 +44,14 @@ def test_inner_config():
 
 
 def test_not_annotated_default():
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         s = "some value"
     config = TestConfig({})
     assert config.s == "some value"
 
 
 def test_not_annotated():
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         i: int = 1
         s = "some value"
     storage = dict(s="new")
@@ -61,7 +61,7 @@ def test_not_annotated():
 
 
 def test_descriptor():
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         s = StrParam("test")
         i = IntParam(1)
     storage = dict(s="new")
@@ -71,7 +71,7 @@ def test_descriptor():
 
 
 def test_descriptor_no_default():
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         s = StrParam()
     storage = dict()
     with pytest.raises(KeyError):
@@ -79,7 +79,7 @@ def test_descriptor_no_default():
 
 
 def test_methods_ignored():
-    class TestConfig(OuterMostConfig):
+    class TestConfig(BaseConfig):
         i = 1
 
         def m(self):
@@ -88,3 +88,4 @@ def test_methods_ignored():
     config = TestConfig({"m": 1})
     assert config.i == 1
     assert callable(config.m)
+    assert config.m() == 10
