@@ -1,15 +1,16 @@
-from typing import Any, Type, get_type_hints
+from typing import get_type_hints
 
 import pytest
 
 from pkonfig.base import (
-    FloatParam, IntParam, MetaConfig,
+    MetaConfig,
     AbstractBaseConfig,
     RETURN_TYPE,
     TypedParameter,
     extend_annotations,
     is_user_attr
 )
+from pkonfig.fields import FloatParam, IntParam
 
 
 def test_is_user_attr():

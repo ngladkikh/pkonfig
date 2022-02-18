@@ -92,39 +92,6 @@ def is_user_attr(name: str, object_: Any) -> bool:
     return True
 
 
-class IntParam(TypedParameter):
-    returns = int
-
-    def cast(self, string_value: str):
-        return int(string_value)
-
-
-class FloatParam(TypedParameter):
-    returns = float
-
-    def cast(self, string_value: str):
-        return float(string_value)
-
-
-class StrParam(TypedParameter):
-    returns = str
-
-    def cast(self, string_value: str):
-        return string_value
-
-
-TYPE_MAP: Dict[Type, Type[TypedParameter]] = {
-    int: IntParam,
-    float: FloatParam,
-    str: StrParam
-}
-
-
-# def get_descriptor(annotation: Type, value: Any) -> TypedParameter:
-#     descriptor_class = TYPE_MAP.get(annotation, StrParam)
-#     return descriptor_class(value)
-
-
 def replace_fields_with_descriptors(attributes: Dict[str, Any], parents):
     mapper = None
     try:
@@ -140,7 +107,7 @@ def replace_fields_with_descriptors(attributes: Dict[str, Any], parents):
         return
 
     def get_descriptor(annotation: Type, value: Any) -> TypedParameter:
-        descriptor_class = mapper.get(annotation, StrParam)
+        descriptor_class = mapper.get(annotation)
         return descriptor_class(value)
 
     type_hints = attributes["__annotations__"]
