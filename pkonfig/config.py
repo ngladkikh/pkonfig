@@ -13,13 +13,8 @@ Annotations = Dict[str, Type]
 
 
 class BaseConfig(AbstractBaseConfig):
-    _type_map: Dict[Type, TypedParameter] = {
+    _mapper: Dict[Type, Type[TypedParameter]] = {
         int: IntParam,
         float: FloatParam,
         str: StrParam
     }
-
-    @classmethod
-    def get_descriptor(cls, annotation: Type, value: Any) -> TypedParameter:
-        descriptor_class = cls._type_map.get(annotation, StrParam)
-        return descriptor_class(value)

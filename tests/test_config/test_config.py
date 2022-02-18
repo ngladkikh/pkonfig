@@ -89,3 +89,22 @@ def test_methods_ignored():
     assert config.i == 1
     assert callable(config.m)
     assert config.m() == 10
+
+
+def test_dynamic_config():
+    class TestConfig(BaseConfig):
+        i = IntParam(no_cache=True)
+    storage = {"i": "2"}
+    config = TestConfig(storage)
+    assert config.i == 2
+
+    storage["i"] = "3"
+    assert config.i == 3
+
+
+def test_fail_fast():
+    class TestConfig(BaseConfig):
+        i = 1
+
+    with pytest.raises(KeyError):
+        TestConfig()

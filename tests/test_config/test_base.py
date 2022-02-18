@@ -3,7 +3,7 @@ from typing import Any, Type, get_type_hints
 import pytest
 
 from pkonfig.base import (
-    MetaConfig,
+    FloatParam, IntParam, MetaConfig,
     AbstractBaseConfig,
     RETURN_TYPE,
     TypedParameter,
@@ -33,8 +33,10 @@ def test_is_user_attr():
 
 def test_user_fields_getter(descriptor):
     class TestConfig(AbstractBaseConfig):
-        def get_descriptor(self, annotation: Type, value: Any) -> TypedParameter:
-            return descriptor(value)
+        _mapper = {
+            int: IntParam,
+            float: FloatParam,
+        }
 
         first: int
         second = 0.1

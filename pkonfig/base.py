@@ -1,7 +1,7 @@
 from abc import ABC, ABCMeta, abstractmethod
 from functools import partial
 from inspect import isfunction, ismethod
-from typing import Any, Dict, Mapping, Optional, Type, TypeVar, get_type_hints
+from typing import Any, Dict, Mapping, Optional, Tuple, Type, TypeVar, get_type_hints
 
 
 TEmbedded = TypeVar("TEmbedded", bound="EmbeddedConfig")
@@ -120,12 +120,29 @@ TYPE_MAP: Dict[Type, Type[TypedParameter]] = {
 }
 
 
-def get_descriptor(annotation: Type, value: Any) -> TypedParameter:
-    descriptor_class = TYPE_MAP.get(annotation, StrParam)
-    return descriptor_class(value)
+# def get_descriptor(annotation: Type, value: Any) -> TypedParameter:
+#     descriptor_class = TYPE_MAP.get(annotation, StrParam)
+#     return descriptor_class(value)
 
 
 def replace_fields_with_descriptors(attributes: Dict[str, Any], parents):
+    mapper = None
+    try:
+        mapper = attributes["_mapper"]
+    except KeyError:
+        for p in parents:
+            try:
+                mapper = p._mapper
+                break
+            except AttributeError:
+                pass
+    if mapper is None:
+        return
+
+    def get_descriptor(annotation: Type, value: Any) -> TypedParameter:
+        descriptor_class = mapper.get(annotation, StrParam)
+        return descriptor_class(value)
+
     type_hints = attributes["__annotations__"]
     for name in type_hints.keys():
         if name.startswith("_"):
