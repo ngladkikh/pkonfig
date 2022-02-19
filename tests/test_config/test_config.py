@@ -109,3 +109,20 @@ def test_fail_fast():
 
     with pytest.raises(KeyError):
         TestConfig({})
+
+
+def test_three_level():
+    class InnerMost(EmbeddedConfig):
+        s: str
+
+    class Inner(EmbeddedConfig):
+        f: float
+        i = InnerMost()
+
+    class TestConfig(Config):
+        inner = Inner()
+
+    storage = dict(inner={"f": 0.1, "i": {"s": "text"}})
+    config = TestConfig(storage)
+    assert config.inner.f == 0.1
+    assert config.inner.i.s == "text"
