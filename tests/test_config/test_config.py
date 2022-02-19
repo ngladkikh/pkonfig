@@ -38,6 +38,7 @@ def test_inner_config():
 
     class TestConfig(Config):
         inner = Inner()
+
     storage = dict(inner={"f": 0.1})
     config = TestConfig(storage)
     assert config.inner.f == 0.1

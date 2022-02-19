@@ -9,6 +9,7 @@ from pkonfig.base import (
     extend_annotations,
     is_user_attr, replace
 )
+from pkonfig.config import EmbeddedConfig
 from pkonfig.fields import IntParam
 
 
@@ -88,3 +89,10 @@ def test_replace_not_set():
 
 def test_replace_descriptor():
     assert not replace(IntParam())
+
+
+def test_replace_inner_config():
+    class Inner(EmbeddedConfig):
+        s: str
+
+    assert not replace(Inner())

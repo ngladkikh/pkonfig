@@ -1,6 +1,6 @@
 from abc import ABC, ABCMeta, abstractmethod
 from functools import partial
-from inspect import isclass, isdatadescriptor, isfunction, ismethod
+from inspect import isclass, isdatadescriptor, isfunction, ismethod, ismethoddescriptor
 from typing import Any, Dict, Iterable, Mapping, Optional, Type, TypeVar, get_type_hints
 
 
@@ -110,6 +110,7 @@ def replace(attribute):
     return not (
             isfunction(attribute)
             or isdatadescriptor(attribute)
+            or ismethoddescriptor(attribute)
             or isclass(attribute)
     )
 
