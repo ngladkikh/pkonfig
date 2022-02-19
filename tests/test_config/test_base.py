@@ -4,13 +4,12 @@ import pytest
 
 from pkonfig.base import (
     MetaConfig,
-    AbstractBaseConfig,
-    RETURN_TYPE,
+    NOT_SET, RETURN_TYPE,
     TypedParameter,
     extend_annotations,
-    is_user_attr
+    is_user_attr, replace
 )
-from pkonfig.fields import FloatParam, IntParam
+from pkonfig.fields import IntParam
 
 
 def test_is_user_attr():
@@ -30,20 +29,6 @@ def test_is_user_attr():
     assert not is_user_attr("m", t)
     assert not is_user_attr("_m", t)
     assert not is_user_attr("__annotations__", t)
-
-
-def test_user_fields_getter(descriptor):
-    class TestConfig(AbstractBaseConfig):
-        _mapper = {
-            int: IntParam,
-            float: FloatParam,
-        }
-
-        first: int
-        second = 0.1
-
-    t = TestConfig({"first": 1})
-    assert set(t.user_fields()) == {"first", "second"}
 
 
 @pytest.fixture
@@ -88,3 +73,18 @@ def test_extend_annotations(attributes):
     assert "__annotations__" in attributes
     assert attributes["__annotations__"]["int"] is int
     assert attributes["__annotations__"]["descriptor"] is int
+
+
+def test_replace_class():
+    class T:
+        pass
+
+    assert not replace(T)
+
+
+def test_replace_not_set():
+    assert replace(NOT_SET)
+
+
+def test_replace_descriptor():
+    assert not replace(IntParam())

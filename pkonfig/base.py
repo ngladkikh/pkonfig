@@ -1,7 +1,7 @@
 from abc import ABC, ABCMeta, abstractmethod
 from functools import partial
-from inspect import isfunction, ismethod
-from typing import Any, Dict, Mapping, Optional, Tuple, Type, TypeVar, get_type_hints
+from inspect import isclass, isdatadescriptor, isfunction, ismethod
+from typing import Any, Dict, Iterable, Mapping, Optional, Type, TypeVar, get_type_hints
 
 
 TEmbedded = TypeVar("TEmbedded", bound="EmbeddedConfig")
@@ -70,10 +70,20 @@ class TypeMapper(ABC):
         pass
 
 
+def get_mapper(attributes: Dict[str, Any], parents: Iterable[Type]) -> Optional[TypeMapper]:
+    for name, attribute in attributes.items():
+        if isclass(attribute) and issubclass(attribute, TypeMapper):
+            return attribute()
+    for cls in parents:
+        mapper = getattr(cls, "Mapper", None)
+        if mapper and isclass(mapper) and issubclass(mapper, TypeMapper):
+            return mapper()
+
+
 def extend_annotations(attributes: Dict[str, Any]) -> None:
     annotations = attributes.get("__annotations__", {})
     for name, attr in attributes.items():
-        if not name.startswith("_"):
+        if not name.startswith("_") or isclass(attr):
             if name not in annotations:
                 attr_type = type(attr)
                 annotation = attr.returns if issubclass(attr_type, TypedParameter) else attr_type
@@ -87,78 +97,55 @@ def is_user_attr(name: str, object_: Any) -> bool:
 
     if hasattr(object_, name):
         attribute = getattr(object_, name)
-        return not (ismethod(attribute) or isfunction(attribute))
+        return not (
+                ismethod(attribute)
+                or isfunction(attribute)
+                or isclass(attribute)
+        )
 
     return True
 
 
-def replace_fields_with_descriptors(attributes: Dict[str, Any], parents):
-    mapper = None
-    try:
-        mapper = attributes["_mapper"]
-    except KeyError:
-        for p in parents:
-            try:
-                mapper = p._mapper
-                break
-            except AttributeError:
-                pass
-    if mapper is None:
-        return
+def replace(attribute):
+    return not (
+            isfunction(attribute)
+            or isdatadescriptor(attribute)
+            or isclass(attribute)
+    )
 
-    def get_descriptor(annotation: Type, value: Any) -> TypedParameter:
-        descriptor_class = mapper.get(annotation)
-        return descriptor_class(value)
 
+def replace_fields_with_descriptors(
+    attributes: Dict[str, Any], mapper: TypeMapper
+) -> None:
     type_hints = attributes["__annotations__"]
-    for name in type_hints.keys():
-        if name.startswith("_"):
-            continue
-
+    for name in filter(lambda x: not x.startswith("_"), type_hints.keys()):
         attribute = attributes.get(name, NOT_SET)
-        if parents and issubclass(type(attribute), parents[0]):
-            continue
-        if isfunction(attribute):
-            continue
-        if issubclass(type(attribute), TypedParameter):
-            continue
-        hint = type_hints[name]
-        descriptor = get_descriptor(hint, attribute)
-        attributes[name] = descriptor
+        if replace(attribute):
+            hint = type_hints[name]
+            descriptor = mapper.descriptor(hint, attribute)
+            attributes[name] = descriptor
 
 
 class MetaConfig(ABCMeta):
     def __new__(mcs, name, parents, attributes):
         extend_annotations(attributes)
-        replace_fields_with_descriptors(attributes, parents)
+        mapper = get_mapper(attributes, parents)
+        if mapper:
+            replace_fields_with_descriptors(attributes, mapper)
         cls = super().__new__(mcs, name, parents, attributes)
         return cls
 
 
 class AbstractBaseConfig(ConfigFromStorageBase, metaclass=MetaConfig):
+    @property
+    @abstractmethod
+    def Mapper(self) -> Type[TypeMapper]:
+        pass
 
-    def __init__(
-        self,
-        storage: Optional[Mapping] = None,
-        fail_fast: bool = True
-    ):
+    def __init__(self, fail_fast: bool = True):
+        self._storage = None
         self._fail_fast = fail_fast
-        self._storage = storage
         self._validation_done: bool = False
-        if self._fail_fast and self._storage is not None:
-            self.check_all_fields()
-
-    def __set_name__(self, _, name):
-        self._name = name
-
-    def __get__(
-        self, instance: ConfigFromStorageBase, _=None
-    ) -> TEmbedded:
-        if self._storage is None:
-            self._storage = instance.get_storage()[self._name]
-        if not (self._validation_done and self._fail_fast):
-            self.check_all_fields()
-        return self
 
     def user_fields_filter(self):
         return partial(is_user_attr, object_=self)
@@ -172,3 +159,26 @@ class AbstractBaseConfig(ConfigFromStorageBase, metaclass=MetaConfig):
     def check_all_fields(self):
         for name in self.user_fields():
             getattr(self, name)
+
+
+class BaseOuterConfig(AbstractBaseConfig, ABC):
+    def __init__(self, storage: Mapping, fail_fast=True):
+        super().__init__(fail_fast=fail_fast)
+        self._storage = storage
+        if self._fail_fast:
+            self.check_all_fields()
+
+
+class BaseInnerConfig(AbstractBaseConfig, ABC):
+
+    def __set_name__(self, _, name):
+        self._name = name
+
+    def __get__(
+        self, instance: ConfigFromStorageBase, _=None
+    ) -> TEmbedded:
+        if self._storage is None:
+            self._storage = instance.get_storage()[self._name]
+        if not (self._validation_done and self._fail_fast):
+            self.check_all_fields()
+        return self
