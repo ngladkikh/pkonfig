@@ -10,16 +10,19 @@ from pkonfig.fields import (
     PathParam,
     File,
     Folder,
-    Choice,
     EnumParam,
+    LogLevel,
+    Choice,
 )
 
 
 def build_config(descriptor) -> "Config":
     class Config(BaseOuterConfig):
         attr = descriptor
+
         def __init__(self, **kwargs):
             super().__init__(kwargs, True)
+
     return Config
 
 
@@ -111,3 +114,18 @@ def test_choice_raises_error():
     cls = build_config(Choice(["foo", "bar"]))
     with pytest.raises(TypeError):
         cls(attr="test")
+
+
+@pytest.mark.parametrize(
+    "level,value",
+    [
+        ("info", 20),
+        ("INFO", 20),
+        ("Error", 40),
+        ("WaRnInG", 30)
+    ]
+)
+def test_log_level_case_insensitive(level, value):
+    cls = build_config(LogLevel())
+    config = cls(attr=level)
+    assert config.attr == value

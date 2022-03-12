@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from pathlib import Path
 from typing import Generic, Sequence, Type, TypeVar
@@ -62,6 +63,19 @@ class EnumParam(TypedParameter):
 
     def cast(self, string_value: str) -> int:
         return self.enum_cls[string_value].value
+
+
+class LogLevel(TypedParameter):
+    class Levels(Enum):
+        NOTSET = logging.NOTSET
+        DEBUG = logging.DEBUG
+        INFO = logging.INFO
+        WARNING = logging.WARNING
+        ERROR = logging.ERROR
+        CRITICAL = logging.CRITICAL
+
+    def cast(self, string_value: str) -> int:
+        return self.Levels[string_value.upper()].value
 
 
 class Choice(TypedParameter, Generic[T]):
