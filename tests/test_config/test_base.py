@@ -3,7 +3,7 @@ from typing import Any, get_type_hints
 import pytest
 
 from pkonfig.base import (
-    MetaConfig,
+    ConfigFromStorageBase, MetaConfig,
     NOT_SET,
     TypedParameter,
     extend_annotations,
@@ -73,6 +73,54 @@ def any_type_descriptor():
             return string_value
 
     return AnyDescriptor
+
+
+@pytest.fixture
+def config_with_descriptor(any_type_descriptor):
+    class Config(ConfigFromStorageBase):
+        attr = any_type_descriptor()
+
+        def __init__(self, **kwargs):
+            self._storage = kwargs
+
+    return Config
+
+
+def test_attr_changed(config_with_descriptor):
+    config = config_with_descriptor(attr=4)
+    assert config.attr == 4
+
+    config.attr = 5
+    assert config.attr == 5
+
+
+def test_no_value_raised(config_with_descriptor):
+    config = config_with_descriptor()
+    with pytest.raises(KeyError):
+        config.attr
+
+
+def test_no_value_default_used(any_type_descriptor):
+    class Config(ConfigFromStorageBase):
+        attr = any_type_descriptor(1)
+
+        def __init__(self, **kwargs):
+            self._storage = kwargs
+
+    config = Config()
+    assert config.attr == 1
+
+
+def test_default_value_validated(descriptor):
+    class Config(ConfigFromStorageBase):
+        attr = descriptor("a")
+
+        def __init__(self, **kwargs):
+            self._storage = kwargs
+
+    config = Config()
+    with pytest.raises(ValueError):
+        config.attr
 
 
 def test_extend_annotations(attributes):
