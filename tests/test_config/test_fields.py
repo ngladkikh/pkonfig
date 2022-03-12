@@ -1,8 +1,8 @@
-from typing import Type
+from enum import Enum, auto
 
 import pytest
 
-from pkonfig.base import ConfigFromStorageBase
+from pkonfig.base import BaseOuterConfig
 from pkonfig.fields import (
     IntParam,
     FloatParam,
@@ -16,10 +16,10 @@ from pkonfig.fields import (
 
 
 def build_config(descriptor) -> "Config":
-    class Config(ConfigFromStorageBase):
+    class Config(BaseOuterConfig):
         attr = descriptor
         def __init__(self, **kwargs):
-            self._storage = kwargs
+            super().__init__(kwargs, True)
     return Config
 
 
@@ -53,3 +53,61 @@ def test_string_param_casts():
     cls = build_config(StrParam())
     config = cls(attr=2)
     assert config.attr == "2"
+
+
+def test_path_cast():
+    cls = build_config(PathParam(missing_ok=True))
+    config = cls(attr="/some")
+    assert config.attr.name == "some"
+
+
+def test_path_not_exists_raises():
+    cls = build_config(PathParam())
+    with pytest.raises(FileNotFoundError):
+        cls(attr="/some")
+
+
+def test_is_file_checked(tmp_path):
+    cls = build_config(File())
+    existing_file = tmp_path / "test"
+    with open(existing_file, "w"):
+        config = cls(attr=existing_file)
+        assert config.attr.name == "test"
+
+    with pytest.raises(TypeError):
+        config.attr = tmp_path
+
+
+def test_is_dir_checked(tmp_path):
+    cls = build_config(Folder())
+    config = cls(attr=tmp_path)
+    existing_file = tmp_path / "test"
+    with open(existing_file, "w"):
+        with pytest.raises(TypeError):
+            config.attr = existing_file
+
+
+@pytest.fixture
+def enum_attr_config():
+    class Color(Enum):
+        red = auto()
+        green = auto()
+        blue = auto()
+
+    return build_config(EnumParam(Color))
+
+
+def test_enum_param_returns_value(enum_attr_config):
+    config = enum_attr_config(attr="red")
+    assert config.attr == 1
+
+
+def test_enum_raises_error(enum_attr_config):
+    with pytest.raises(KeyError):
+        enum_attr_config(attr="foo")
+
+
+def test_choice_raises_error():
+    cls = build_config(Choice(["foo", "bar"]))
+    with pytest.raises(TypeError):
+        cls(attr="test")
