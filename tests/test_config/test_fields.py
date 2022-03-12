@@ -116,6 +116,12 @@ def test_choice_raises_error():
         cls(attr="test")
 
 
+def test_choice():
+    cls = build_config(Choice(["foo", "bar"]))
+    config = cls(attr="foo")
+    assert config.attr == "foo"
+
+
 @pytest.mark.parametrize(
     "level,value",
     [

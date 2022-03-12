@@ -6,9 +6,6 @@ from typing import Generic, Sequence, Type, TypeVar
 from pkonfig.base import NOT_SET, TypedParameter
 
 
-T = TypeVar("T")
-
-
 class IntParam(TypedParameter):
     def cast(self, string_value) -> int:
         return int(string_value)
@@ -78,6 +75,9 @@ class LogLevel(TypedParameter):
         return self.Levels[string_value.upper()].value
 
 
+T = TypeVar("T")
+
+
 class Choice(TypedParameter, Generic[T]):
     def __init__(
         self, choices: Sequence[T], default=NOT_SET, no_cache=False
@@ -85,7 +85,7 @@ class Choice(TypedParameter, Generic[T]):
         self.choices = choices
         super().__init__(default, no_cache)
 
-    def cast(self, string_value: str) -> T:
+    def cast(self, string_value: T) -> T:
         return string_value
 
     def validate(self, value):
