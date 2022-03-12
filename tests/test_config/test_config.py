@@ -126,3 +126,15 @@ def test_three_level():
     config = TestConfig(storage)
     assert config.inner.f == 0.1
     assert config.inner.i.s == "text"
+
+
+def test_inheritance():
+    class Parent(Config):
+        s: str
+
+    class Child(Parent):
+        i: int
+
+    config = Child(dict(s="some", i=1))
+    assert config.s == "some"
+    assert config.i == 1
