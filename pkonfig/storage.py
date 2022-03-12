@@ -1,8 +1,32 @@
 import os
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import UserDict
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Tuple
+from typing import Any, Callable, Dict, List, Literal, Mapping, Tuple, IO
+
+MODE = Literal['r', 'rb']
+
+
+class BaseFileStorage(UserDict, ABC):
+    mode: MODE = "r"
+
+    def __init__(self, file: Path, missing_ok: bool = False, **kwargs):
+        super().__init__(**kwargs)
+        self.file = file
+        self.missing_ok = missing_ok
+        self.load()
+
+    def load(self) -> None:
+        try:
+            with open(self.file, self.mode) as fh:
+                self.data.update(self.parse(fh))
+        except FileNotFoundError:
+            if not self.missing_ok:
+                raise
+
+    @abstractmethod
+    def parse(self, handler: IO) -> Dict[str, Any]:
+        pass
 
 
 class PlainStructureStorage(UserDict):
