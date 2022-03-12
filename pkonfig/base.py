@@ -29,23 +29,27 @@ class ConfigFromStorageBase:
 
 
 class TypedParameter(ABC, Generic[T]):
-    def __init__(self, default=NOT_SET, no_cache=True):
+    __slots__ = ("no_cache", "value", "default")
+
+    def __init__(self, default=NOT_SET, no_cache=False):
         self.no_cache = no_cache
         self.default = default
-        self.value = default
+        self.value = NOT_SET
 
     def __set_name__(self, _, name):
         self.name = name
 
     def __set__(self, _, value):
-        self.value = self.cast(value)
-        self.validate()
+        value = self.cast(value)
+        self.validate(value)
+        self.value = value
 
     def __get__(self, instance: ConfigFromStorageBase, _=None) -> T:
         if self.should_get_from_storage():
             value = self.get_from_storage(instance)
-            self.value = self.cast(value)
-            self.validate()
+            value = self.cast(value)
+            self.validate(value)
+            self.value = value
         return self.value
 
     def get_from_storage(self, instance: ConfigFromStorageBase) -> Any:
@@ -64,7 +68,8 @@ class TypedParameter(ABC, Generic[T]):
     def cast(self, string_value: str) -> T:
         pass
 
-    def validate(self):
+    @staticmethod
+    def validate(value: Any) -> None:
         pass
 
 
