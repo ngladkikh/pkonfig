@@ -1,10 +1,10 @@
-from typing import get_type_hints
+from typing import Any, get_type_hints
 
 import pytest
 
 from pkonfig.base import (
     MetaConfig,
-    NOT_SET, RETURN_TYPE,
+    NOT_SET,
     TypedParameter,
     extend_annotations,
     is_user_attr, replace
@@ -49,24 +49,30 @@ def test_annotations(config_cls):
 
 
 @pytest.fixture
-def attributes(descriptor):
+def attributes(descriptor, any_type_descriptor):
     return {
         "int": 1,
-        "descriptor": descriptor(2)
+        "descriptor": descriptor(2),
+        "any_type_descriptor": any_type_descriptor(0.1)
     }
 
 
 @pytest.fixture
 def descriptor():
     class MyDescriptor(TypedParameter):
-        def cast(self, string_value: str) -> RETURN_TYPE:
+        def cast(self, string_value: str) -> int:
             return int(string_value)
 
-        @property
-        def returns(self):
-            return int
-
     return MyDescriptor
+
+
+@pytest.fixture
+def any_type_descriptor():
+    class AnyDescriptor(TypedParameter):
+        def cast(self, string_value: str):
+            return string_value
+
+    return AnyDescriptor
 
 
 def test_extend_annotations(attributes):
@@ -74,6 +80,7 @@ def test_extend_annotations(attributes):
     assert "__annotations__" in attributes
     assert attributes["__annotations__"]["int"] is int
     assert attributes["__annotations__"]["descriptor"] is int
+    assert attributes["__annotations__"]["any_type_descriptor"] is Any
 
 
 def test_replace_class():

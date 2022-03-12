@@ -55,13 +55,8 @@ class EnvConfigStorage(PlainStructureStorage):
 
 
 class EnvFileConfigStorage(PlainStructureStorage):
-
     def __init__(
-        self,
-        prefix="APP",
-        delimiter="_",
-        file: Path = Path(".env"),
-        **kwargs
+        self, prefix="APP", delimiter="_", file: Path = Path(".env"), **kwargs
     ):
         self.file_path = file
         self.__storage = None

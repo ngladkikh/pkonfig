@@ -1,22 +1,23 @@
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, Type
 
-from pkonfig.base import BaseOuterConfig, BaseInnerConfig, NOT_SET, TypeMapper, TypedParameter
+from pkonfig.base import (
+    BaseOuterConfig,
+    BaseInnerConfig,
+    NOT_SET,
+    TypeMapper,
+    TypedParameter,
+)
 from pkonfig.fields import IntParam, FloatParam, StrParam
-
-
-ConfigT = Union["Config", "EmbeddedConfig"]
 
 
 class DefaultMapper(TypeMapper):
     _mapper: Dict[Type, Type[TypedParameter]] = {
         int: IntParam,
         float: FloatParam,
-        str: StrParam
+        str: StrParam,
     }
 
-    def descriptor(
-        self, type_: Type, value: Any = NOT_SET
-    ) -> TypedParameter:
+    def descriptor(self, type_: Type, value: Any = NOT_SET) -> TypedParameter:
         cls = self._mapper.get(type_, StrParam)
         return cls(value)
 

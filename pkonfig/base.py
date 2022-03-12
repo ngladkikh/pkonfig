@@ -1,29 +1,34 @@
 from abc import ABC, ABCMeta, abstractmethod
 from functools import partial
 from inspect import isclass, isdatadescriptor, isfunction, ismethod, ismethoddescriptor
-from typing import Any, Dict, Iterable, Mapping, Optional, Type, TypeVar, get_type_hints
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterable,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    get_type_hints,
+)
 
 
 TEmbedded = TypeVar("TEmbedded", bound="EmbeddedConfig")
+T = TypeVar("T")
 RETURN_TYPE = TypeVar("RETURN_TYPE")
 NOT_SET = object()
 
 
 class ConfigFromStorageBase:
     _storage: Optional[Mapping]
+    Mapper: "TypeMapper"
 
-    def get_storage(self) -> Mapping:
+    def get_storage(self) -> Optional[Mapping]:
         return self._storage
 
 
-class TypedParameter(ABC):
-    _return_type: RETURN_TYPE
-
-    @property
-    @abstractmethod
-    def returns(self):
-        return self._return_type
-
+class TypedParameter(ABC, Generic[T]):
     def __init__(self, default=NOT_SET, no_cache=True):
         self.no_cache = no_cache
         self.default = default
@@ -34,8 +39,9 @@ class TypedParameter(ABC):
 
     def __set__(self, _, value):
         self.value = self.cast(value)
+        self.validate()
 
-    def __get__(self, instance: ConfigFromStorageBase, _=None) -> RETURN_TYPE:
+    def __get__(self, instance: ConfigFromStorageBase, _=None) -> T:
         if self.should_get_from_storage():
             value = self.get_from_storage(instance)
             self.value = self.cast(value)
@@ -55,7 +61,7 @@ class TypedParameter(ABC):
         return self.value is NOT_SET or self.no_cache
 
     @abstractmethod
-    def cast(self, string_value: str) -> RETURN_TYPE:
+    def cast(self, string_value: str) -> T:
         pass
 
     def validate(self):
@@ -64,13 +70,13 @@ class TypedParameter(ABC):
 
 class TypeMapper(ABC):
     @abstractmethod
-    def descriptor(
-        self, type_: Type, value: Any = NOT_SET
-    ) -> TypedParameter:
+    def descriptor(self, type_: Type, value: Any = NOT_SET) -> TypedParameter:
         pass
 
 
-def get_mapper(attributes: Dict[str, Any], parents: Iterable[Type]) -> Optional[TypeMapper]:
+def get_mapper(
+    attributes: Dict[str, Any], parents: Iterable[Type]
+) -> Optional[TypeMapper]:
     for name, attribute in attributes.items():
         if isclass(attribute) and issubclass(attribute, TypeMapper):
             return attribute()
@@ -86,7 +92,10 @@ def extend_annotations(attributes: Dict[str, Any]) -> None:
         if not name.startswith("_") or isclass(attr):
             if name not in annotations:
                 attr_type = type(attr)
-                annotation = attr.returns if issubclass(attr_type, TypedParameter) else attr_type
+                if issubclass(attr_type, TypedParameter):
+                    annotation = get_type_hints(attr.cast).get("return", Any)
+                else:
+                    annotation = attr_type
                 annotations[name] = annotation
     attributes["__annotations__"] = annotations
 
@@ -97,21 +106,17 @@ def is_user_attr(name: str, object_: Any) -> bool:
 
     if hasattr(object_, name):
         attribute = getattr(object_, name)
-        return not (
-                ismethod(attribute)
-                or isfunction(attribute)
-                or isclass(attribute)
-        )
+        return not (ismethod(attribute) or isfunction(attribute) or isclass(attribute))
 
     return True
 
 
 def replace(attribute):
     return not (
-            isfunction(attribute)
-            or isdatadescriptor(attribute)
-            or ismethoddescriptor(attribute)
-            or isclass(attribute)
+        isfunction(attribute)
+        or isdatadescriptor(attribute)
+        or ismethoddescriptor(attribute)
+        or isclass(attribute)
     )
 
 
@@ -138,11 +143,6 @@ class MetaConfig(ABCMeta):
 
 
 class AbstractBaseConfig(ConfigFromStorageBase, metaclass=MetaConfig):
-    @property
-    @abstractmethod
-    def Mapper(self) -> Type[TypeMapper]:
-        pass
-
     def __init__(self, fail_fast: bool = True):
         self._storage = None
         self._fail_fast = fail_fast
@@ -152,14 +152,12 @@ class AbstractBaseConfig(ConfigFromStorageBase, metaclass=MetaConfig):
         return partial(is_user_attr, object_=self)
 
     def user_fields(self):
-        return filter(
-            self.user_fields_filter(),
-            get_type_hints(self).keys()
-        )
+        return filter(self.user_fields_filter(), get_type_hints(self).keys())
 
     def check_all_fields(self):
         for name in self.user_fields():
             getattr(self, name)
+        self._validation_done = True
 
 
 class BaseOuterConfig(AbstractBaseConfig, ABC):
@@ -171,13 +169,10 @@ class BaseOuterConfig(AbstractBaseConfig, ABC):
 
 
 class BaseInnerConfig(AbstractBaseConfig, ABC):
-
     def __set_name__(self, _, name):
         self._name = name
 
-    def __get__(
-        self, instance: ConfigFromStorageBase, _=None
-    ) -> TEmbedded:
+    def __get__(self, instance: ConfigFromStorageBase, _=None) -> TEmbedded:
         if self._storage is None:
             self._storage = instance.get_storage()[self._name]
         if not (self._validation_done and self._fail_fast):
