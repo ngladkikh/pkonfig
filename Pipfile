@@ -4,8 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+tomli = "*"
+pyyaml = "*"
 
 [dev-packages]
+coverage = "*"
 pytest = "*"
 
 [requires]
