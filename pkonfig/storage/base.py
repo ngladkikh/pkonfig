@@ -135,10 +135,10 @@ class Ini(BaseFileStorageMixin, AbstractStorage):
             empty_lines_in_values=empty_lines_in_values,
             default_section=default_section,
         )
+        self.data = self.parser
         self.missing_ok = missing_ok
         self.file = file
         super().__init__(**kwargs)
-        self.data = self.parser
 
     def load_file_content(self, handler: IO) -> None:
         self.parser.read_string(handler.read())
