@@ -3,7 +3,10 @@ import os
 from abc import ABC, abstractmethod
 from collections import UserDict
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Tuple, IO
+from typing import Any, Dict, List, Literal, Tuple, IO, BinaryIO
+
+import tomli
+
 
 MODE = Literal['r', 'rb']
 
@@ -106,8 +109,13 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
         return param_line and (not param_line.startswith(("#", "//")))
 
 
-class JsonConfig(BaseFileStorageMixin, AbstractStorage):
+class Json(BaseFileStorageMixin, AbstractStorage):
     def load_file_content(self, handler: IO) -> None:
         self.data = json.load(handler)
 
 
+class Toml(BaseFileStorageMixin, AbstractStorage):
+    mode = "rb"
+
+    def load_file_content(self, handler: BinaryIO) -> None:
+        self.data = tomli.load(handler)
