@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, IO
+from typing import IO
 
 import pytest
 
