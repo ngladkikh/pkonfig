@@ -4,9 +4,10 @@ from abc import ABC, abstractmethod
 from collections import UserDict
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Tuple, IO, BinaryIO
+import configparser
 
 import tomli
-
+import yaml
 
 MODE = Literal['r', 'rb']
 
@@ -80,9 +81,9 @@ class Env(PlainStructureParserMixin, AbstractStorage):
 class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
     def __init__(
         self,
+        file: Path,
         prefix="APP",
         delimiter="_",
-        file: Path = Path(".env"),
         mode: MODE = "r",
         missing_ok: bool = False,
         **kwargs
@@ -111,11 +112,48 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
 
 class Json(BaseFileStorageMixin, AbstractStorage):
     def load_file_content(self, handler: IO) -> None:
-        self.data = json.load(handler)
+        self.data.update(json.load(handler))
 
 
 class Toml(BaseFileStorageMixin, AbstractStorage):
     mode = "rb"
 
     def load_file_content(self, handler: BinaryIO) -> None:
-        self.data = tomli.load(handler)
+        self.data.update(tomli.load(handler))
+
+
+class Yaml(BaseFileStorageMixin, AbstractStorage):
+    def load_file_content(self, handler: IO) -> None:
+        self.data.update(yaml.load(handler))
+
+
+class Ini(BaseFileStorageMixin, AbstractStorage):
+    def __init__(
+        self,
+        file: Path,
+        missing_ok=False,
+        allow_no_value=False,
+        delimiters=('=', ':'),
+        comment_prefixes=('#', ';'),
+        inline_comment_prefixes=None,
+        strict=True,
+        empty_lines_in_values=True,
+        default_section=configparser.DEFAULTSECT,
+        **kwargs
+    ):
+        self.parser = configparser.ConfigParser(
+            allow_no_value=allow_no_value,
+            delimiters=delimiters,
+            comment_prefixes=comment_prefixes,
+            inline_comment_prefixes=inline_comment_prefixes,
+            strict=strict,
+            empty_lines_in_values=empty_lines_in_values,
+            default_section=default_section,
+        )
+        self.missing_ok = missing_ok
+        self.file = file
+        super().__init__(**kwargs)
+        self.data = self.parser
+
+    def load_file_content(self, handler: IO) -> None:
+        self.parser.read_string(handler.read())
