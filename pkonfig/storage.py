@@ -1,46 +1,52 @@
+import json
 import os
 from abc import ABC, abstractmethod
 from collections import UserDict
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, Mapping, Tuple, IO
+from typing import Any, Dict, List, Literal, Tuple, IO
 
 MODE = Literal['r', 'rb']
 
 
-class BaseFileStorage(UserDict, ABC):
-    mode: MODE = "r"
-
-    def __init__(self, file: Path, missing_ok: bool = False, **kwargs):
+class AbstractStorage(UserDict, ABC):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.file = file
-        self.missing_ok = missing_ok
         self.load()
+
+    @abstractmethod
+    def load(self) -> None:
+        """Load storage from source to cache"""
+        pass
+
+
+class BaseFileStorageMixin(AbstractStorage, ABC):
+    file: Path
+    mode: MODE = "r"
+    missing_ok: bool = False
 
     def load(self) -> None:
         try:
             with open(self.file, self.mode) as fh:
-                self.data.update(self.parse(fh))
+                self.load_file_content(fh)
         except FileNotFoundError:
             if not self.missing_ok:
                 raise
 
     @abstractmethod
-    def parse(self, handler: IO) -> Dict[str, Any]:
+    def load_file_content(self, handler: IO) -> None:
         pass
 
 
-class PlainStructureStorage(UserDict):
-    def __init__(self, prefix="APP", delimiter="_", **kwargs):
-        super().__init__(**kwargs)
-        self.delimiter = delimiter
-        prefix += delimiter
-        for key in filter(self.app_keys(prefix), self.plain_raw_storage):
-            self.set_multilevel_value(key, self.plain_raw_storage[key])
+class PlainStructureParserMixin:
+    delimiter: str = "_"
+    prefix: str = "APP" + delimiter
+    data: Dict[str, Any]
 
-    def set_multilevel_value(self, key: str, value: str) -> None:
-        levels, leaf = self.split_and_normalize(key)
-        storage = self.leaf_level_storage(levels)
-        storage[leaf] = value
+    def save_key_value(self, key: str, value: Any) -> None:
+        if key.startswith(self.prefix):
+            levels, leaf = self.split_and_normalize(key)
+            storage = self.leaf_level_storage(levels)
+            storage[leaf] = value
 
     def leaf_level_storage(self, levels: List[str]) -> Dict:
         storage = self.data
@@ -56,55 +62,52 @@ class PlainStructureStorage(UserDict):
         leaf = normalized_parts.pop()
         return normalized_parts, leaf
 
-    @staticmethod
-    def normalize(key) -> str:
-        if not key:
-            raise ValueError()
-        return key.lower()
 
-    @staticmethod
-    def app_keys(prefix: str) -> Callable[[str], bool]:
-        return lambda x: x.startswith(prefix)
+class Env(PlainStructureParserMixin, AbstractStorage):
+    def __init__(self, delimiter="_", prefix="APP", **kwargs):
+        self.delimiter = delimiter
+        self.prefix = prefix + self.delimiter
+        super(Env, self).__init__(**kwargs)
 
-    @property
-    @abstractmethod
-    def plain_raw_storage(self) -> Mapping[str, str]:
-        return os.environ
+    def load(self) -> None:
+        for key, value in os.environ.items():
+            self.save_key_value(key, value)
 
 
-class EnvConfigStorage(PlainStructureStorage):
-    @property
-    def plain_raw_storage(self) -> Mapping[str, str]:
-        return os.environ
-
-
-class EnvFileConfigStorage(PlainStructureStorage):
+class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
     def __init__(
-        self, prefix="APP", delimiter="_", file: Path = Path(".env"), **kwargs
+        self,
+        prefix="APP",
+        delimiter="_",
+        file: Path = Path(".env"),
+        mode: MODE = "r",
+        missing_ok: bool = False,
+        **kwargs
     ):
-        self.file_path = file
-        self.__storage = None
-        super().__init__(prefix=prefix, delimiter=delimiter, **kwargs)
+        self.delimiter = delimiter
+        self.prefix = prefix + self.delimiter
+        self.file = file
+        self.mode = mode
+        self.missing_ok = missing_ok
+        super().__init__(**kwargs)
 
-    @property
-    def plain_raw_storage(self) -> Mapping[str, str]:
-        if self.__storage is None:
-            self.__storage = self.read_file()
-        return self.__storage
-
-    def read_file(self):
-        with open(self.file_path) as fh:
-            raw_params = fh.readlines()
-        return {
-            key: value
-            for key, value in map(self.split_, filter(self.filter_, raw_params))
-        }
+    def load_file_content(self, handler: IO) -> None:
+        for line in filter(self.filter, handler.readlines()):
+            key, value = self.split(line)
+            self.save_key_value(key, value)
 
     @staticmethod
-    def split_(param_line: str) -> Tuple[str, str]:
+    def split(param_line: str) -> Tuple[str, str]:
         key, value = param_line.split("=", maxsplit=2)
         return key.strip(), value.strip()
 
     @staticmethod
-    def filter_(param_line: str) -> bool:
+    def filter(param_line: str) -> bool:
         return param_line and (not param_line.startswith(("#", "//")))
+
+
+class JsonConfig(BaseFileStorageMixin, AbstractStorage):
+    def load_file_content(self, handler: IO) -> None:
+        self.data = json.load(handler)
+
+

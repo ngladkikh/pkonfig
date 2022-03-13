@@ -4,7 +4,7 @@ from time import time
 import pydantic
 from pkonfig.config import Config, EmbeddedConfig
 from pkonfig.fields import FloatParam
-from pkonfig.storage import EnvConfigStorage
+from pkonfig.storage import Env
 
 
 def read_py(kwargs):
@@ -61,7 +61,7 @@ def main():
     os.environ["APP_INNER__I"] = "1"
     os.environ["APP_INNER__F"] = "0.2"
 
-    storage = EnvConfigStorage()
+    storage = Env()
     test_pkonfig_read(iterations, storage)
     test_pydantic_read(iterations, {})
 
