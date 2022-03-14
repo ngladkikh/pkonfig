@@ -173,8 +173,12 @@ class BaseOuterConfig(AbstractBaseConfig, ABC):
 
 
 class BaseInnerConfig(AbstractBaseConfig, ABC):
+    def __init__(self, fail_fast: bool = True, alias: Optional[str] = None):
+        self._alias = alias
+        super().__init__(fail_fast)
+
     def __set_name__(self, _, name):
-        self._name = name
+        self._name = self._alias if self._alias is not None else name
 
     def __get__(self, instance: ConfigFromStorageBase, _=None) -> TEmbedded:
         if self._storage is None:
