@@ -1,14 +1,9 @@
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Generic, Sequence, Type, TypeVar
+from typing import Generic, Sequence, Type, TypeVar
 
 from pkonfig.base import NOT_SET, TypedParameter
-
-
-class AnyType(TypedParameter):
-    def cast(self, value) -> Any:
-        return value
 
 
 class Int(TypedParameter):
