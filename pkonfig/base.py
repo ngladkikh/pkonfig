@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Type,
     TypeVar,
+    Union,
     get_type_hints,
 )
 
@@ -18,10 +19,13 @@ NOT_SET = object()
 
 
 class Field(ABC, Generic[T]):
+    default: Union[T, object]
+    value: Union[T, object]
+
     def __init__(self, default=NOT_SET, no_cache=False, alias: Optional[str] = None):
         self.no_cache = no_cache
-        self.default = default
-        self.value = NOT_SET
+        self.default: Union[T, object] = default
+        self.value: Union[T, object] = NOT_SET
         self.alias = alias
 
     def __set_name__(self, _, name):
@@ -32,7 +36,7 @@ class Field(ABC, Generic[T]):
         self.validate(value)
         self.value = value
 
-    def __get__(self, instance: "BaseConfig", _=None) -> T:
+    def __get__(self, instance: "BaseConfig", _=None) -> Union[T, object]:
         if self.should_get_from_storage():
             value = self.get_from_storage(instance)
             value = self.cast(value)
@@ -41,12 +45,14 @@ class Field(ABC, Generic[T]):
         return self.value
 
     def get_from_storage(self, instance: "BaseConfig") -> Any:
+        value = self.default
         try:
-            value = instance.get_storage()[self.name]
+            storage = instance.get_storage()
+            if storage is not None:
+                value = storage[self.name]
         except KeyError:
             if self.default is NOT_SET:
                 raise KeyError(self.name)
-            value = self.default
         return value
 
     def should_get_from_storage(self) -> bool:
@@ -56,13 +62,11 @@ class Field(ABC, Generic[T]):
     def cast(self, value: Any) -> T:
         pass
 
-    @staticmethod
-    def validate(value: Any) -> None:
+    def validate(self, value: Any) -> None:
         pass
 
 
 class TypeMapper(ABC):
-
     def replace_fields_with_descriptors(
         self, attributes: Dict[str, Any], type_hints: Dict[str, Type]
     ) -> None:
@@ -76,10 +80,10 @@ class TypeMapper(ABC):
     @staticmethod
     def replace(attribute):
         return not (
-                isfunction(attribute)
-                or isdatadescriptor(attribute)
-                or ismethoddescriptor(attribute)
-                or isclass(attribute)
+            isfunction(attribute)
+            or isdatadescriptor(attribute)
+            or ismethoddescriptor(attribute)
+            or isclass(attribute)
         )
 
     @abstractmethod
@@ -117,12 +121,13 @@ class MetaConfig(ABCMeta):
         attributes: Dict[str, Any], parents: Iterable[Type]
     ) -> Optional[TypeMapper]:
         for name, attribute in attributes.items():
-            if isclass(attribute) and issubclass(attribute, TypeMapper):
-                return attribute()
+            if isinstance(attribute, TypeMapper):
+                return attribute
         for cls in parents:
             mapper = getattr(cls, "Mapper", None)
-            if mapper and isclass(mapper) and issubclass(mapper, TypeMapper):
-                return mapper()
+            if mapper and isinstance(mapper, TypeMapper):
+                return mapper
+        return None
 
 
 class BaseConfig(metaclass=MetaConfig):
@@ -143,7 +148,9 @@ class BaseConfig(metaclass=MetaConfig):
 
         if hasattr(self, name):
             attribute = getattr(self, name)
-            return not (ismethod(attribute) or isfunction(attribute) or isclass(attribute))
+            return not (
+                ismethod(attribute) or isfunction(attribute) or isclass(attribute)
+            )
 
         return True
 
@@ -168,7 +175,6 @@ TInner = TypeVar("TInner", bound="BaseInnerConfig")
 
 
 class BaseInnerConfig(BaseConfig, ABC):
-
     def __init__(self, fail_fast: bool = True, alias: Optional[str] = None):
         self._alias = alias
         super().__init__(fail_fast)
@@ -176,9 +182,11 @@ class BaseInnerConfig(BaseConfig, ABC):
     def __set_name__(self, _, name):
         self._name = self._alias if self._alias is not None else name
 
-    def __get__(self, instance: BaseConfig, _=None) -> TInner:
+    def __get__(self, instance: BaseConfig, _=None) -> "BaseInnerConfig":
         if self._storage is None:
-            self._storage = instance.get_storage()[self._name]
+            parent_storage = instance.get_storage()
+            if parent_storage:
+                self._storage = parent_storage[self._name]
         if not (self._validation_done and self._fail_fast):
             self.check_all_fields()
         return self

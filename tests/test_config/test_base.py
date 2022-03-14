@@ -7,7 +7,6 @@ from pkonfig.base import (
     BaseConfig,
     NOT_SET,
     TypeMapper, Field,
-    extend_annotations,
 )
 from pkonfig.config import EmbeddedConfig
 from pkonfig.fields import Int
@@ -134,7 +133,7 @@ def test_default_value_validated(descriptor):
 
 
 def test_extend_annotations(attributes):
-    extend_annotations(attributes)
+    MetaConfig.extend_annotations(attributes)
     assert "__annotations__" in attributes
     assert attributes["__annotations__"]["int"] is int
     assert attributes["__annotations__"]["descriptor"] is int

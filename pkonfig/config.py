@@ -34,8 +34,8 @@ class DefaultMapper(TypeMapper):
 
 
 class Config(BaseOuterConfig):
-    Mapper = DefaultMapper
+    Mapper = DefaultMapper()
 
 
 class EmbeddedConfig(BaseInnerConfig):
-    Mapper = DefaultMapper
+    Mapper = DefaultMapper()

@@ -41,7 +41,7 @@ class BaseFileStorageMixin(AbstractStorage, ABC):
 class PlainStructureParserMixin:
     delimiter: str = "_"
     prefix: str = "APP" + delimiter
-    data: Dict[str, Any]
+    data: Dict
 
     def save_key_value(self, key: str, value: Any) -> None:
         if key.startswith(self.prefix):
@@ -104,7 +104,7 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
 
     @staticmethod
     def filter(param_line: str) -> bool:
-        return param_line and (not param_line.startswith(("#", "//")))
+        return bool(param_line) and (not param_line.startswith(("#", "//")))
 
 
 class Json(BaseFileStorageMixin, AbstractStorage):
