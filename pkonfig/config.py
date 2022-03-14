@@ -8,9 +8,9 @@ from pkonfig.base import (
     TypedParameter,
 )
 from pkonfig.fields import (
-    IntParam,
-    FloatParam,
-    StrParam,
+    Int,
+    Float,
+    Str,
     Byte,
     AnyType,
     ByteArray,
@@ -19,9 +19,9 @@ from pkonfig.fields import (
 
 class DefaultMapper(TypeMapper):
     _mapper: Dict[Type, Type[TypedParameter]] = {
-        int: IntParam,
-        float: FloatParam,
-        str: StrParam,
+        int: Int,
+        float: Float,
+        str: Str,
         bytes: Byte,
         bytearray: ByteArray,
     }

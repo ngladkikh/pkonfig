@@ -1,7 +1,7 @@
 import pytest
 
 from pkonfig.config import Config, EmbeddedConfig
-from pkonfig.fields import IntParam, StrParam
+from pkonfig.fields import Int, Str
 
 
 def test_outer_config():
@@ -63,8 +63,8 @@ def test_not_annotated():
 
 def test_descriptor():
     class TestConfig(Config):
-        s = StrParam("test")
-        i = IntParam(1)
+        s = Str("test")
+        i = Int(1)
     storage = dict(s="new")
     config = TestConfig(storage)
     assert config.s == "new"
@@ -73,7 +73,7 @@ def test_descriptor():
 
 def test_descriptor_no_default():
     class TestConfig(Config):
-        s = StrParam()
+        s = Str()
     storage = dict()
     with pytest.raises(KeyError):
         TestConfig(storage)
@@ -94,7 +94,7 @@ def test_methods_ignored():
 
 def test_dynamic_config():
     class TestConfig(Config):
-        i = IntParam(no_cache=True)
+        i = Int(no_cache=True)
     storage = {"i": "2"}
     config = TestConfig(storage)
     assert config.i == 2

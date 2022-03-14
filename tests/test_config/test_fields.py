@@ -4,9 +4,9 @@ import pytest
 
 from pkonfig.base import BaseOuterConfig
 from pkonfig.fields import (
-    IntParam,
-    FloatParam,
-    StrParam,
+    Int,
+    Float,
+    Str,
     PathParam,
     File,
     Folder,
@@ -28,7 +28,7 @@ def build_config(descriptor) -> "Config":
 
 @pytest.fixture
 def int_config():
-    cls = build_config(IntParam())
+    cls = build_config(Int())
     return cls(attr=3)
 
 
@@ -43,7 +43,7 @@ def test_only_int_accepted(int_config):
 
 @pytest.fixture
 def float_config():
-    cls = build_config(FloatParam())
+    cls = build_config(Float())
     return cls(attr=0.3)
 
 
@@ -53,7 +53,7 @@ def test_float_only_accepted(float_config):
 
 
 def test_string_param_casts():
-    cls = build_config(StrParam())
+    cls = build_config(Str())
     config = cls(attr=2)
     assert config.attr == "2"
 

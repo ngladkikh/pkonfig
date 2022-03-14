@@ -11,17 +11,17 @@ class AnyType(TypedParameter):
         return value
 
 
-class IntParam(TypedParameter):
+class Int(TypedParameter):
     def cast(self, string_value) -> int:
         return int(string_value)
 
 
-class FloatParam(TypedParameter):
+class Float(TypedParameter):
     def cast(self, string_value) -> float:
         return float(string_value)
 
 
-class StrParam(TypedParameter):
+class Str(TypedParameter):
     def cast(self, string_value) -> str:
         return str(string_value)
 

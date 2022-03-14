@@ -10,7 +10,7 @@ from pkonfig.base import (
     is_user_attr, replace
 )
 from pkonfig.config import EmbeddedConfig
-from pkonfig.fields import IntParam
+from pkonfig.fields import Int
 
 
 def test_is_user_attr():
@@ -143,7 +143,7 @@ def test_replace_not_set():
 
 
 def test_replace_descriptor():
-    assert not replace(IntParam())
+    assert not replace(Int())
 
 
 def test_replace_inner_config():
