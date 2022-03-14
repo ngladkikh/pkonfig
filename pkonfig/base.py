@@ -14,18 +14,8 @@ from typing import (
 )
 
 
-TEmbedded = TypeVar("TEmbedded", bound="EmbeddedConfig")
 T = TypeVar("T")
-RETURN_TYPE = TypeVar("RETURN_TYPE")
 NOT_SET = object()
-
-
-class ConfigFromStorageBase:
-    _storage: Optional[Mapping]
-    Mapper: "TypeMapper"
-
-    def get_storage(self) -> Optional[Mapping]:
-        return self._storage
 
 
 class TypedParameter(ABC, Generic[T]):
@@ -43,7 +33,7 @@ class TypedParameter(ABC, Generic[T]):
         self.validate(value)
         self.value = value
 
-    def __get__(self, instance: ConfigFromStorageBase, _=None) -> T:
+    def __get__(self, instance: "BaseConfig", _=None) -> T:
         if self.should_get_from_storage():
             value = self.get_from_storage(instance)
             value = self.cast(value)
@@ -51,7 +41,7 @@ class TypedParameter(ABC, Generic[T]):
             self.value = value
         return self.value
 
-    def get_from_storage(self, instance: ConfigFromStorageBase) -> Any:
+    def get_from_storage(self, instance: "BaseConfig") -> Any:
         try:
             value = instance.get_storage()[self.name]
         except KeyError:
@@ -73,6 +63,26 @@ class TypedParameter(ABC, Generic[T]):
 
 
 class TypeMapper(ABC):
+
+    def replace_fields_with_descriptors(
+        self, attributes: Dict[str, Any], type_hints: Dict[str, Type]
+    ) -> None:
+        for name in filter(lambda x: not x.startswith("_"), type_hints.keys()):
+            attribute = attributes.get(name, NOT_SET)
+            if self.replace(attribute):
+                hint = type_hints[name]
+                descriptor = self.descriptor(hint, attribute)
+                attributes[name] = descriptor
+
+    @staticmethod
+    def replace(attribute):
+        return not (
+                isfunction(attribute)
+                or isdatadescriptor(attribute)
+                or ismethoddescriptor(attribute)
+                or isclass(attribute)
+        )
+
     @abstractmethod
     def descriptor(self, type_: Type, value: Any = NOT_SET) -> TypedParameter:
         pass
@@ -115,42 +125,39 @@ def is_user_attr(name: str, object_: Any) -> bool:
     return True
 
 
-def replace(attribute):
-    return not (
-        isfunction(attribute)
-        or isdatadescriptor(attribute)
-        or ismethoddescriptor(attribute)
-        or isclass(attribute)
-    )
-
-
-def replace_fields_with_descriptors(
-    attributes: Dict[str, Any], mapper: TypeMapper
-) -> None:
-    type_hints = attributes["__annotations__"]
-    for name in filter(lambda x: not x.startswith("_"), type_hints.keys()):
-        attribute = attributes.get(name, NOT_SET)
-        if replace(attribute):
-            hint = type_hints[name]
-            descriptor = mapper.descriptor(hint, attribute)
-            attributes[name] = descriptor
-
-
 class MetaConfig(ABCMeta):
     def __new__(mcs, name, parents, attributes):
         extend_annotations(attributes)
         mapper = get_mapper(attributes, parents)
         if mapper:
-            replace_fields_with_descriptors(attributes, mapper)
+            mapper.replace_fields_with_descriptors(
+                attributes, attributes.get("__annotations__", {})
+            )
         cls = super().__new__(mcs, name, parents, attributes)
         return cls
 
 
-class AbstractBaseConfig(ConfigFromStorageBase, metaclass=MetaConfig):
+class BaseConfig(metaclass=MetaConfig):
+    _storage: Optional[Mapping]
+    Mapper: "TypeMapper"
+
     def __init__(self, fail_fast: bool = True):
         self._storage = None
         self._fail_fast = fail_fast
         self._validation_done: bool = False
+
+    def get_storage(self) -> Optional[Mapping]:
+        return self._storage
+
+    def is_user_attr(self, name: str) -> bool:
+        if not name.startswith("_"):
+            return False
+
+        if hasattr(self, name):
+            attribute = getattr(self, name)
+            return not (ismethod(attribute) or isfunction(attribute) or isclass(attribute))
+
+        return True
 
     def user_fields_filter(self):
         return partial(is_user_attr, object_=self)
@@ -164,7 +171,7 @@ class AbstractBaseConfig(ConfigFromStorageBase, metaclass=MetaConfig):
         self._validation_done = True
 
 
-class BaseOuterConfig(AbstractBaseConfig, ABC):
+class BaseOuterConfig(BaseConfig, ABC):
     def __init__(self, storage: Mapping, fail_fast=True):
         super().__init__(fail_fast=fail_fast)
         self._storage = storage
@@ -172,7 +179,11 @@ class BaseOuterConfig(AbstractBaseConfig, ABC):
             self.check_all_fields()
 
 
-class BaseInnerConfig(AbstractBaseConfig, ABC):
+TInner = TypeVar("TInner", bound="BaseInnerConfig")
+
+
+class BaseInnerConfig(BaseConfig, ABC):
+
     def __init__(self, fail_fast: bool = True, alias: Optional[str] = None):
         self._alias = alias
         super().__init__(fail_fast)
@@ -180,7 +191,7 @@ class BaseInnerConfig(AbstractBaseConfig, ABC):
     def __set_name__(self, _, name):
         self._name = self._alias if self._alias is not None else name
 
-    def __get__(self, instance: ConfigFromStorageBase, _=None) -> TEmbedded:
+    def __get__(self, instance: BaseConfig, _=None) -> TInner:
         if self._storage is None:
             self._storage = instance.get_storage()[self._name]
         if not (self._validation_done and self._fail_fast):

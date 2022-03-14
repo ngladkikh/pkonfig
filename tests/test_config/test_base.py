@@ -3,11 +3,12 @@ from typing import Any, get_type_hints
 import pytest
 
 from pkonfig.base import (
-    ConfigFromStorageBase, MetaConfig,
+    MetaConfig,
+    BaseConfig,
     NOT_SET,
-    TypedParameter,
+    TypeMapper, TypedParameter,
     extend_annotations,
-    is_user_attr, replace
+    is_user_attr,
 )
 from pkonfig.config import EmbeddedConfig
 from pkonfig.fields import Int
@@ -77,7 +78,7 @@ def any_type_descriptor():
 
 @pytest.fixture
 def config_with_descriptor(any_type_descriptor):
-    class Config(ConfigFromStorageBase):
+    class Config(BaseConfig):
         attr = any_type_descriptor()
 
         def __init__(self, **kwargs):
@@ -101,7 +102,7 @@ def test_no_value_raised(config_with_descriptor):
 
 
 def test_attribute_uses_alias(any_type_descriptor):
-    class Config(ConfigFromStorageBase):
+    class Config(BaseConfig):
         attr = any_type_descriptor(alias="attr_alias")
 
         def __init__(self, **kwargs):
@@ -112,7 +113,7 @@ def test_attribute_uses_alias(any_type_descriptor):
 
 
 def test_no_value_default_used(any_type_descriptor):
-    class Config(ConfigFromStorageBase):
+    class Config(BaseConfig):
         attr = any_type_descriptor(1)
 
         def __init__(self, **kwargs):
@@ -123,7 +124,7 @@ def test_no_value_default_used(any_type_descriptor):
 
 
 def test_default_value_validated(descriptor):
-    class Config(ConfigFromStorageBase):
+    class Config(BaseConfig):
         attr = descriptor("a")
 
         def __init__(self, **kwargs):
@@ -146,19 +147,19 @@ def test_replace_class():
     class T:
         pass
 
-    assert not replace(T)
+    assert not TypeMapper.replace(T)
 
 
 def test_replace_not_set():
-    assert replace(NOT_SET)
+    assert TypeMapper.replace(NOT_SET)
 
 
 def test_replace_descriptor():
-    assert not replace(Int())
+    assert not TypeMapper.replace(Int())
 
 
 def test_replace_inner_config():
     class Inner(EmbeddedConfig):
         s: str
 
-    assert not replace(Inner())
+    assert not TypeMapper.replace(Inner())
