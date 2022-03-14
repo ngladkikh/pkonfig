@@ -29,15 +29,14 @@ class ConfigFromStorageBase:
 
 
 class TypedParameter(ABC, Generic[T]):
-    __slots__ = ("no_cache", "value", "default")
-
-    def __init__(self, default=NOT_SET, no_cache=False):
+    def __init__(self, default=NOT_SET, no_cache=False, alias: Optional[str] = None):
         self.no_cache = no_cache
         self.default = default
         self.value = NOT_SET
+        self.alias = alias
 
     def __set_name__(self, _, name):
-        self.name = name
+        self.name = self.alias if self.alias is not None else name
 
     def __set__(self, _, value):
         value = self.cast(value)

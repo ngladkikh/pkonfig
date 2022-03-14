@@ -100,6 +100,17 @@ def test_no_value_raised(config_with_descriptor):
         config.attr
 
 
+def test_attribute_uses_alias(any_type_descriptor):
+    class Config(ConfigFromStorageBase):
+        attr = any_type_descriptor(alias="attr_alias")
+
+        def __init__(self, **kwargs):
+            self._storage = kwargs
+
+    config = Config(attr_alias=1)
+    assert config.attr == 1
+
+
 def test_no_value_default_used(any_type_descriptor):
     class Config(ConfigFromStorageBase):
         attr = any_type_descriptor(1)
