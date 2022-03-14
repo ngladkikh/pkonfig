@@ -1,5 +1,4 @@
 from abc import ABC, ABCMeta, abstractmethod
-from functools import partial
 from inspect import isclass, isdatadescriptor, isfunction, ismethod, ismethoddescriptor
 from typing import (
     Any,
@@ -114,17 +113,6 @@ def extend_annotations(attributes: Dict[str, Any]) -> None:
     attributes["__annotations__"] = annotations
 
 
-def is_user_attr(name: str, object_: Any) -> bool:
-    if name.startswith("_"):
-        return False
-
-    if hasattr(object_, name):
-        attribute = getattr(object_, name)
-        return not (ismethod(attribute) or isfunction(attribute) or isclass(attribute))
-
-    return True
-
-
 class MetaConfig(ABCMeta):
     def __new__(mcs, name, parents, attributes):
         extend_annotations(attributes)
@@ -150,7 +138,7 @@ class BaseConfig(metaclass=MetaConfig):
         return self._storage
 
     def is_user_attr(self, name: str) -> bool:
-        if not name.startswith("_"):
+        if name.startswith("_"):
             return False
 
         if hasattr(self, name):
@@ -159,11 +147,8 @@ class BaseConfig(metaclass=MetaConfig):
 
         return True
 
-    def user_fields_filter(self):
-        return partial(is_user_attr, object_=self)
-
     def user_fields(self):
-        return filter(self.user_fields_filter(), get_type_hints(self).keys())
+        return filter(self.is_user_attr, get_type_hints(self).keys())
 
     def check_all_fields(self):
         for name in self.user_fields():

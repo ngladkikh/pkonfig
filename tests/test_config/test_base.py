@@ -8,29 +8,9 @@ from pkonfig.base import (
     NOT_SET,
     TypeMapper, TypedParameter,
     extend_annotations,
-    is_user_attr,
 )
 from pkonfig.config import EmbeddedConfig
 from pkonfig.fields import Int
-
-
-def test_is_user_attr():
-    class Test:
-        f: int = 1
-        _f = 0
-
-        def m(self):
-            pass
-
-        def _m(self):
-            pass
-
-    t = Test()
-    assert is_user_attr("f", t)
-    assert not is_user_attr("_f", t)
-    assert not is_user_attr("m", t)
-    assert not is_user_attr("_m", t)
-    assert not is_user_attr("__annotations__", t)
 
 
 @pytest.fixture
@@ -40,6 +20,24 @@ def config_cls():
         second = 0.1
         third: bytes = b'test'
     return TestConfig
+
+
+def test_user_attribute_filter():
+    class TestConfig(BaseConfig):
+        _f = 0.2
+        f = 0.2
+
+        def m(self):
+            pass
+
+        class Inner:
+            pass
+
+    t = TestConfig()
+    assert t.is_user_attr("f")
+    assert not t.is_user_attr("_f")
+    assert not t.is_user_attr("m")
+    assert not t.is_user_attr("Inner")
 
 
 def test_annotations(config_cls):
