@@ -1,6 +1,6 @@
 import pytest
 
-from pkonfig.config import Config, EmbeddedConfig
+from pkonfig.config import Config, DefaultMapper, EmbeddedConfig
 from pkonfig.fields import Int, Str
 
 
@@ -138,3 +138,14 @@ def test_inheritance():
     config = Child(dict(s="some", i=1))
     assert config.s == "some"
     assert config.i == 1
+
+
+def test_default_mapper_ignores_unknown_types():
+    class Custom:
+        pass
+
+    mapper = DefaultMapper()
+
+    value = Custom()
+    descriptor = mapper.descriptor(Custom, value)
+    assert descriptor is value

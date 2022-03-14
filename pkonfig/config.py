@@ -12,7 +12,6 @@ from pkonfig.fields import (
     Float,
     Str,
     Byte,
-    AnyType,
     ByteArray,
 )
 
@@ -27,8 +26,11 @@ class DefaultMapper(TypeMapper):
     }
 
     def descriptor(self, type_: Type, value: Any = NOT_SET) -> TypedParameter:
-        cls = self._mapper.get(type_, AnyType)
-        return cls(value)
+        try:
+            cls = self._mapper[type_]
+            return cls(value)
+        except KeyError:
+            return value
 
 
 class Config(BaseOuterConfig):
