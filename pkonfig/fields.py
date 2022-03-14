@@ -12,18 +12,18 @@ class AnyType(TypedParameter):
 
 
 class Int(TypedParameter):
-    def cast(self, string_value) -> int:
-        return int(string_value)
+    def cast(self, value) -> int:
+        return int(value)
 
 
 class Float(TypedParameter):
-    def cast(self, string_value) -> float:
-        return float(string_value)
+    def cast(self, value) -> float:
+        return float(value)
 
 
 class Str(TypedParameter):
-    def cast(self, string_value) -> str:
-        return str(string_value)
+    def cast(self, value) -> str:
+        return str(value)
 
 
 class Byte(TypedParameter):
@@ -44,8 +44,8 @@ class PathParam(TypedParameter):
         self.missing_ok = missing_ok
         super().__init__(default, no_cache)
 
-    def cast(self, string_value) -> Path:
-        return Path(string_value)
+    def cast(self, value) -> Path:
+        return Path(value)
 
     def validate(self, value: Path) -> None:
         if not value.exists() and not self.missing_ok:
@@ -73,8 +73,8 @@ class EnumParam(TypedParameter):
         self.enum_cls = enum_cls
         super().__init__(default, no_cache)
 
-    def cast(self, string_value: str) -> int:
-        return self.enum_cls[string_value].value
+    def cast(self, value: str) -> int:
+        return self.enum_cls[value].value
 
 
 class LogLevel(TypedParameter):
@@ -86,8 +86,8 @@ class LogLevel(TypedParameter):
         ERROR = logging.ERROR
         CRITICAL = logging.CRITICAL
 
-    def cast(self, string_value: str) -> int:
-        return self.Levels[string_value.upper()].value
+    def cast(self, value: str) -> int:
+        return self.Levels[value.upper()].value
 
 
 T = TypeVar("T")
@@ -98,8 +98,8 @@ class Choice(TypedParameter, Generic[T]):
         self.choices = choices
         super().__init__(default, no_cache)
 
-    def cast(self, string_value: T) -> T:
-        return string_value
+    def cast(self, value: T) -> T:
+        return value
 
     def validate(self, value):
         if value not in self.choices:

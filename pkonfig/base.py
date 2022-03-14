@@ -65,7 +65,7 @@ class TypedParameter(ABC, Generic[T]):
         return self.value is NOT_SET or self.no_cache
 
     @abstractmethod
-    def cast(self, string_value: str) -> T:
+    def cast(self, value: Any) -> T:
         pass
 
     @staticmethod

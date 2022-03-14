@@ -60,8 +60,8 @@ def attributes(descriptor, any_type_descriptor):
 @pytest.fixture
 def descriptor():
     class MyDescriptor(TypedParameter):
-        def cast(self, string_value: str) -> int:
-            return int(string_value)
+        def cast(self, value: str) -> int:
+            return int(value)
 
     return MyDescriptor
 
@@ -69,8 +69,8 @@ def descriptor():
 @pytest.fixture
 def any_type_descriptor():
     class AnyDescriptor(TypedParameter):
-        def cast(self, string_value: str):
-            return string_value
+        def cast(self, value: str):
+            return value
 
     return AnyDescriptor
 
