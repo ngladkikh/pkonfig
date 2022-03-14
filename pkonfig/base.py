@@ -17,7 +17,7 @@ T = TypeVar("T")
 NOT_SET = object()
 
 
-class TypedParameter(ABC, Generic[T]):
+class Field(ABC, Generic[T]):
     def __init__(self, default=NOT_SET, no_cache=False, alias: Optional[str] = None):
         self.no_cache = no_cache
         self.default = default
@@ -83,40 +83,14 @@ class TypeMapper(ABC):
         )
 
     @abstractmethod
-    def descriptor(self, type_: Type, value: Any = NOT_SET) -> TypedParameter:
+    def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
         pass
-
-
-def get_mapper(
-    attributes: Dict[str, Any], parents: Iterable[Type]
-) -> Optional[TypeMapper]:
-    for name, attribute in attributes.items():
-        if isclass(attribute) and issubclass(attribute, TypeMapper):
-            return attribute()
-    for cls in parents:
-        mapper = getattr(cls, "Mapper", None)
-        if mapper and isclass(mapper) and issubclass(mapper, TypeMapper):
-            return mapper()
-
-
-def extend_annotations(attributes: Dict[str, Any]) -> None:
-    annotations = attributes.get("__annotations__", {})
-    for name, attr in attributes.items():
-        if not name.startswith("_") or isclass(attr):
-            if name not in annotations:
-                attr_type = type(attr)
-                if issubclass(attr_type, TypedParameter):
-                    annotation = get_type_hints(attr.cast).get("return", Any)
-                else:
-                    annotation = attr_type
-                annotations[name] = annotation
-    attributes["__annotations__"] = annotations
 
 
 class MetaConfig(ABCMeta):
     def __new__(mcs, name, parents, attributes):
-        extend_annotations(attributes)
-        mapper = get_mapper(attributes, parents)
+        MetaConfig.extend_annotations(attributes)
+        mapper = MetaConfig.get_mapper(attributes, parents)
         if mapper:
             mapper.replace_fields_with_descriptors(
                 attributes, attributes.get("__annotations__", {})
@@ -124,10 +98,36 @@ class MetaConfig(ABCMeta):
         cls = super().__new__(mcs, name, parents, attributes)
         return cls
 
+    @staticmethod
+    def extend_annotations(attributes: Dict[str, Any]) -> None:
+        annotations = attributes.get("__annotations__", {})
+        for name, attr in attributes.items():
+            if not name.startswith("_") or isclass(attr):
+                if name not in annotations:
+                    attr_type = type(attr)
+                    if issubclass(attr_type, Field):
+                        annotation = get_type_hints(attr.cast).get("return", Any)
+                    else:
+                        annotation = attr_type
+                    annotations[name] = annotation
+        attributes["__annotations__"] = annotations
+
+    @staticmethod
+    def get_mapper(
+        attributes: Dict[str, Any], parents: Iterable[Type]
+    ) -> Optional[TypeMapper]:
+        for name, attribute in attributes.items():
+            if isclass(attribute) and issubclass(attribute, TypeMapper):
+                return attribute()
+        for cls in parents:
+            mapper = getattr(cls, "Mapper", None)
+            if mapper and isclass(mapper) and issubclass(mapper, TypeMapper):
+                return mapper()
+
 
 class BaseConfig(metaclass=MetaConfig):
     _storage: Optional[Mapping]
-    Mapper: "TypeMapper"
+    Mapper: TypeMapper
 
     def __init__(self, fail_fast: bool = True):
         self._storage = None

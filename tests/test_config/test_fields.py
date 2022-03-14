@@ -7,10 +7,10 @@ from pkonfig.fields import (
     Int,
     Float,
     Str,
-    PathParam,
+    PathField,
     File,
     Folder,
-    EnumParam,
+    EnumField,
     LogLevel,
     Choice,
 )
@@ -59,13 +59,13 @@ def test_string_param_casts():
 
 
 def test_path_cast():
-    cls = build_config(PathParam(missing_ok=True))
+    cls = build_config(PathField(missing_ok=True))
     config = cls(attr="/some")
     assert config.attr.name == "some"
 
 
 def test_path_not_exists_raises():
-    cls = build_config(PathParam())
+    cls = build_config(PathField())
     with pytest.raises(FileNotFoundError):
         cls(attr="/some")
 
@@ -97,7 +97,7 @@ def enum_attr_config():
         green = auto()
         blue = auto()
 
-    return build_config(EnumParam(Color))
+    return build_config(EnumField(Color))
 
 
 def test_enum_param_returns_value(enum_attr_config):

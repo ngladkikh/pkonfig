@@ -6,7 +6,7 @@ from pkonfig.base import (
     MetaConfig,
     BaseConfig,
     NOT_SET,
-    TypeMapper, TypedParameter,
+    TypeMapper, Field,
     extend_annotations,
 )
 from pkonfig.config import EmbeddedConfig
@@ -58,7 +58,7 @@ def attributes(descriptor, any_type_descriptor):
 
 @pytest.fixture
 def descriptor():
-    class MyDescriptor(TypedParameter):
+    class MyDescriptor(Field):
         def cast(self, value: str) -> int:
             return int(value)
 
@@ -67,7 +67,7 @@ def descriptor():
 
 @pytest.fixture
 def any_type_descriptor():
-    class AnyDescriptor(TypedParameter):
+    class AnyDescriptor(Field):
         def cast(self, value: str):
             return value
 

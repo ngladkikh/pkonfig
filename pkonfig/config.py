@@ -5,7 +5,7 @@ from pkonfig.base import (
     BaseInnerConfig,
     NOT_SET,
     TypeMapper,
-    TypedParameter,
+    Field,
 )
 from pkonfig.fields import (
     Int,
@@ -17,7 +17,7 @@ from pkonfig.fields import (
 
 
 class DefaultMapper(TypeMapper):
-    _mapper: Dict[Type, Type[TypedParameter]] = {
+    _mapper: Dict[Type, Type[Field]] = {
         int: Int,
         float: Float,
         str: Str,
@@ -25,7 +25,7 @@ class DefaultMapper(TypeMapper):
         bytearray: ByteArray,
     }
 
-    def descriptor(self, type_: Type, value: Any = NOT_SET) -> TypedParameter:
+    def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
         try:
             cls = self._mapper[type_]
             return cls(value)

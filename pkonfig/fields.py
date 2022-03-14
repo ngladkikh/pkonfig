@@ -3,35 +3,35 @@ from enum import Enum
 from pathlib import Path
 from typing import Generic, Sequence, Type, TypeVar
 
-from pkonfig.base import NOT_SET, TypedParameter
+from pkonfig.base import NOT_SET, Field
 
 
-class Int(TypedParameter):
+class Int(Field):
     def cast(self, value) -> int:
         return int(value)
 
 
-class Float(TypedParameter):
+class Float(Field):
     def cast(self, value) -> float:
         return float(value)
 
 
-class Str(TypedParameter):
+class Str(Field):
     def cast(self, value) -> str:
         return str(value)
 
 
-class Byte(TypedParameter):
+class Byte(Field):
     def cast(self, value) -> bytes:
         return bytes(value)
 
 
-class ByteArray(TypedParameter):
+class ByteArray(Field):
     def cast(self, value) -> bytearray:
         return bytearray(value)
 
 
-class PathParam(TypedParameter):
+class PathField(Field):
     value: Path
     missing_ok: bool
 
@@ -47,7 +47,7 @@ class PathParam(TypedParameter):
             raise FileNotFoundError(f"File {value.absolute()} not found")
 
 
-class File(PathParam):
+class File(PathField):
     def validate(self, value):
         super().validate(value)
         if value.is_file():
@@ -55,7 +55,7 @@ class File(PathParam):
         raise TypeError(f"{value.absolute()} is not a file")
 
 
-class Folder(PathParam):
+class Folder(PathField):
     def validate(self, value):
         super().validate(value)
         if value.is_dir():
@@ -63,7 +63,7 @@ class Folder(PathParam):
         raise TypeError(f"{value.absolute()} is not a directory")
 
 
-class EnumParam(TypedParameter):
+class EnumField(Field):
     def __init__(self, enum_cls: Type[Enum], default=NOT_SET, no_cache=False):
         self.enum_cls = enum_cls
         super().__init__(default, no_cache)
@@ -72,7 +72,7 @@ class EnumParam(TypedParameter):
         return self.enum_cls[value].value
 
 
-class LogLevel(TypedParameter):
+class LogLevel(Field):
     class Levels(Enum):
         NOTSET = logging.NOTSET
         DEBUG = logging.DEBUG
@@ -88,7 +88,7 @@ class LogLevel(TypedParameter):
 T = TypeVar("T")
 
 
-class Choice(TypedParameter, Generic[T]):
+class Choice(Field, Generic[T]):
     def __init__(self, choices: Sequence[T], default=NOT_SET, no_cache=False):
         self.choices = choices
         super().__init__(default, no_cache)
