@@ -1,9 +1,14 @@
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Generic, Sequence, Type, TypeVar
+from typing import Any, Generic, Sequence, Type, TypeVar
 
 from pkonfig.base import NOT_SET, TypedParameter
+
+
+class AnyType(TypedParameter):
+    def cast(self, value) -> Any:
+        return value
 
 
 class IntParam(TypedParameter):
@@ -19,6 +24,16 @@ class FloatParam(TypedParameter):
 class StrParam(TypedParameter):
     def cast(self, string_value) -> str:
         return str(string_value)
+
+
+class Byte(TypedParameter):
+    def cast(self, value) -> bytes:
+        return bytes(value)
+
+
+class ByteArray(TypedParameter):
+    def cast(self, value) -> bytearray:
+        return bytearray(value)
 
 
 class PathParam(TypedParameter):
@@ -79,9 +94,7 @@ T = TypeVar("T")
 
 
 class Choice(TypedParameter, Generic[T]):
-    def __init__(
-        self, choices: Sequence[T], default=NOT_SET, no_cache=False
-    ):
+    def __init__(self, choices: Sequence[T], default=NOT_SET, no_cache=False):
         self.choices = choices
         super().__init__(default, no_cache)
 

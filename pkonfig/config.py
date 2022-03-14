@@ -7,7 +7,14 @@ from pkonfig.base import (
     TypeMapper,
     TypedParameter,
 )
-from pkonfig.fields import IntParam, FloatParam, StrParam
+from pkonfig.fields import (
+    IntParam,
+    FloatParam,
+    StrParam,
+    Byte,
+    AnyType,
+    ByteArray,
+)
 
 
 class DefaultMapper(TypeMapper):
@@ -15,10 +22,12 @@ class DefaultMapper(TypeMapper):
         int: IntParam,
         float: FloatParam,
         str: StrParam,
+        bytes: Byte,
+        bytearray: ByteArray,
     }
 
     def descriptor(self, type_: Type, value: Any = NOT_SET) -> TypedParameter:
-        cls = self._mapper.get(type_, StrParam)
+        cls = self._mapper.get(type_, AnyType)
         return cls(value)
 
 

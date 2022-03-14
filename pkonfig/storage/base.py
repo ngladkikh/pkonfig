@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Tuple, IO
 import configparser
 
-MODE = Literal['r', 'rb']
+MODE = Literal["r", "rb"]
 
 
 class AbstractStorage(UserDict, ABC):
@@ -118,8 +118,8 @@ class Ini(BaseFileStorageMixin, AbstractStorage):
         file: Path,
         missing_ok=False,
         allow_no_value=False,
-        delimiters=('=', ':'),
-        comment_prefixes=('#', ';'),
+        delimiters=("=", ":"),
+        comment_prefixes=("#", ";"),
         inline_comment_prefixes=None,
         strict=True,
         empty_lines_in_values=True,
