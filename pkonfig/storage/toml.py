@@ -8,5 +8,5 @@ from pkonfig.storage.base import AbstractStorage, BaseFileStorageMixin, MODE
 class Toml(BaseFileStorageMixin, AbstractStorage):
     mode: MODE = "rb"
 
-    def load_file_content(self, handler: BinaryIO) -> None:
+    def load_file_content(self, handler: BinaryIO) -> None:  # type: ignore
         self.data.update(tomli.load(handler))

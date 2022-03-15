@@ -135,7 +135,7 @@ class Ini(BaseFileStorageMixin, AbstractStorage):
             empty_lines_in_values=empty_lines_in_values,
             default_section=default_section,
         )
-        self.data = self.parser
+        self.data = self.parser  # type: ignore
         self.missing_ok = missing_ok
         self.file = file
         super().__init__(**kwargs)
