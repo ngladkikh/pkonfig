@@ -3,7 +3,7 @@ from time import time
 
 import pydantic
 from pkonfig.config import Config, EmbeddedConfig
-from pkonfig.fields import FloatParam
+from pkonfig.fields import Float
 from pkonfig.storage import Env
 
 
@@ -33,7 +33,7 @@ def get_attributes_py(settings):
 def read_pk(kwargs):
     class Inner(EmbeddedConfig):
         i: int
-        f = FloatParam()
+        f = Float()
 
     class Settings(Config):
         s: str

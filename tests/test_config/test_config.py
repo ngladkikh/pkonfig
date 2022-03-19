@@ -1,7 +1,11 @@
+from decimal import Decimal
+from typing import Any, Type, get_type_hints
+
 import pytest
 
-from pkonfig.config import Config, EmbeddedConfig
-from pkonfig.fields import IntParam, StrParam
+from pkonfig.base import Field, NOT_SET, TypeMapper
+from pkonfig.config import Config, DefaultMapper, EmbeddedConfig
+from pkonfig.fields import DecimalField, Int, Str
 
 
 def test_outer_config():
@@ -63,8 +67,8 @@ def test_not_annotated():
 
 def test_descriptor():
     class TestConfig(Config):
-        s = StrParam("test")
-        i = IntParam(1)
+        s = Str("test")
+        i = Int(1)
     storage = dict(s="new")
     config = TestConfig(storage)
     assert config.s == "new"
@@ -73,7 +77,7 @@ def test_descriptor():
 
 def test_descriptor_no_default():
     class TestConfig(Config):
-        s = StrParam()
+        s = Str()
     storage = dict()
     with pytest.raises(KeyError):
         TestConfig(storage)
@@ -94,7 +98,7 @@ def test_methods_ignored():
 
 def test_dynamic_config():
     class TestConfig(Config):
-        i = IntParam(no_cache=True)
+        i = Int(no_cache=True)
     storage = {"i": "2"}
     config = TestConfig(storage)
     assert config.i == 2
@@ -138,3 +142,67 @@ def test_inheritance():
     config = Child(dict(s="some", i=1))
     assert config.s == "some"
     assert config.i == 1
+
+
+def test_default_mapper_ignores_unknown_types():
+    class Custom:
+        pass
+
+    mapper = DefaultMapper()
+
+    value = Custom()
+    descriptor = mapper.descriptor(Custom, value)
+    assert descriptor is value
+
+
+def test_strict_mapper(strict_int_mapper):
+
+    class AppConfig(Config):
+        Mapper = strict_int_mapper()
+
+        attr = Int()
+
+    config = AppConfig(dict(attr=1))
+    assert config.attr == 1
+
+
+def test_strict_mapper_raises_error(strict_int_mapper):
+    with pytest.raises(KeyError):
+        class AppConfig(Config):
+            _mapper = strict_int_mapper()
+
+            attr: float
+
+
+@pytest.fixture
+def strict_int_mapper():
+    class StrictMapper(TypeMapper):
+        map = {
+            int: Int
+        }
+
+        def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
+            return self.map[type_](value)
+    return StrictMapper
+
+
+def test_change_type_mapping_on_init():
+    class AppConfig(Config):
+        _mapper = DefaultMapper({float: DecimalField})
+        attr: float
+
+    config = AppConfig(dict(attr=0.3))
+    assert isinstance(config.attr, Decimal)
+
+
+def test_embedded_config_type_remains():
+    class Inner(EmbeddedConfig):
+        f: float
+
+    class TestConfig(Config):
+        inner = Inner()
+
+    storage = dict(inner={"f": 0.1, "i": {"s": "text"}})
+    config = TestConfig(storage)
+    assert get_type_hints(config)["inner"] is Inner
+    assert isinstance(config.inner, Inner)

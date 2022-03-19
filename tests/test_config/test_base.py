@@ -3,33 +3,13 @@ from typing import Any, get_type_hints
 import pytest
 
 from pkonfig.base import (
-    ConfigFromStorageBase, MetaConfig,
+    MetaConfig,
+    BaseConfig,
     NOT_SET,
-    TypedParameter,
-    extend_annotations,
-    is_user_attr, replace
+    TypeMapper, Field,
 )
 from pkonfig.config import EmbeddedConfig
-from pkonfig.fields import IntParam
-
-
-def test_is_user_attr():
-    class Test:
-        f: int = 1
-        _f = 0
-
-        def m(self):
-            pass
-
-        def _m(self):
-            pass
-
-    t = Test()
-    assert is_user_attr("f", t)
-    assert not is_user_attr("_f", t)
-    assert not is_user_attr("m", t)
-    assert not is_user_attr("_m", t)
-    assert not is_user_attr("__annotations__", t)
+from pkonfig.fields import Int
 
 
 @pytest.fixture
@@ -39,6 +19,24 @@ def config_cls():
         second = 0.1
         third: bytes = b'test'
     return TestConfig
+
+
+def test_user_attribute_filter():
+    class TestConfig(BaseConfig):
+        _f = 0.2
+        f = 0.2
+
+        def m(self):
+            pass
+
+        class Inner:
+            pass
+
+    t = TestConfig()
+    assert t.is_user_attr("f")
+    assert not t.is_user_attr("_f")
+    assert not t.is_user_attr("m")
+    assert not t.is_user_attr("Inner")
 
 
 def test_annotations(config_cls):
@@ -59,25 +57,25 @@ def attributes(descriptor, any_type_descriptor):
 
 @pytest.fixture
 def descriptor():
-    class MyDescriptor(TypedParameter):
-        def cast(self, string_value: str) -> int:
-            return int(string_value)
+    class MyDescriptor(Field):
+        def cast(self, value: str) -> int:
+            return int(value)
 
     return MyDescriptor
 
 
 @pytest.fixture
 def any_type_descriptor():
-    class AnyDescriptor(TypedParameter):
-        def cast(self, string_value: str):
-            return string_value
+    class AnyDescriptor(Field):
+        def cast(self, value: str):
+            return value
 
     return AnyDescriptor
 
 
 @pytest.fixture
 def config_with_descriptor(any_type_descriptor):
-    class Config(ConfigFromStorageBase):
+    class Config(BaseConfig):
         attr = any_type_descriptor()
 
         def __init__(self, **kwargs):
@@ -100,8 +98,19 @@ def test_no_value_raised(config_with_descriptor):
         config.attr
 
 
+def test_attribute_uses_alias(any_type_descriptor):
+    class Config(BaseConfig):
+        attr = any_type_descriptor(alias="attr_alias")
+
+        def __init__(self, **kwargs):
+            self._storage = kwargs
+
+    config = Config(attr_alias=1)
+    assert config.attr == 1
+
+
 def test_no_value_default_used(any_type_descriptor):
-    class Config(ConfigFromStorageBase):
+    class Config(BaseConfig):
         attr = any_type_descriptor(1)
 
         def __init__(self, **kwargs):
@@ -112,7 +121,7 @@ def test_no_value_default_used(any_type_descriptor):
 
 
 def test_default_value_validated(descriptor):
-    class Config(ConfigFromStorageBase):
+    class Config(BaseConfig):
         attr = descriptor("a")
 
         def __init__(self, **kwargs):
@@ -124,7 +133,7 @@ def test_default_value_validated(descriptor):
 
 
 def test_extend_annotations(attributes):
-    extend_annotations(attributes)
+    MetaConfig.extend_annotations(attributes)
     assert "__annotations__" in attributes
     assert attributes["__annotations__"]["int"] is int
     assert attributes["__annotations__"]["descriptor"] is int
@@ -135,19 +144,19 @@ def test_replace_class():
     class T:
         pass
 
-    assert not replace(T)
+    assert not TypeMapper.replace(T)
 
 
 def test_replace_not_set():
-    assert replace(NOT_SET)
+    assert TypeMapper.replace(NOT_SET)
 
 
 def test_replace_descriptor():
-    assert not replace(IntParam())
+    assert not TypeMapper.replace(Int())
 
 
 def test_replace_inner_config():
     class Inner(EmbeddedConfig):
         s: str
 
-    assert not replace(Inner())
+    assert not TypeMapper.replace(Inner())

@@ -1,3 +1,5 @@
+from decimal import Decimal
+from pathlib import Path
 from typing import Any, Dict, Type
 
 from pkonfig.base import (
@@ -5,26 +7,43 @@ from pkonfig.base import (
     BaseInnerConfig,
     NOT_SET,
     TypeMapper,
-    TypedParameter,
+    Field,
 )
-from pkonfig.fields import IntParam, FloatParam, StrParam
+from pkonfig.fields import (
+    Bool,
+    Int,
+    Float,
+    Str,
+    Byte,
+    ByteArray,
+    PathField,
+    DecimalField,
+)
 
 
 class DefaultMapper(TypeMapper):
-    _mapper: Dict[Type, Type[TypedParameter]] = {
-        int: IntParam,
-        float: FloatParam,
-        str: StrParam,
+    type_mapping: Dict[Type, Type[Field]] = {
+        bool: Bool,
+        int: Int,
+        float: Float,
+        str: Str,
+        bytes: Byte,
+        bytearray: ByteArray,
+        Path: PathField,
+        Decimal: DecimalField,
     }
 
-    def descriptor(self, type_: Type, value: Any = NOT_SET) -> TypedParameter:
-        cls = self._mapper.get(type_, StrParam)
-        return cls(value)
+    def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
+        try:
+            cls = self.type_mapping[type_]
+            return cls(value)
+        except KeyError:
+            return value
 
 
 class Config(BaseOuterConfig):
-    Mapper = DefaultMapper
+    _mapper = DefaultMapper()
 
 
 class EmbeddedConfig(BaseInnerConfig):
-    Mapper = DefaultMapper
+    _mapper = DefaultMapper()

@@ -10,6 +10,8 @@ pyyaml = "*"
 [dev-packages]
 coverage = "*"
 pytest = "*"
+mypy = "*"
+types-pyyaml = "*"
 
 [requires]
 python_version = "3.9"

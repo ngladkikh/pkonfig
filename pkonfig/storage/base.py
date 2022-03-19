@@ -3,10 +3,10 @@ import os
 from abc import ABC, abstractmethod
 from collections import UserDict
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Tuple, IO
+from typing import Any, Dict, List, Literal, Tuple, IO, Union
 import configparser
 
-MODE = Literal['r', 'rb']
+MODE = Literal["r", "rb"]
 
 
 class AbstractStorage(UserDict, ABC):
@@ -20,10 +20,20 @@ class AbstractStorage(UserDict, ABC):
         pass
 
 
-class BaseFileStorageMixin(AbstractStorage, ABC):
-    file: Path
+class BaseFileStorage(AbstractStorage, ABC):
+    file: Union[Path, str]
     mode: MODE = "r"
     missing_ok: bool = False
+
+    def __init__(
+        self,
+        file: Union[Path, str],
+        missing_ok: bool = False,
+        **kwargs
+    ):
+        self.file = file
+        self.missing_ok = missing_ok
+        super().__init__(**kwargs)
 
     def load(self) -> None:
         try:
@@ -41,7 +51,7 @@ class BaseFileStorageMixin(AbstractStorage, ABC):
 class PlainStructureParserMixin:
     delimiter: str = "_"
     prefix: str = "APP" + delimiter
-    data: Dict[str, Any]
+    data: Dict
 
     def save_key_value(self, key: str, value: Any) -> None:
         if key.startswith(self.prefix):
@@ -75,22 +85,18 @@ class Env(PlainStructureParserMixin, AbstractStorage):
             self.save_key_value(key, value)
 
 
-class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
+class DotEnv(PlainStructureParserMixin, BaseFileStorage):
     def __init__(
         self,
-        file: Path,
+        file: Union[Path, str],
         prefix="APP",
         delimiter="_",
-        mode: MODE = "r",
         missing_ok: bool = False,
         **kwargs
     ):
         self.delimiter = delimiter
         self.prefix = prefix + self.delimiter
-        self.file = file
-        self.mode = mode
-        self.missing_ok = missing_ok
-        super().__init__(**kwargs)
+        super().__init__(file=file, missing_ok=missing_ok, **kwargs)
 
     def load_file_content(self, handler: IO) -> None:
         for line in filter(self.filter, handler.readlines()):
@@ -104,22 +110,23 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
 
     @staticmethod
     def filter(param_line: str) -> bool:
-        return param_line and (not param_line.startswith(("#", "//")))
+        return bool(param_line) and (not param_line.startswith(("#", "//")))
 
 
-class Json(BaseFileStorageMixin, AbstractStorage):
+class Json(BaseFileStorage):
+
     def load_file_content(self, handler: IO) -> None:
         self.data.update(json.load(handler))
 
 
-class Ini(BaseFileStorageMixin, AbstractStorage):
+class Ini(BaseFileStorage):
     def __init__(
         self,
-        file: Path,
+        file: Union[Path, str],
         missing_ok=False,
         allow_no_value=False,
-        delimiters=('=', ':'),
-        comment_prefixes=('#', ';'),
+        delimiters=("=", ":"),
+        comment_prefixes=("#", ";"),
         inline_comment_prefixes=None,
         strict=True,
         empty_lines_in_values=True,
@@ -135,10 +142,8 @@ class Ini(BaseFileStorageMixin, AbstractStorage):
             empty_lines_in_values=empty_lines_in_values,
             default_section=default_section,
         )
-        self.data = self.parser
-        self.missing_ok = missing_ok
-        self.file = file
-        super().__init__(**kwargs)
+        super().__init__(file=file, missing_ok=missing_ok, **kwargs)
 
     def load_file_content(self, handler: IO) -> None:
         self.parser.read_string(handler.read())
+        self.data.update(self.parser)

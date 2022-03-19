@@ -1,0 +1,10 @@
+[first_section]
+string = "some"
+int = 1
+float = 0.33
+
+[second_section]
+key = "value"
+
+[object.inner]
+test_key = "value"

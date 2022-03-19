@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import IO
 
@@ -5,8 +6,10 @@ import pytest
 
 from pkonfig.storage import (
     Env,
-    BaseFileStorageMixin,
+    BaseFileStorage,
     PlainStructureParserMixin,
+    Json,
+    Ini,
 )
 
 
@@ -60,17 +63,13 @@ def test_file_storage_missing_raises(file_storage_cls):
 
 
 def test_file_storage_missing_ok(file_storage_cls):
-    file_storage_cls.missing_ok = True
-    storage = file_storage_cls(Path("test"))
+    storage = file_storage_cls(Path("test"), missing_ok=True)
     assert storage.data == {}
 
 
 @pytest.fixture
 def file_storage_cls(storage_file):
-    class FileStorage(BaseFileStorageMixin):
-        def __init__(self, file: Path, **kwargs):
-            self.file = file
-            super().__init__(**kwargs)
+    class FileStorage(BaseFileStorage):
 
         def load_file_content(self, handler: IO) -> None:
             self.data.update({"content": handler.read()})
@@ -112,3 +111,43 @@ def parser():
     parser = PlainStructureParserMixin()
     parser.data = {}
     return parser
+
+
+def test_json_storage(json_configs, file):
+    storage = Json(file)
+    for key, value in json_configs.items():
+        assert storage[key] == value
+
+
+@pytest.fixture
+def json_configs(file):
+    data = {
+        "str": "value",
+        "int": 1,
+        "float": 1/3,
+        "bool": True,
+    }
+    with open(file, "w") as fh:
+        json.dump(data, fh)
+    yield data
+
+
+def test_ini_storage(ini_file):
+    storage = Ini(ini_file)
+    assert storage["bitbucket.org"]["User"] == "hg"
+    assert storage["bitbucket.org"]["ServerAliveInterval"] == "45"
+
+
+def test_ini_storage_respects_defaults(ini_file):
+    storage = Ini(ini_file, attr="some")
+    assert storage["attr"] == "some"
+
+
+@pytest.fixture
+def ini_file():
+    return "tests/test_storage/test.ini"
+
+
+@pytest.fixture
+def file(tmp_path):
+    return tmp_path / "test_config"

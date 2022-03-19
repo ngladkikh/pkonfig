@@ -1,27 +1,48 @@
 import logging
+from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from typing import Generic, Sequence, Type, TypeVar
 
-from pkonfig.base import NOT_SET, TypedParameter
+from pkonfig.base import NOT_SET, Field
 
 
-class IntParam(TypedParameter):
-    def cast(self, string_value) -> int:
-        return int(string_value)
+class Bool(Field):
+    def cast(self, value) -> bool:
+        return bool(value)
 
 
-class FloatParam(TypedParameter):
-    def cast(self, string_value) -> float:
-        return float(string_value)
+class Int(Field):
+    def cast(self, value) -> int:
+        return int(value)
 
 
-class StrParam(TypedParameter):
-    def cast(self, string_value) -> str:
-        return str(string_value)
+class Float(Field):
+    def cast(self, value) -> float:
+        return float(value)
 
 
-class PathParam(TypedParameter):
+class DecimalField(Field):
+    def cast(self, value) -> Decimal:
+        return Decimal(float(value))
+
+
+class Str(Field):
+    def cast(self, value) -> str:
+        return str(value)
+
+
+class Byte(Field):
+    def cast(self, value) -> bytes:
+        return bytes(value)
+
+
+class ByteArray(Field):
+    def cast(self, value) -> bytearray:
+        return bytearray(value)
+
+
+class PathField(Field):
     value: Path
     missing_ok: bool
 
@@ -29,15 +50,15 @@ class PathParam(TypedParameter):
         self.missing_ok = missing_ok
         super().__init__(default, no_cache)
 
-    def cast(self, string_value) -> Path:
-        return Path(string_value)
+    def cast(self, value) -> Path:
+        return Path(value)
 
     def validate(self, value: Path) -> None:
         if not value.exists() and not self.missing_ok:
             raise FileNotFoundError(f"File {value.absolute()} not found")
 
 
-class File(PathParam):
+class File(PathField):
     def validate(self, value):
         super().validate(value)
         if value.is_file():
@@ -45,7 +66,7 @@ class File(PathParam):
         raise TypeError(f"{value.absolute()} is not a file")
 
 
-class Folder(PathParam):
+class Folder(PathField):
     def validate(self, value):
         super().validate(value)
         if value.is_dir():
@@ -53,16 +74,16 @@ class Folder(PathParam):
         raise TypeError(f"{value.absolute()} is not a directory")
 
 
-class EnumParam(TypedParameter):
+class EnumField(Field):
     def __init__(self, enum_cls: Type[Enum], default=NOT_SET, no_cache=False):
         self.enum_cls = enum_cls
         super().__init__(default, no_cache)
 
-    def cast(self, string_value: str) -> int:
-        return self.enum_cls[string_value].value
+    def cast(self, value: str) -> int:
+        return self.enum_cls[value].value
 
 
-class LogLevel(TypedParameter):
+class LogLevel(Field):
     class Levels(Enum):
         NOTSET = logging.NOTSET
         DEBUG = logging.DEBUG
@@ -71,22 +92,20 @@ class LogLevel(TypedParameter):
         ERROR = logging.ERROR
         CRITICAL = logging.CRITICAL
 
-    def cast(self, string_value: str) -> int:
-        return self.Levels[string_value.upper()].value
+    def cast(self, value: str) -> int:
+        return self.Levels[value.upper()].value
 
 
 T = TypeVar("T")
 
 
-class Choice(TypedParameter, Generic[T]):
-    def __init__(
-        self, choices: Sequence[T], default=NOT_SET, no_cache=False
-    ):
+class Choice(Field, Generic[T]):
+    def __init__(self, choices: Sequence[T], default=NOT_SET, no_cache=False):
         self.choices = choices
         super().__init__(default, no_cache)
 
-    def cast(self, string_value: T) -> T:
-        return string_value
+    def cast(self, value: T) -> T:
+        return value
 
     def validate(self, value):
         if value not in self.choices:

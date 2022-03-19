@@ -4,13 +4,13 @@ import pytest
 
 from pkonfig.base import BaseOuterConfig
 from pkonfig.fields import (
-    IntParam,
-    FloatParam,
-    StrParam,
-    PathParam,
+    Int,
+    Float,
+    Str,
+    PathField,
     File,
     Folder,
-    EnumParam,
+    EnumField,
     LogLevel,
     Choice,
 )
@@ -28,7 +28,7 @@ def build_config(descriptor) -> "Config":
 
 @pytest.fixture
 def int_config():
-    cls = build_config(IntParam())
+    cls = build_config(Int())
     return cls(attr=3)
 
 
@@ -43,7 +43,7 @@ def test_only_int_accepted(int_config):
 
 @pytest.fixture
 def float_config():
-    cls = build_config(FloatParam())
+    cls = build_config(Float())
     return cls(attr=0.3)
 
 
@@ -53,19 +53,19 @@ def test_float_only_accepted(float_config):
 
 
 def test_string_param_casts():
-    cls = build_config(StrParam())
+    cls = build_config(Str())
     config = cls(attr=2)
     assert config.attr == "2"
 
 
 def test_path_cast():
-    cls = build_config(PathParam(missing_ok=True))
+    cls = build_config(PathField(missing_ok=True))
     config = cls(attr="/some")
     assert config.attr.name == "some"
 
 
 def test_path_not_exists_raises():
-    cls = build_config(PathParam())
+    cls = build_config(PathField())
     with pytest.raises(FileNotFoundError):
         cls(attr="/some")
 
@@ -97,7 +97,7 @@ def enum_attr_config():
         green = auto()
         blue = auto()
 
-    return build_config(EnumParam(Color))
+    return build_config(EnumField(Color))
 
 
 def test_enum_param_returns_value(enum_attr_config):
