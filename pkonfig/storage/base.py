@@ -28,12 +28,10 @@ class BaseFileStorage(AbstractStorage, ABC):
     def __init__(
         self,
         file: Union[Path, str],
-        mode: MODE = "r",
         missing_ok: bool = False,
         **kwargs
     ):
         self.file = file
-        self.mode = mode
         self.missing_ok = missing_ok
         super().__init__(**kwargs)
 
@@ -93,13 +91,12 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorage):
         file: Union[Path, str],
         prefix="APP",
         delimiter="_",
-        mode: MODE = "r",
         missing_ok: bool = False,
         **kwargs
     ):
         self.delimiter = delimiter
         self.prefix = prefix + self.delimiter
-        super().__init__(file=file, mode=mode, missing_ok=missing_ok, **kwargs)
+        super().__init__(file=file, missing_ok=missing_ok, **kwargs)
 
     def load_file_content(self, handler: IO) -> None:
         for line in filter(self.filter, handler.readlines()):
