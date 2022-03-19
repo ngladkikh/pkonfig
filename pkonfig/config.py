@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Type
 
@@ -16,6 +17,7 @@ from pkonfig.fields import (
     Byte,
     ByteArray,
     PathField,
+    DecimalField,
 )
 
 
@@ -28,6 +30,7 @@ class DefaultMapper(TypeMapper):
         bytes: Byte,
         bytearray: ByteArray,
         Path: PathField,
+        Decimal: DecimalField,
     }
 
     def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
