@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict, Type
 
 from pkonfig.base import (
@@ -14,6 +15,7 @@ from pkonfig.fields import (
     Str,
     Byte,
     ByteArray,
+    PathField,
 )
 
 
@@ -25,6 +27,7 @@ class DefaultMapper(TypeMapper):
         str: Str,
         bytes: Byte,
         bytearray: ByteArray,
+        Path: PathField,
     }
 
     def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
