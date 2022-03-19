@@ -1,0 +1,5 @@
+str: some
+int: 1
+float: 0.33
+inner:
+  key: value
