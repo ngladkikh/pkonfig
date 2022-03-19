@@ -125,7 +125,7 @@ class Json(BaseFileStorage):
 class Ini(BaseFileStorage):
     def __init__(
         self,
-        file: Path,
+        file: Union[Path, str],
         missing_ok=False,
         allow_no_value=False,
         delimiters=("=", ":"),
@@ -145,10 +145,8 @@ class Ini(BaseFileStorage):
             empty_lines_in_values=empty_lines_in_values,
             default_section=default_section,
         )
-        self.data = self.parser  # type: ignore
-        self.missing_ok = missing_ok
-        self.file = file
-        super().__init__(**kwargs)
+        super().__init__(file=file, missing_ok=missing_ok, **kwargs)
 
     def load_file_content(self, handler: IO) -> None:
         self.parser.read_string(handler.read())
+        self.data.update(self.parser)

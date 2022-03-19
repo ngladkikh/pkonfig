@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import IO
 
@@ -7,6 +8,10 @@ from pkonfig.storage import (
     Env,
     BaseFileStorage,
     PlainStructureParserMixin,
+    Json,
+    Ini,
+    Toml,
+    Yaml,
 )
 
 
@@ -108,3 +113,43 @@ def parser():
     parser = PlainStructureParserMixin()
     parser.data = {}
     return parser
+
+
+def test_json_storage(json_configs, file):
+    storage = Json(file)
+    for key, value in json_configs.items():
+        assert storage[key] == value
+
+
+@pytest.fixture
+def json_configs(file):
+    data = {
+        "str": "value",
+        "int": 1,
+        "float": 1/3,
+        "bool": True,
+    }
+    with open(file, "w") as fh:
+        json.dump(data, fh)
+    yield data
+
+
+def test_ini_storage(ini_file):
+    storage = Ini(ini_file)
+    assert storage["bitbucket.org"]["User"] == "hg"
+    assert storage["bitbucket.org"]["ServerAliveInterval"] == "45"
+
+
+def test_ini_storage_respects_defaults(ini_file):
+    storage = Ini(ini_file, attr="some")
+    assert storage["attr"] == "some"
+
+
+@pytest.fixture
+def ini_file():
+    return "tests/test_storage/test.ini"
+
+
+@pytest.fixture
+def file(tmp_path):
+    return tmp_path / "test_config"
