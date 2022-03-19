@@ -1,6 +1,6 @@
 from pkonfig.storage.base import (
     AbstractStorage,
-    BaseFileStorageMixin,
+    BaseFileStorage,
     PlainStructureParserMixin,
     Env,
     DotEnv,

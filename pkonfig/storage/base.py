@@ -3,7 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import UserDict
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Tuple, IO
+from typing import Any, Dict, List, Literal, Tuple, IO, Union
 import configparser
 
 MODE = Literal["r", "rb"]
@@ -20,10 +20,22 @@ class AbstractStorage(UserDict, ABC):
         pass
 
 
-class BaseFileStorageMixin(AbstractStorage, ABC):
-    file: Path
+class BaseFileStorage(AbstractStorage, ABC):
+    file: Union[Path, str]
     mode: MODE = "r"
     missing_ok: bool = False
+
+    def __init__(
+        self,
+        file: Union[Path, str],
+        mode: MODE = "r",
+        missing_ok: bool = False,
+        **kwargs
+    ):
+        self.file = file
+        self.mode = mode
+        self.missing_ok = missing_ok
+        super().__init__(**kwargs)
 
     def load(self) -> None:
         try:
@@ -75,10 +87,10 @@ class Env(PlainStructureParserMixin, AbstractStorage):
             self.save_key_value(key, value)
 
 
-class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
+class DotEnv(PlainStructureParserMixin, BaseFileStorage):
     def __init__(
         self,
-        file: Path,
+        file: Union[Path, str],
         prefix="APP",
         delimiter="_",
         mode: MODE = "r",
@@ -87,10 +99,7 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
     ):
         self.delimiter = delimiter
         self.prefix = prefix + self.delimiter
-        self.file = file
-        self.mode = mode
-        self.missing_ok = missing_ok
-        super().__init__(**kwargs)
+        super().__init__(file=file, mode=mode, missing_ok=missing_ok, **kwargs)
 
     def load_file_content(self, handler: IO) -> None:
         for line in filter(self.filter, handler.readlines()):
@@ -107,12 +116,13 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorageMixin):
         return bool(param_line) and (not param_line.startswith(("#", "//")))
 
 
-class Json(BaseFileStorageMixin, AbstractStorage):
+class Json(BaseFileStorage):
+
     def load_file_content(self, handler: IO) -> None:
         self.data.update(json.load(handler))
 
 
-class Ini(BaseFileStorageMixin, AbstractStorage):
+class Ini(BaseFileStorage):
     def __init__(
         self,
         file: Path,

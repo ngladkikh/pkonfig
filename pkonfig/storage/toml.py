@@ -2,10 +2,10 @@ from typing import BinaryIO
 
 import tomli
 
-from pkonfig.storage.base import AbstractStorage, BaseFileStorageMixin, MODE
+from pkonfig.storage.base import AbstractStorage, BaseFileStorage, MODE
 
 
-class Toml(BaseFileStorageMixin, AbstractStorage):
+class Toml(BaseFileStorage, AbstractStorage):
     mode: MODE = "rb"
 
     def load_file_content(self, handler: BinaryIO) -> None:  # type: ignore

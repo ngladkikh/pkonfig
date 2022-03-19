@@ -5,7 +5,7 @@ import pytest
 
 from pkonfig.storage import (
     Env,
-    BaseFileStorageMixin,
+    BaseFileStorage,
     PlainStructureParserMixin,
 )
 
@@ -60,17 +60,13 @@ def test_file_storage_missing_raises(file_storage_cls):
 
 
 def test_file_storage_missing_ok(file_storage_cls):
-    file_storage_cls.missing_ok = True
-    storage = file_storage_cls(Path("test"))
+    storage = file_storage_cls(Path("test"), missing_ok=True)
     assert storage.data == {}
 
 
 @pytest.fixture
 def file_storage_cls(storage_file):
-    class FileStorage(BaseFileStorageMixin):
-        def __init__(self, file: Path, **kwargs):
-            self.file = file
-            super().__init__(**kwargs)
+    class FileStorage(BaseFileStorage):
 
         def load_file_content(self, handler: IO) -> None:
             self.data.update({"content": handler.read()})
