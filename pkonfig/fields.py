@@ -6,6 +6,11 @@ from typing import Generic, Sequence, Type, TypeVar
 from pkonfig.base import NOT_SET, Field
 
 
+class Bool(Field):
+    def cast(self, value) -> bool:
+        return bool(value)
+
+
 class Int(Field):
     def cast(self, value) -> int:
         return int(value)

@@ -8,6 +8,7 @@ from pkonfig.base import (
     Field,
 )
 from pkonfig.fields import (
+    Bool,
     Int,
     Float,
     Str,
@@ -18,6 +19,7 @@ from pkonfig.fields import (
 
 class DefaultMapper(TypeMapper):
     _mapper: Dict[Type, Type[Field]] = {
+        bool: Bool,
         int: Int,
         float: Float,
         str: Str,
