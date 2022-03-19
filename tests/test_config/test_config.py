@@ -168,7 +168,7 @@ def test_strict_mapper(strict_int_mapper):
 def test_strict_mapper_raises_error(strict_int_mapper):
     with pytest.raises(KeyError):
         class AppConfig(Config):
-            Mapper = strict_int_mapper()
+            _mapper = strict_int_mapper()
 
             attr: float
 

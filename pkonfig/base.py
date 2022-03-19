@@ -135,14 +135,10 @@ class BaseConfig(metaclass=MetaConfig):
     _storage: Optional[Mapping]
     _mapper: TypeMapper
 
-    def __init__(
-        self, fail_fast: bool = True, mapper: Optional[TypeMapper] = None
-    ):
+    def __init__(self, fail_fast: bool = True):
         self._storage = None
         self._fail_fast = fail_fast
         self._validation_done: bool = False
-        if mapper is not None:
-            self._mapper = mapper
 
     def get_storage(self) -> Optional[Mapping]:
         return self._storage
