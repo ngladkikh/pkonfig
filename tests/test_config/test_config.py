@@ -1,10 +1,11 @@
+from decimal import Decimal
 from typing import Any, Type
 
 import pytest
 
 from pkonfig.base import Field, NOT_SET, TypeMapper
 from pkonfig.config import Config, DefaultMapper, EmbeddedConfig
-from pkonfig.fields import Int, Str
+from pkonfig.fields import DecimalField, Int, Str
 
 
 def test_outer_config():
@@ -183,3 +184,12 @@ def strict_int_mapper():
         def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
             return self.map[type_](value)
     return StrictMapper
+
+
+def test_change_type_mapping_on_init():
+    class AppConfig(Config):
+        _mapper = DefaultMapper({float: DecimalField})
+        attr: float
+
+    config = AppConfig(dict(attr=0.3))
+    assert isinstance(config.attr, Decimal)

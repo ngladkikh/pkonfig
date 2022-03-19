@@ -20,7 +20,7 @@ from pkonfig.fields import (
 
 
 class DefaultMapper(TypeMapper):
-    _mapper: Dict[Type, Type[Field]] = {
+    type_mapping: Dict[Type, Type[Field]] = {
         bool: Bool,
         int: Int,
         float: Float,
@@ -32,7 +32,7 @@ class DefaultMapper(TypeMapper):
 
     def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
         try:
-            cls = self._mapper[type_]
+            cls = self.type_mapping[type_]
             return cls(value)
         except KeyError:
             return value

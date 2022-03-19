@@ -66,7 +66,16 @@ class Field(ABC, Generic[T]):
         pass
 
 
+TypeMapping = Dict[Type, Type[Field]]
+
+
 class TypeMapper(ABC):
+    type_mapping: TypeMapping = {}
+
+    def __init__(self, mappings: Optional[TypeMapping] = None):
+        if mappings:
+            self.type_mapping.update(mappings)
+
     def replace_fields_with_descriptors(
         self, attributes: Dict[str, Any], type_hints: Dict[str, Type]
     ) -> None:
