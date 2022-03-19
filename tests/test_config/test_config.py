@@ -1,5 +1,8 @@
+from typing import Any, Type
+
 import pytest
 
+from pkonfig.base import Field, NOT_SET, TypeMapper
 from pkonfig.config import Config, DefaultMapper, EmbeddedConfig
 from pkonfig.fields import Int, Str
 
@@ -149,3 +152,34 @@ def test_default_mapper_ignores_unknown_types():
     value = Custom()
     descriptor = mapper.descriptor(Custom, value)
     assert descriptor is value
+
+
+def test_strict_mapper(strict_int_mapper):
+
+    class AppConfig(Config):
+        Mapper = strict_int_mapper()
+
+        attr = Int()
+
+    config = AppConfig(dict(attr=1))
+    assert config.attr == 1
+
+
+def test_strict_mapper_raises_error(strict_int_mapper):
+    with pytest.raises(KeyError):
+        class AppConfig(Config):
+            Mapper = strict_int_mapper()
+
+            attr: float
+
+
+@pytest.fixture
+def strict_int_mapper():
+    class StrictMapper(TypeMapper):
+        map = {
+            int: Int
+        }
+
+        def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
+            return self.map[type_](value)
+    return StrictMapper

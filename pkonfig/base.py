@@ -84,6 +84,7 @@ class TypeMapper(ABC):
             or isdatadescriptor(attribute)
             or ismethoddescriptor(attribute)
             or isclass(attribute)
+            or isinstance(attribute, TypeMapper)
         )
 
     @abstractmethod
@@ -124,7 +125,7 @@ class MetaConfig(ABCMeta):
             if isinstance(attribute, TypeMapper):
                 return attribute
         for cls in parents:
-            mapper = getattr(cls, "Mapper", None)
+            mapper = getattr(cls, "_mapper", None)
             if mapper and isinstance(mapper, TypeMapper):
                 return mapper
         return None
@@ -132,12 +133,16 @@ class MetaConfig(ABCMeta):
 
 class BaseConfig(metaclass=MetaConfig):
     _storage: Optional[Mapping]
-    Mapper: TypeMapper
+    _mapper: TypeMapper
 
-    def __init__(self, fail_fast: bool = True):
+    def __init__(
+        self, fail_fast: bool = True, mapper: Optional[TypeMapper] = None
+    ):
         self._storage = None
         self._fail_fast = fail_fast
         self._validation_done: bool = False
+        if mapper is not None:
+            self._mapper = mapper
 
     def get_storage(self) -> Optional[Mapping]:
         return self._storage
