@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from typing import Generic, Sequence, Type, TypeVar
@@ -19,6 +20,11 @@ class Int(Field):
 class Float(Field):
     def cast(self, value) -> float:
         return float(value)
+
+
+class DecimalField(Field):
+    def cast(self, value) -> Decimal:
+        return Decimal(float(value))
 
 
 class Str(Field):
