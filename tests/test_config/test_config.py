@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Type
+from typing import Any, Type, get_type_hints
 
 import pytest
 
@@ -193,3 +193,16 @@ def test_change_type_mapping_on_init():
 
     config = AppConfig(dict(attr=0.3))
     assert isinstance(config.attr, Decimal)
+
+
+def test_embedded_config_type_remains():
+    class Inner(EmbeddedConfig):
+        f: float
+
+    class TestConfig(Config):
+        inner = Inner()
+
+    storage = dict(inner={"f": 0.1, "i": {"s": "text"}})
+    config = TestConfig(storage)
+    assert get_type_hints(config)["inner"] is Inner
+    assert isinstance(config.inner, Inner)
