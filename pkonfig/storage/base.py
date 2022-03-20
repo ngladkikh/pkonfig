@@ -25,12 +25,7 @@ class BaseFileStorage(AbstractStorage, ABC):
     mode: MODE = "r"
     missing_ok: bool = False
 
-    def __init__(
-        self,
-        file: Union[Path, str],
-        missing_ok: bool = False,
-        **kwargs
-    ):
+    def __init__(self, file: Union[Path, str], missing_ok: bool = False, **kwargs):
         self.file = file
         self.missing_ok = missing_ok
         super().__init__(**kwargs)
@@ -114,7 +109,6 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorage):
 
 
 class Json(BaseFileStorage):
-
     def load_file_content(self, handler: IO) -> None:
         self.data.update(json.load(handler))
 

@@ -1,10 +1,10 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Type
+from typing import Any, Dict, Optional, Type
 
 from pkonfig.base import (
     BaseOuterConfig,
-    BaseInnerConfig,
+    BaseConfig,
     NOT_SET,
     TypeMapper,
     Field,
@@ -45,5 +45,8 @@ class Config(BaseOuterConfig):
     _mapper = DefaultMapper()
 
 
-class EmbeddedConfig(BaseInnerConfig):
+class EmbeddedConfig(BaseConfig):
     _mapper = DefaultMapper()
+
+    def __init__(self, alias: Optional[str] = None):
+        self._alias = alias
