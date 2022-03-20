@@ -98,31 +98,6 @@ config = AppConfig(storage)
 print(config.inner.key)   # value
 ```
 
-### Fail-fast
-
-By default `Config` children classes during initialization do recursive check for all user attributes.
-This helps to detect any misconfiguration as early as possible.
-This behaviour may be disabled:
-
-```python
-from pkonfig.config import Config
-
-
-class AppConfig(Config):
-    foo: float
-    baz: int
-
-
-storage = {"baz": "a"}
-config = AppConfig(storage, fail_fast=False)
-
-print(config.foo)   # Here KeyError is raised
-```
-In given example `config` object is created without issues despite `baz` value can't be converted to `float`
-and `foo` is not defined and has no default value.
-Only during first attribute access exception is raised.
-
-
 ### Environment variables naming conventions
 
 Storing configs in environment variables is the easiest and most common way to configurate your app.
@@ -167,6 +142,36 @@ APP__REDIS__HOST=redis
 In this example we customized delimiter with two underscores, default is '**_**'.
 Prefix parameter could be also customized so that our app uses variables starting from __prefix__ only.
 Prefix is `APP` by default.
+
+### Aliases
+
+Previous example might be simplified using `alias` field attribute 
+that is used to get raw values from given storage:
+
+```python
+from pkonfig.storage import DotEnv
+from pkonfig.config import Config, EmbeddedConfig
+from pkonfig.fields import Str
+
+
+class HostConfig(EmbeddedConfig):
+    host: str
+    port: int
+
+
+class AppConfig(Config):
+    pg = HostConfig(alias="pg")
+    redis = HostConfig(alias="redis")
+    foo = Str(alias="baz")
+
+
+config = AppConfig(
+    DotEnv(".env", delimiter="__", prefix="APP")
+)
+```
+
+In this example storage will seek in dotenv file parameters named by given alias.
+Also field `AppConfig.foo` will use value taken by key __baz__ rather than __foo__.
 
 ### PKonfig fields
 
@@ -216,43 +221,13 @@ class AppConfig(Config):
     file = PathField()
 ```
 
-### Aliases
-
-Previous example might be simplified using `alias` field attribute 
-that is used to get raw values from given storage:
-
-```python
-from pkonfig.storage import DotEnv
-from pkonfig.config import Config, EmbeddedConfig
-from pkonfig.fields import Str
-
-
-class HostConfig(EmbeddedConfig):
-    host: str
-    port: int
-
-
-class AppConfig(Config):
-    pg = HostConfig(alias="pg")
-    redis = HostConfig(alias="redis")
-    foo = Str(alias="baz")
-
-
-config = AppConfig(
-    DotEnv(".env", delimiter="__", prefix="APP")
-)
-```
-
-In this example storage will seek in dotenv file parameters named by given alias.
-Also field `AppConfig.foo` will use value taken by key __baz__ rather than __foo__.
-
 #### Caching
 
 All __PKonfig__ field types are Python descriptors that are responsible for type casting and data validation.
 In most cases there is no need to do this job every time the value is accessed.
 To avoid undesirable calculations caching is used.
 So that type casting and validation is done only once 
-during `Config` object initialization or during the first attribute access.
+during `Config` object initialization.
 In case when configuration may change during application lifecycle user may disable this behaviour:
 
 ```python
@@ -272,13 +247,16 @@ If value is not set in config source user can use default value.
 `None` is also to be valid default type:
 
 ```python
-from pkonfig.fields import Int
+from pkonfig.fields import Int, Str
 from pkonfig.config import Config
 
 
 class AppConfig(Config):
     int_attr = Int(1)
-    none_default_attribute = Int(None)
+    none_default_attribute = Str(None)
+
+config = AppConfig({})
+print(config.none_default_attribute)    # None
 ```
 
 ### Implement custom descriptor or property
@@ -332,9 +310,9 @@ class ListOfStrings(Field):
         return value.split(",")
 ```
 
-#### Available fields
+### Available fields
 
-##### PathField
+#### PathField
 
 Basic path type that is parental for other two types and is used when you define field using `pathlib.Path`.
 This type raises `FileNotFoundError` exception during initialization if given path doesn't exist by default:
@@ -351,15 +329,15 @@ class AppConfig(Config):
 
 In given example field `optional_path` may not exist during initialization.
 
-###### File
+##### File
 
 `File` inherits `PathField` but also checks whether given path is a file.
 
-##### Folder
+#### Folder
 
 `Folder` inherits `PathField` and does checking whether given path is a folder.
 
-##### EnumField
+### EnumField
 
 This field uses custom enum to validate input and cast it to given `Enum`:
 
@@ -383,11 +361,11 @@ config = AppConfig({"user_type": "admin"})
 print(config.user_type is UserType.admin)  # True
 ```
 
-##### LogLevel
+#### LogLevel
 
 `LogLevel` field is useful to define `logging` level through configs.
 `LogLevel` accepts strings that define log level and casts 
-that string to `logging` level integer values:
+that string to `logging` level integer value:
 
 ```python
 import logging
@@ -413,9 +391,9 @@ print(config.another_level)     # 10
 print(config.another_level is logging.DEBUG)     # True
 ```
 
-##### Choice
+#### Choice
 
-`Choice` fields validates that config value is one of given and also does optional type casting:
+`Choice` field validates that config value is one of given and also does optional type casting:
 
 ```python
 from pkonfig.fields import Choice
@@ -429,14 +407,14 @@ class AppConfig(Config):
 config = AppConfig({"one_of_attr": "10"})
 print(config.one_of_attr == 10)  # True
 
-config = AppConfig({"one_of_attr": "1"})    # raises TypeError exception
+config = AppConfig({"one_of_attr": "2"})    # raises TypeError exception
 ```
 
 When `cast_function` is not given raw values from storage are used.
 
 ### Types to Fields mapping
 
-All fields for `Config` children classes are converted to descriptors internally.
+All fields for `BaseConfig` children classes are converted to descriptors internally.
 Class `pkonfig.config.DefaultMapper` defines how field types will be replaced with descriptors.
 This mapper is used as base:
 ```
