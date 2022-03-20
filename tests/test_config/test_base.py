@@ -3,7 +3,7 @@ from typing import Any, get_type_hints
 import pytest
 
 from pkonfig.base import (
-    MetaConfig,
+    BaseOuterConfig, MetaConfig,
     BaseConfig,
     NOT_SET,
     TypeMapper, Field,
@@ -130,6 +130,30 @@ def test_default_value_validated(descriptor):
     config = Config()
     with pytest.raises(ValueError):
         config.attr
+
+
+def test_none_omits_validation(descriptor):
+    class Config(BaseOuterConfig):
+        attr = descriptor(None)
+
+    config = Config({})
+    assert config.attr is None
+
+
+def test_nullable_field(descriptor):
+    class Config(BaseOuterConfig):
+        attr = descriptor(nullable=True)
+
+    config = Config({"attr": None})
+    assert config.attr is None
+
+
+def test_non_nullable_field_raises(descriptor):
+    class Config(BaseOuterConfig):
+        attr = descriptor()
+
+    with pytest.raises(ValueError):
+        Config({"attr": None})
 
 
 def test_extend_annotations(attributes):
