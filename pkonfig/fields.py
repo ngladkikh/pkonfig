@@ -2,7 +2,7 @@ import logging
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Generic, Sequence, Type, TypeVar
+from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
 from pkonfig.base import NOT_SET, Field
 
@@ -60,16 +60,14 @@ class PathField(Field):
 
 class File(PathField):
     def validate(self, value):
-        super().validate(value)
-        if value.is_file():
+        if (value.exists() and value.is_file()) or self.missing_ok:
             return
         raise TypeError(f"{value.absolute()} is not a file")
 
 
 class Folder(PathField):
     def validate(self, value):
-        super().validate(value)
-        if value.is_dir():
+        if (value.exists() and value.is_dir()) or self.missing_ok:
             return
         raise TypeError(f"{value.absolute()} is not a directory")
 
@@ -79,8 +77,8 @@ class EnumField(Field):
         self.enum_cls = enum_cls
         super().__init__(default, no_cache)
 
-    def cast(self, value: str) -> int:
-        return self.enum_cls[value].value
+    def cast(self, value: str) -> Enum:
+        return self.enum_cls[value]
 
 
 class LogLevel(Field):
@@ -100,11 +98,20 @@ T = TypeVar("T")
 
 
 class Choice(Field, Generic[T]):
-    def __init__(self, choices: Sequence[T], default=NOT_SET, no_cache=False):
+    def __init__(
+        self,
+        choices: Sequence[T],
+        cast_function: Optional[Callable[[Any], T]] = None,
+        default=NOT_SET,
+        no_cache=False
+    ):
         self.choices = choices
+        self.cast_function = cast_function
         super().__init__(default, no_cache)
 
     def cast(self, value: T) -> T:
+        if self.cast_function is not None:
+            value = self.cast_function(value)
         return value
 
     def validate(self, value):

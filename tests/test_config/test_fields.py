@@ -81,6 +81,18 @@ def test_is_file_checked(tmp_path):
         config.attr = tmp_path
 
 
+def test_file_field_respects_missing_ok():
+    cls = build_config(File(missing_ok=True))
+    config = cls(attr="not_exists")
+    assert not config.attr.exists()
+
+
+def test_folder_field_respects_missing_ok():
+    cls = build_config(Folder(missing_ok=True))
+    config = cls(attr="not_exists")
+    assert not config.attr.exists()
+
+
 def test_is_dir_checked(tmp_path):
     cls = build_config(Folder())
     config = cls(attr=tmp_path)
@@ -97,15 +109,17 @@ def enum_attr_config():
         green = auto()
         blue = auto()
 
-    return build_config(EnumField(Color))
+    return build_config(EnumField(Color)), Color
 
 
 def test_enum_param_returns_value(enum_attr_config):
-    config = enum_attr_config(attr="red")
-    assert config.attr == 1
+    cls, enum_cls = enum_attr_config
+    config = cls(attr="red")
+    assert config.attr is enum_cls.red
 
 
 def test_enum_raises_error(enum_attr_config):
+    enum_attr_config, _ = enum_attr_config
     with pytest.raises(KeyError):
         enum_attr_config(attr="foo")
 
@@ -120,6 +134,17 @@ def test_choice():
     cls = build_config(Choice(["foo", "bar"]))
     config = cls(attr="foo")
     assert config.attr == "foo"
+
+
+def test_choice_casts_values():
+    cls = build_config(
+        Choice(
+            [10, 100],
+            int
+        )
+    )
+    config = cls(attr="10")
+    assert config.attr == 10
 
 
 @pytest.mark.parametrize(
