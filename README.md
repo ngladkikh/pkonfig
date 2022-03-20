@@ -59,7 +59,6 @@ environ["NOPE"] = "qwe"
 
 source = Env(delimiter="_", prefix="APP", some_key="some")
 
-print(source["some_key"])       # some
 print(source["outer"])          # foo
 print(source["inner"]["key"])   # baz
 print(source["nope"])           # raises KeyError
