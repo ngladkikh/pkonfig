@@ -147,7 +147,6 @@ class BaseConfig(metaclass=MetaConfig):
     def __init__(self, fail_fast: bool = True):
         self._storage = None
         self._fail_fast = fail_fast
-        self._validation_done: bool = False
 
     def get_storage(self) -> Optional[Mapping]:
         return self._storage
@@ -170,7 +169,6 @@ class BaseConfig(metaclass=MetaConfig):
     def check_all_fields(self):
         for name in self.user_fields():
             getattr(self, name)
-        self._validation_done = True
 
 
 class BaseOuterConfig(BaseConfig, ABC):
@@ -187,6 +185,7 @@ TInner = TypeVar("TInner", bound="BaseInnerConfig")
 class BaseInnerConfig(BaseConfig, ABC):
     def __init__(self, fail_fast: bool = True, alias: Optional[str] = None):
         self._alias = alias
+        self._validation_done: bool = False
         super().__init__(fail_fast)
 
     def __set_name__(self, _, name):
@@ -199,4 +198,5 @@ class BaseInnerConfig(BaseConfig, ABC):
                 self._storage = parent_storage[self._name]
         if not (self._validation_done and self._fail_fast):
             self.check_all_fields()
+            self._validation_done = True
         return self
