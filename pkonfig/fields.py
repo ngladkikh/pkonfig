@@ -77,8 +77,8 @@ class EnumField(Field):
         self.enum_cls = enum_cls
         super().__init__(default, no_cache)
 
-    def cast(self, value: str) -> int:
-        return self.enum_cls[value].value
+    def cast(self, value: str) -> Enum:
+        return self.enum_cls[value]
 
 
 class LogLevel(Field):

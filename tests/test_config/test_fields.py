@@ -109,15 +109,17 @@ def enum_attr_config():
         green = auto()
         blue = auto()
 
-    return build_config(EnumField(Color))
+    return build_config(EnumField(Color)), Color
 
 
 def test_enum_param_returns_value(enum_attr_config):
-    config = enum_attr_config(attr="red")
-    assert config.attr == 1
+    cls, enum_cls = enum_attr_config
+    config = cls(attr="red")
+    assert config.attr is enum_cls.red
 
 
 def test_enum_raises_error(enum_attr_config):
+    enum_attr_config, _ = enum_attr_config
     with pytest.raises(KeyError):
         enum_attr_config(attr="foo")
 
