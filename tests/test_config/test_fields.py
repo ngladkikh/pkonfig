@@ -81,6 +81,18 @@ def test_is_file_checked(tmp_path):
         config.attr = tmp_path
 
 
+def test_file_field_respects_missing_ok():
+    cls = build_config(File(missing_ok=True))
+    config = cls(attr="not_exists")
+    assert not config.attr.exists()
+
+
+def test_folder_field_respects_missing_ok():
+    cls = build_config(Folder(missing_ok=True))
+    config = cls(attr="not_exists")
+    assert not config.attr.exists()
+
+
 def test_is_dir_checked(tmp_path):
     cls = build_config(Folder())
     config = cls(attr=tmp_path)

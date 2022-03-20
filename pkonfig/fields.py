@@ -60,16 +60,14 @@ class PathField(Field):
 
 class File(PathField):
     def validate(self, value):
-        super().validate(value)
-        if value.is_file():
+        if (value.exists() and value.is_file()) or self.missing_ok:
             return
         raise TypeError(f"{value.absolute()} is not a file")
 
 
 class Folder(PathField):
     def validate(self, value):
-        super().validate(value)
-        if value.is_dir():
+        if (value.exists() and value.is_dir()) or self.missing_ok:
             return
         raise TypeError(f"{value.absolute()} is not a directory")
 
