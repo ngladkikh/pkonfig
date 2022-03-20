@@ -136,6 +136,17 @@ def test_choice():
     assert config.attr == "foo"
 
 
+def test_choice_casts_values():
+    cls = build_config(
+        Choice(
+            [10, 100],
+            int
+        )
+    )
+    config = cls(attr="10")
+    assert config.attr == 10
+
+
 @pytest.mark.parametrize(
     "level,value",
     [

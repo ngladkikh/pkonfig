@@ -2,7 +2,7 @@ import logging
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Generic, Sequence, Type, TypeVar
+from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
 from pkonfig.base import NOT_SET, Field
 
@@ -98,11 +98,20 @@ T = TypeVar("T")
 
 
 class Choice(Field, Generic[T]):
-    def __init__(self, choices: Sequence[T], default=NOT_SET, no_cache=False):
+    def __init__(
+        self,
+        choices: Sequence[T],
+        cast_function: Optional[Callable[[Any], T]] = None,
+        default=NOT_SET,
+        no_cache=False
+    ):
         self.choices = choices
+        self.cast_function = cast_function
         super().__init__(default, no_cache)
 
     def cast(self, value: T) -> T:
+        if self.cast_function is not None:
+            value = self.cast_function(value)
         return value
 
     def validate(self, value):
