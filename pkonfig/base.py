@@ -143,10 +143,10 @@ class MetaConfig(ABCMeta):
 
 class BaseConfig(metaclass=MetaConfig):
     _mapper: TypeMapper
+    _storage: Mapping
     _alias: Optional[str] = None
-    _storage: Optional[Mapping] = None
 
-    def get_storage(self) -> Optional[Mapping]:
+    def get_storage(self) -> Mapping:
         return self._storage
 
     def set_storage(self, storage: Mapping) -> None:

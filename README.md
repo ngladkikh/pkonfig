@@ -24,11 +24,126 @@ with agile order configuration.
 
 ## Quickstart
 
+### Config sources
+
+__PKonfig__ implements several config sources out of the box.
+All config sources implement `Mapping` protocol and default values could be set up during initialization.
+
+#### Environment variables
+
+The most common way to configure application is environment variables.
+To parse environment variables and store values in multilevel structure class `Env` could be used.
+Common pattern is naming variables with multiple words describing the exact purpose 
+more precise: __PG_HOST__, __PG_PORT__ and __REDIS_HOST__, __REDIS_PORT__ could be treated as two groups:
+
+- PG
+  - HOST
+  - PORT
+- REDIS
+  - HOST
+  - PORT
+
+PKonfig respects this convention so that `Env` has two optional arguments:
+
+- `delimiter` string that will be used to split configuration levels taken from keys;
+- `prefix` string that is used to identify keys that are related to the given app and omit everything else.
+
+```python
+from os import environ
+from pkonfig.storage import Env
+
+
+environ["APP_OUTER"] = "foo"
+environ["APP_INNER_KEY"] = "baz"
+environ["NOPE"] = "qwe"
+
+source = Env(delimiter="_", prefix="APP", some_key="some")
+
+print(source["some_key"])       # some
+print(source["outer"])          # foo
+print(source["inner"]["key"])   # baz
+print(source["nope"])           # raises KeyError
+```
+
+`Env` ignores key cases and ignores all keys starting not from __prefix__.
+
+#### DotEnv
+
+In the same manner as environment variables DotEnv files could be used.
+`DotEnv` requires file name as a string or a path and also accepts `delimiter` and `prefix` optional arguments.
+`missing_ok` argument defines whether `DotEnv` raises exception when given file not found.
+When file not found and `missing_ok` is set `DotEnv` contains empty dictionary.
+
+```python
+from pkonfig.storage import DotEnv
+
+
+config_source = DotEnv("test.env", delimiter="_", prefix="APP", missing_ok=True)
+```
+
+#### Ini
+
+__INI__ files are quite common and class `Ini` 
+is build on top of [`configparser.ConfigParser`](https://docs.python.org/3/library/configparser.html):
+
+```python
+from pkonfig.storage import Ini
+
+storage = Ini("config.ini", missing_ok=False)
+print(storage["bitbucket.org"]["User"])  # hg
+print(storage["bitbucket.org"]["ServerAliveInterval"])  # 45
+```
+
+In case when __config.ini__:
+
+```ini
+[DEFAULT]
+ServerAliveInterval = 45
+
+[bitbucket.org]
+User = hg
+```
+
+`Ini` also accepts `missing_ok` argument to ignore missing file.
+Most of `ConfigParser` arguments are also accepted to modify parser behaviour.
+
+#### Json
+
+`Json` class uses `json.load` to read given JSON file and respects `missing_ok` argument:
+
+```python
+from pkonfig.storage import Json
+
+
+storage = Json("config.json", missing_ok=False)
+```
+
+#### Yaml
+
+To parse YAML files [PyYaml](https://pyyaml.org/wiki/PyYAMLDocumentation) could be used wrapped with `Yaml` class:
+
+```python
+from pkonfig.storage import Yaml
+
+storage = Yaml("config.yaml", missing_ok=False)
+```
+
+#### Toml
+
+TOML files are parsed with [tomli](https://pypi.org/project/tomli/) wrapped with `Toml` helper class:
+
+```python
+from pkonfig.storage import Toml
+
+
+storage = Toml("config.toml", missing_ok=False)
+```
+
 ### Source order
 
 Any source for `BaseConfig` should implement `Mapper` protocol.
 So it is easy to implement custom or combine existing implementations.
-Recommended way to combine multiple sources of configs is using `ChainMap`:
+Recommended way to combine multiple sources of configs is `ChainMap`:
 
 ```python
 from collections import ChainMap
@@ -43,7 +158,7 @@ config_source = ChainMap(
 ```
 
 In this example we created `ChainMap` that looks for key until finds one in the given mappers sequence.
-The first one source for configs is **test.env** file that might not exist and cpuld be used for local development only.
+The first one source for configs is **test.env** file that might not exist and could be used for local development only.
 Environment variables are used as the second one config source.
 Dotenv file will be preferred source in this example.
 The last one source is **base_config.yaml** that should exist or `FileNotFoundError` exception raised.
@@ -98,13 +213,10 @@ config = AppConfig(storage)
 print(config.inner.key)   # value
 ```
 
-### Environment variables naming conventions
+### Multilevel Config
 
-Storing configs in environment variables is the easiest and most common way to configurate your app.
-But when there are lots of parameters it is quite complicated to maintain all of them in a plain structure and some
-grouping might be useful. Common pattern is naming variables with multiple words describing the exact purpose 
-more precise: __PG_HOST__, __PG_PORT__ and __REDIS_HOST__, __REDIS_PORT__ as an example. 
-PKonfig respects this convention.
+Grouping might be useful when there are lots of config parameters.
+To achieve this `EmbeddedConfig` class should be inherited:
 
 ```python
 from pkonfig.storage import DotEnv
@@ -130,7 +242,9 @@ config = AppConfig(
     DotEnv(".env", delimiter="__", prefix="APP")
 )
 
-print(config.pg.host)   # 'db_host'
+print(config.pg.host)       # db_host
+print(config.pg.port)       # 6432
+print(config.redis.host)    # redis
 ```
 
 __.env__ content:
@@ -140,12 +254,10 @@ APP__PG__PORT=6432
 APP__REDIS__HOST=redis
 ```
 In this example we customized delimiter with two underscores, default is '**_**'.
-Prefix parameter could be also customized so that our app uses variables starting from __prefix__ only.
-Prefix is `APP` by default.
 
 ### Aliases
 
-Previous example might be simplified using `alias` field attribute 
+Previous example might be simplified using `alias` attribute 
 that is used to get raw values from given storage:
 
 ```python
@@ -162,7 +274,6 @@ class HostConfig(EmbeddedConfig):
 class AppConfig(Config):
     pg = HostConfig(alias="pg")
     redis = HostConfig(alias="redis")
-    foo = Str(alias="baz")
 
 
 config = AppConfig(
@@ -171,11 +282,11 @@ config = AppConfig(
 ```
 
 In this example storage will seek in dotenv file parameters named by given alias.
-Also field `AppConfig.foo` will use value taken by key __baz__ rather than __foo__.
 
 ### PKonfig fields
 
 All simple Python data types are implemented in field types: `Bool`, `Int`, `Float`, `Str`, `Byte`, `ByteArray`.
+All fields with known type converted to descriptors during class creation.
 Fields in `Config` classes may be defined in several ways:
 
 #### Using types:
@@ -265,7 +376,7 @@ When `None` is default value field is treated as nullable.
 #### Field nullability
 
 To handle type casting and validation fields should not be nullable.
-In case `None` is valid value and should be used without casting and validation
+In case `None` is a valid value and should be used without casting and validation
 option `nullable` could be set:
 
 ```python
@@ -335,10 +446,22 @@ class ListOfStrings(Field):
 
 ### Available fields
 
+Builtin Python types has appropriate `Field` types:
+
+- bool -> `Bool`
+- int -> `Int`
+- float -> `Float`
+- Decimal -> `DecimalField`
+- str -> `Str`
+- bytes -> `Byte`
+- bytearray -> `ByteArray`
+
+The only reason to use this types directly is customising field nullability and cache policy.
+
 #### PathField
 
 Basic path type that is parental for other two types and is used when you define field using `pathlib.Path`.
-This type raises `FileNotFoundError` exception during initialization if given path doesn't exist by default:
+This type raises `FileNotFoundError` exception during initialization if given path doesn't exist:
 
 ```python
 from pkonfig.fields import PathField
@@ -360,7 +483,7 @@ In given example field `optional_path` may not exist during initialization.
 
 `Folder` inherits `PathField` and does checking whether given path is a folder.
 
-### EnumField
+#### EnumField
 
 This field uses custom enum to validate input and cast it to given `Enum`:
 
@@ -416,7 +539,7 @@ print(config.another_level is logging.DEBUG)     # True
 
 #### Choice
 
-`Choice` field validates that config value is one of given and also does optional type casting:
+`Choice` field validates that config value is a member of the given sequence and also does optional type casting:
 
 ```python
 from pkonfig.fields import Choice
@@ -439,7 +562,7 @@ When `cast_function` is not given raw values from storage are used.
 
 All fields for `BaseConfig` children classes are converted to descriptors internally.
 Class `pkonfig.config.DefaultMapper` defines how field types will be replaced with descriptors.
-This mapper is used as base:
+This mapping is used by default:
 ```
 {
     bool: Bool,
