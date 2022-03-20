@@ -51,6 +51,78 @@ The last one source is **base_config.yaml** that should exist or `FileNotFoundEr
 You can customize source order in this way or even create your own logic implementing
 `Mapper` protocol.
 
+### Config
+
+To implement application config class user should inherit from `pkonfig.config.Config` class and define
+required fields:
+
+```python
+from pkonfig.config import Config
+
+
+class AppConfig(Config):
+    foo: float
+    baz: int
+
+
+storage = {"foo": "0.33", "baz": 1}
+config = AppConfig(storage)
+
+print(config.foo)   # 0.33
+print(config.baz)   # 1
+```
+
+To build more granular config structure `EmbeddedConfig` class is used:
+
+```python
+from pkonfig.config import Config, EmbeddedConfig
+
+
+class Inner(EmbeddedConfig):
+    key: str
+
+
+class AppConfig(Config):
+    inner = Inner()
+    foo: float
+    baz: int
+
+
+storage = {
+    "foo": "0.33", 
+    "baz": 1, 
+    "inner": {"key": "value"}
+}
+config = AppConfig(storage)
+
+print(config.inner.key)   # value
+```
+
+### Fail-fast
+
+By default `Config` children classes during initialization do recursive check for all user attributes.
+This helps to detect any misconfiguration as early as possible.
+This behaviour may be disabled:
+
+```python
+from pkonfig.config import Config
+
+
+class AppConfig(Config):
+    foo: float
+    baz: int
+
+
+storage = {"baz": "a"}
+config = AppConfig(storage, fail_fast=False)
+
+print(config.foo)   # Here KeyError is raised
+```
+In given example `config` object is created without issues despite `baz` value can't be converted to `float`
+and `foo` is not defined and has no default value.
+Only during first attribute access exception is raised.
+
+
 ### Environment variables naming conventions
 
 Storing configs in environment variables is the easiest and most common way to configurate your app.
@@ -96,36 +168,9 @@ In this example we customized delimiter with two underscores, default is '**_**'
 Prefix parameter could be also customized so that our app uses variables starting from __prefix__ only.
 Prefix is `APP` by default.
 
-### Aliases
+### PKonfig fields
 
-Previous example might be simplified:
-```python
-from pkonfig.storage import DotEnv
-from pkonfig.config import Config, EmbeddedConfig
-from pkonfig.fields import Str
-
-
-class HostConfig(EmbeddedConfig):
-    host: str
-    port: int
-
-
-class AppConfig(Config):
-    pg = HostConfig(alias="pg")
-    redis = HostConfig(alias="redis")
-    foo = Str(alias="baz")
-
-
-config = AppConfig(
-    DotEnv(".env", delimiter="__", prefix="APP")
-)
-```
-
-In this example storage will seek in dotenv file parameters named by given alias.
-Also field `AppConfig.foo` will use value taken by key __baz__ rather than __foo__.
-
-### Fields definition and type casting
-
+All simple Python data types are implemented in field types: `Bool`, `Int`, `Float`, `Str`, `Byte`, `ByteArray`.
 Fields in `Config` classes may be defined in several ways:
 
 #### Using types:
@@ -155,7 +200,9 @@ class AppConfig(Config):
     file = Path("some.text")
 ```
 
-#### Using pkonfig fields directly
+Given values will be used as default values.
+
+#### Using PKonfig fields directly
 
 ```python
 from pkonfig.config import Config
@@ -167,6 +214,71 @@ class AppConfig(Config):
     baz = Int()
     flag = Bool()
     file = PathField()
+```
+
+### Aliases
+
+Previous example might be simplified using `alias` field attribute 
+that is used to get raw values from given storage:
+
+```python
+from pkonfig.storage import DotEnv
+from pkonfig.config import Config, EmbeddedConfig
+from pkonfig.fields import Str
+
+
+class HostConfig(EmbeddedConfig):
+    host: str
+    port: int
+
+
+class AppConfig(Config):
+    pg = HostConfig(alias="pg")
+    redis = HostConfig(alias="redis")
+    foo = Str(alias="baz")
+
+
+config = AppConfig(
+    DotEnv(".env", delimiter="__", prefix="APP")
+)
+```
+
+In this example storage will seek in dotenv file parameters named by given alias.
+Also field `AppConfig.foo` will use value taken by key __baz__ rather than __foo__.
+
+#### Caching
+
+All __PKonfig__ field types are Python descriptors that are responsible for type casting and data validation.
+In most cases there is no need to do this job every time the value is accessed.
+To avoid undesirable calculations caching is used.
+So that type casting and validation is done only once 
+during `Config` object initialization or during the first attribute access.
+In case when configuration may change during application lifecycle user may disable this behaviour:
+
+```python
+from pkonfig.fields import Int
+from pkonfig.config import Config
+
+
+class AppConfig(Config):
+    attr = Int(no_cache=True)
+```
+
+In given example `attr` will do type casting and validation every time this attribute is accessed.
+
+#### Default values
+
+If value is not set in config source user can use default value.
+`None` is also to be valid default type:
+
+```python
+from pkonfig.fields import Int
+from pkonfig.config import Config
+
+
+class AppConfig(Config):
+    int_attr = Int(1)
+    none_default_attribute = Int(None)
 ```
 
 #### Implement custom descriptor or property
@@ -181,7 +293,11 @@ class AppConfig(Config):
     
     @property
     def value(self):
-        return self.flag and self.baz == "prod" 
+        return self.flag and self.baz == "test" 
+
+
+config = AppConfig({})
+print(config.value)  # True
 ```
 
 #### Custom field types
@@ -215,6 +331,108 @@ class ListOfStrings(Field):
     def cast(self, value: str) -> List[str]:
         return value.split(",")
 ```
+
+#### Available fields
+
+##### PathField
+
+Basic path type that is parental for other two types and is used when you define field using `pathlib.Path`.
+This type raises `FileNotFoundError` exception during initialization if given path doesn't exist by default:
+
+```python
+from pkonfig.fields import PathField
+from pkonfig.config import Config
+
+
+class AppConfig(Config):
+    mandatory_existing_path = PathField()
+    optional_path = PathField(missing_ok=True)
+```
+
+In given example field `optional_path` may not exist during initialization.
+
+###### File
+
+`File` inherits `PathField` but also checks whether given path is a file.
+
+##### Folder
+
+`Folder` inherits `PathField` and does checking whether given path is a folder.
+
+##### EnumField
+
+This field uses custom enum to validate input and cast it to given `Enum`:
+
+```python
+from enum import Enum
+from pkonfig.fields import EnumField
+from pkonfig.config import Config
+
+
+class UserType(Enum):
+    guest = 1
+    user = 2
+    admin = 3
+
+
+class AppConfig(Config):
+    user_type = EnumField(UserType)
+
+
+config = AppConfig({"user_type": "admin"})
+print(config.user_type is UserType.admin)  # True
+```
+
+##### LogLevel
+
+`LogLevel` field is useful to define `logging` level through configs.
+`LogLevel` accepts strings that define log level and casts 
+that string to `logging` level integer values:
+
+```python
+import logging
+from pkonfig.fields import LogLevel
+from pkonfig.config import Config
+
+
+class AppConfig(Config):
+    some_level = LogLevel()
+    another_level = LogLevel()
+
+
+config = AppConfig(
+    {
+        "some_level": "info",
+        "another_level": "Debug",
+    }
+)
+
+print(config.some_level)        # 20
+print(config.another_level)     # 10
+
+print(config.another_level is logging.DEBUG)     # True
+```
+
+##### Choice
+
+`Choice` fields validates that config value is one of given and also does optional type casting:
+
+```python
+from pkonfig.fields import Choice
+from pkonfig.config import Config
+
+
+class AppConfig(Config):
+    one_of_attr = Choice([10, 100], cast_function=int)
+
+
+config = AppConfig({"one_of_attr": "10"})
+print(config.one_of_attr == 10)  # True
+
+config = AppConfig({"one_of_attr": "1"})    # raises TypeError exception
+```
+
+When `cast_function` is not given raw values from storage are used.
 
 ### Types to Fields mapping
 
