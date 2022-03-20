@@ -281,7 +281,7 @@ class AppConfig(Config):
     none_default_attribute = Int(None)
 ```
 
-#### Implement custom descriptor or property
+### Implement custom descriptor or property
 
 ```python
 from pkonfig.config import Config
@@ -300,7 +300,7 @@ config = AppConfig({})
 print(config.value)  # True
 ```
 
-#### Custom field types
+### Custom field types
 
 User can customize how field validation and casting is done.
 The recommended way is to implement `validate` method:
