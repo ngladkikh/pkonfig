@@ -244,7 +244,7 @@ In given example `attr` will do type casting and validation every time this attr
 #### Default values
 
 If value is not set in config source user can use default value.
-`None` is also to be valid default type:
+`None` could be used as default value:
 
 ```python
 from pkonfig.fields import Int, Str
@@ -252,12 +252,35 @@ from pkonfig.config import Config
 
 
 class AppConfig(Config):
-    int_attr = Int(1)
-    none_default_attribute = Str(None)
+    int_attr = Int(None)
+    str_attr = Str(None)
 
 config = AppConfig({})
-print(config.none_default_attribute)    # None
+print(config.str_attr)    # None
+print(config.int_attr)    # None
 ```
+
+When `None` is default value field is treated as nullable.
+
+#### Field nullability
+
+To handle type casting and validation fields should not be nullable.
+In case `None` is valid value and should be used without casting and validation
+option `nullable` could be set:
+
+```python
+from pkonfig.fields import Int
+from pkonfig.config import Config
+
+
+class AppConfig(Config):
+    int_attr = Int(nullable=True)
+
+config = AppConfig(dict(int_attr=None))
+print(config.int_attr)    # None
+```
+
+In this example `None` comes from storage and type casting is omitted.
 
 ### Implement custom descriptor or property
 
