@@ -103,7 +103,7 @@ class Choice(Field, Generic[T]):
         choices: Sequence[T],
         cast_function: Optional[Callable[[Any], T]] = None,
         default=NOT_SET,
-        no_cache=False
+        no_cache=False,
     ):
         self.choices = choices
         self.cast_function = cast_function

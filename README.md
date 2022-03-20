@@ -208,12 +208,12 @@ Custom type casting is also available.
 To achieve this user should inherit abstract class `Field` and implement method `cast`:
 
 ```python
-from decimal import Decimal
+from typing import List
 from pkonfig.base import Field
 
-class DecimalField(Field):
-    def cast(self, value) -> Decimal:
-        return Decimal(float(value))
+class ListOfStrings(Field):
+    def cast(self, value: str) -> List[str]:
+        return value.split(",")
 ```
 
 ### Types to Fields mapping
@@ -236,42 +236,7 @@ This mapper is used as base:
 
 When field type is not found in this mapper it is ignored and won't be taken from storage source while resolving.
 
-User can customize this behaviour by defining type mapper class and setting it as resolver:
-
-```python
-from typing import Type, Dict
-from pathlib import Path
-from pkonfig.base import TypeMapper, Field, NOT_SET
-from pkonfig.fields import Bool, Int, Str, Byte, ByteArray, Float
-from pkonfig.config import BaseOuterConfig
-
-
-class StrictMapper(TypeMapper):
-    mapper: Dict[Type, Type[Field]] = {
-        bool: Bool,
-        int: Int,
-        float: Float,
-        str: Str,
-        bytes: Byte,
-        bytearray: ByteArray,
-    }
-
-    def descriptor(self, type_: Type, value=NOT_SET) -> Field:
-        return self.mapper[type_](value)
-
-
-class AppConfig(BaseOuterConfig):
-    _mapper = StrictMapper()
-    
-    foo = "baz"
-    file = Path("")
-
-```
-
-In this example `StrictMapper` raises exception when field type is not found.
-Field `file` of class `Path` will cause `KeyError` exception on class definition.
-
-Another option is to modify default mapper directly:
+User can modify default mapper giving dictionary of types and appropriate fields:
 
 ```python
 from decimal import Decimal

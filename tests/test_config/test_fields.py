@@ -21,7 +21,7 @@ def build_config(descriptor) -> "Config":
         attr = descriptor
 
         def __init__(self, **kwargs):
-            super().__init__(kwargs, True)
+            super().__init__(kwargs)
 
     return Config
 

@@ -158,7 +158,7 @@ def test_default_mapper_ignores_unknown_types():
 def test_strict_mapper(strict_int_mapper):
 
     class AppConfig(Config):
-        Mapper = strict_int_mapper()
+        _mapper = strict_int_mapper()
 
         attr = Int()
 
@@ -206,3 +206,15 @@ def test_embedded_config_type_remains():
     config = TestConfig(storage)
     assert get_type_hints(config)["inner"] is Inner
     assert isinstance(config.inner, Inner)
+
+
+def test_inner_uses_alias():
+    class Inner(EmbeddedConfig):
+        f: float
+
+    class TestConfig(Config):
+        inner = Inner(alias="foo")
+
+    storage = dict(foo={"f": 0.1, "i": {"s": "text"}})
+    config = TestConfig(storage)
+    assert config.inner.f == 0.1

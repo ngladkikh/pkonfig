@@ -1,5 +1,5 @@
 from abc import ABC, ABCMeta, abstractmethod
-from inspect import isclass, isdatadescriptor, isfunction, ismethod, ismethoddescriptor
+from inspect import isclass, isdatadescriptor, ismethod
 from typing import (
     Any,
     Dict,
@@ -88,13 +88,7 @@ class TypeMapper(ABC):
 
     @staticmethod
     def replace(attribute):
-        return not (
-            isfunction(attribute)
-            or isdatadescriptor(attribute)
-            or ismethoddescriptor(attribute)
-            or isclass(attribute)
-            or isinstance(attribute, TypeMapper)
-        )
+        return not (isdatadescriptor(attribute) or isclass(attribute))
 
     @abstractmethod
     def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
@@ -141,15 +135,15 @@ class MetaConfig(ABCMeta):
 
 
 class BaseConfig(metaclass=MetaConfig):
-    _storage: Optional[Mapping]
     _mapper: TypeMapper
-
-    def __init__(self, fail_fast: bool = True):
-        self._storage = None
-        self._fail_fast = fail_fast
+    _alias: Optional[str] = None
+    _storage: Optional[Mapping] = None
 
     def get_storage(self) -> Optional[Mapping]:
         return self._storage
+
+    def set_storage(self, storage: Mapping) -> None:
+        self._storage = storage
 
     def is_user_attr(self, name: str) -> bool:
         if name.startswith("_"):
@@ -157,9 +151,7 @@ class BaseConfig(metaclass=MetaConfig):
 
         if hasattr(self, name):
             attribute = getattr(self, name)
-            return not (
-                ismethod(attribute) or isfunction(attribute) or isclass(attribute)
-            )
+            return not (ismethod(attribute) or isclass(attribute))
 
         return True
 
@@ -168,35 +160,14 @@ class BaseConfig(metaclass=MetaConfig):
 
     def check_all_fields(self):
         for name in self.user_fields():
-            getattr(self, name)
+            attr = getattr(self, name)
+            if isinstance(attr, BaseConfig):
+                alias = attr._alias if attr._alias else name
+                attr.set_storage(self.get_storage()[alias])
+                attr.check_all_fields()
 
 
-class BaseOuterConfig(BaseConfig, ABC):
-    def __init__(self, storage: Mapping, fail_fast=True):
-        super().__init__(fail_fast=fail_fast)
-        self._storage = storage
-        if self._fail_fast:
-            self.check_all_fields()
-
-
-TInner = TypeVar("TInner", bound="BaseInnerConfig")
-
-
-class BaseInnerConfig(BaseConfig, ABC):
-    def __init__(self, fail_fast: bool = True, alias: Optional[str] = None):
-        self._alias = alias
-        self._validation_done: bool = False
-        super().__init__(fail_fast)
-
-    def __set_name__(self, _, name):
-        self._name = self._alias if self._alias is not None else name
-
-    def __get__(self, instance: BaseConfig, _=None) -> "BaseInnerConfig":
-        if self._storage is None:
-            parent_storage = instance.get_storage()
-            if parent_storage:
-                self._storage = parent_storage[self._name]
-        if not (self._validation_done and self._fail_fast):
-            self.check_all_fields()
-            self._validation_done = True
-        return self
+class BaseOuterConfig(BaseConfig):
+    def __init__(self, storage: Mapping):
+        self.set_storage(storage)
+        self.check_all_fields()
