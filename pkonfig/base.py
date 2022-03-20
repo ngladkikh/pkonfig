@@ -21,12 +21,20 @@ NOT_SET = object()
 class Field(ABC, Generic[T]):
     default: Union[T, object]
     value: Union[T, object]
+    nullable: bool
 
-    def __init__(self, default=NOT_SET, no_cache=False, alias: Optional[str] = None):
+    def __init__(
+        self,
+        default=NOT_SET,
+        no_cache=False,
+        alias: Optional[str] = None,
+        nullable=False,
+    ):
         self.no_cache = no_cache
         self.default: Union[T, object] = default
         self.value: Union[T, object] = NOT_SET
         self.alias = alias
+        self.nullable = default is None or nullable
 
     def __set_name__(self, _, name):
         self.name = self.alias if self.alias is not None else name
@@ -39,20 +47,19 @@ class Field(ABC, Generic[T]):
     def __get__(self, instance: "BaseConfig", _=None) -> Union[T, object]:
         if self.should_get_from_storage():
             value = self.get_from_storage(instance)
-            value = self.cast(value)
-            self.validate(value)
+            if value is not None:
+                value = self.cast(value)
+                self.validate(value)
             self.value = value
         return self.value
 
     def get_from_storage(self, instance: "BaseConfig") -> Any:
-        value = self.default
-        try:
-            storage = instance.get_storage()
-            if storage is not None:
-                value = storage[self.name]
-        except KeyError:
-            if self.default is NOT_SET:
-                raise KeyError(self.name)
+        storage = instance.get_storage()
+        value = storage.get(self.name, self.default)
+        if value is None and not self.nullable:
+            raise ValueError(f"{self.name} is not nullable")
+        elif value is NOT_SET:
+            raise KeyError(self.name)
         return value
 
     def should_get_from_storage(self) -> bool:
@@ -136,10 +143,10 @@ class MetaConfig(ABCMeta):
 
 class BaseConfig(metaclass=MetaConfig):
     _mapper: TypeMapper
+    _storage: Mapping
     _alias: Optional[str] = None
-    _storage: Optional[Mapping] = None
 
-    def get_storage(self) -> Optional[Mapping]:
+    def get_storage(self) -> Mapping:
         return self._storage
 
     def set_storage(self, storage: Mapping) -> None:
