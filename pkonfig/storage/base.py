@@ -9,7 +9,7 @@ import configparser
 try:
     from typing import Literal
 except ImportError:
-    from typing_extensions import Literal
+    from typing_extensions import Literal   # type:ignore
 
 
 MODE = Literal["r", "rb"]
