@@ -3,8 +3,14 @@ import os
 from abc import ABC, abstractmethod
 from collections import UserDict
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Tuple, IO, Union
+from typing import Any, Dict, List, Tuple, IO, Union
 import configparser
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
+
 
 MODE = Literal["r", "rb"]
 
