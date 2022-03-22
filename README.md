@@ -50,7 +50,7 @@ PKonfig respects this convention so that `Env` has two optional arguments:
 
 ```python
 from os import environ
-from pkonfig.storage import Env
+from pkonfig import Env
 
 
 environ["APP_OUTER"] = "foo"
@@ -74,7 +74,7 @@ In the same manner as environment variables DotEnv files could be used.
 When file not found and `missing_ok` is set `DotEnv` contains empty dictionary.
 
 ```python
-from pkonfig.storage import DotEnv
+from pkonfig import DotEnv
 
 
 config_source = DotEnv("test.env", delimiter="_", prefix="APP", missing_ok=True)
@@ -86,7 +86,7 @@ __INI__ files are quite common and class `Ini`
 is build on top of [`configparser.ConfigParser`](https://docs.python.org/3/library/configparser.html):
 
 ```python
-from pkonfig.storage import Ini
+from pkonfig import Ini
 
 storage = Ini("config.ini", missing_ok=False)
 print(storage["bitbucket.org"]["User"])  # hg
@@ -111,7 +111,7 @@ Most of `ConfigParser` arguments are also accepted to modify parser behaviour.
 `Json` class uses `json.load` to read given JSON file and respects `missing_ok` argument:
 
 ```python
-from pkonfig.storage import Json
+from pkonfig import Json
 
 
 storage = Json("config.json", missing_ok=False)
@@ -122,7 +122,7 @@ storage = Json("config.json", missing_ok=False)
 To parse YAML files [PyYaml](https://pyyaml.org/wiki/PyYAMLDocumentation) could be used wrapped with `Yaml` class:
 
 ```python
-from pkonfig.storage import Yaml
+from pkonfig import Yaml
 
 storage = Yaml("config.yaml", missing_ok=False)
 ```
@@ -132,7 +132,7 @@ storage = Yaml("config.yaml", missing_ok=False)
 TOML files are parsed with [tomli](https://pypi.org/project/tomli/) wrapped with `Toml` helper class:
 
 ```python
-from pkonfig.storage import Toml
+from pkonfig import Toml
 
 
 storage = Toml("config.toml", missing_ok=False)
@@ -146,7 +146,7 @@ Recommended way to combine multiple sources of configs is `ChainMap`:
 
 ```python
 from collections import ChainMap
-from pkonfig.storage import Env, DotEnv, Yaml
+from pkonfig import Env, DotEnv, Yaml
 
 
 config_source = ChainMap(
@@ -171,7 +171,7 @@ To implement application config class user should inherit from `pkonfig.config.C
 required fields:
 
 ```python
-from pkonfig.config import Config
+from pkonfig import Config
 
 
 class AppConfig(Config):
@@ -189,7 +189,7 @@ print(config.baz)   # 1
 To build more granular config structure `EmbeddedConfig` class is used:
 
 ```python
-from pkonfig.config import Config, EmbeddedConfig
+from pkonfig import Config, EmbeddedConfig
 
 
 class Inner(EmbeddedConfig):
@@ -218,8 +218,7 @@ Grouping might be useful when there are lots of config parameters.
 To achieve this `EmbeddedConfig` class should be inherited:
 
 ```python
-from pkonfig.storage import DotEnv
-from pkonfig.config import Config, EmbeddedConfig
+from pkonfig import DotEnv, Config, EmbeddedConfig
 
 
 class PgConfig(EmbeddedConfig):
@@ -260,9 +259,7 @@ Previous example might be simplified using `alias` attribute
 that is used to get raw values from given storage:
 
 ```python
-from pkonfig.storage import DotEnv
-from pkonfig.config import Config, EmbeddedConfig
-from pkonfig.fields import Str
+from pkonfig import DotEnv, Config, EmbeddedConfig
 
 
 class HostConfig(EmbeddedConfig):
@@ -291,7 +288,7 @@ Fields in `Config` classes may be defined in several ways:
 #### Using types:
 ```python
 from pathlib import Path
-from pkonfig.config import Config
+from pkonfig import Config
 
 
 class AppConfig(Config):
@@ -305,7 +302,7 @@ class AppConfig(Config):
 
 ```python
 from pathlib import Path
-from pkonfig.config import Config
+from pkonfig import Config
 
 
 class AppConfig(Config):
@@ -320,8 +317,7 @@ Given values will be used as default values.
 #### Using PKonfig fields directly
 
 ```python
-from pkonfig.config import Config
-from pkonfig.fields import PathField, Str, Int, Bool
+from pkonfig import Config, PathField, Str, Int, Bool
 
 
 class AppConfig(Config):
@@ -341,8 +337,7 @@ during `Config` object initialization.
 In case when configuration may change during application lifecycle user may disable this behaviour:
 
 ```python
-from pkonfig.fields import Int
-from pkonfig.config import Config
+from pkonfig import Config, Int
 
 
 class AppConfig(Config):
@@ -357,8 +352,7 @@ If value is not set in config source user can use default value.
 `None` could be used as default value:
 
 ```python
-from pkonfig.fields import Int, Str
-from pkonfig.config import Config
+from pkonfig import Config, Int, Str
 
 
 class AppConfig(Config):
@@ -379,8 +373,7 @@ In case `None` is a valid value and should be used without casting and validatio
 option `nullable` could be set:
 
 ```python
-from pkonfig.fields import Int
-from pkonfig.config import Config
+from pkonfig import Int, Config
 
 
 class AppConfig(Config):
@@ -395,7 +388,7 @@ In this example `None` comes from storage and type casting is omitted.
 ### Implement custom descriptor or property
 
 ```python
-from pkonfig.config import Config
+from pkonfig import Config
 
 
 class AppConfig(Config):
@@ -417,8 +410,7 @@ User can customize how field validation and casting is done.
 The recommended way is to implement `validate` method:
 
 ```python
-from pkonfig.config import Config
-from pkonfig.fields import Int
+from pkonfig import Config, Int
 
 
 class OnlyPositive(Int):
@@ -436,7 +428,7 @@ To achieve this user should inherit abstract class `Field` and implement method 
 
 ```python
 from typing import List
-from pkonfig.base import Field
+from pkonfig import Field
 
 class ListOfStrings(Field):
     def cast(self, value: str) -> List[str]:
@@ -463,8 +455,7 @@ Basic path type that is parental for other two types and is used when you define
 This type raises `FileNotFoundError` exception during initialization if given path doesn't exist:
 
 ```python
-from pkonfig.fields import PathField
-from pkonfig.config import Config
+from pkonfig import Config, PathField
 
 
 class AppConfig(Config):
@@ -488,8 +479,7 @@ This field uses custom enum to validate input and cast it to given `Enum`:
 
 ```python
 from enum import Enum
-from pkonfig.fields import EnumField
-from pkonfig.config import Config
+from pkonfig import Config, EnumField
 
 
 class UserType(Enum):
@@ -514,8 +504,7 @@ that string to `logging` level integer value:
 
 ```python
 import logging
-from pkonfig.fields import LogLevel
-from pkonfig.config import Config
+from pkonfig import Config, LogLevel
 
 
 class AppConfig(Config):
@@ -541,8 +530,7 @@ print(config.another_level is logging.DEBUG)     # True
 `Choice` field validates that config value is a member of the given sequence and also does optional type casting:
 
 ```python
-from pkonfig.fields import Choice
-from pkonfig.config import Config
+from pkonfig import Config, Choice
 
 
 class AppConfig(Config):
@@ -581,8 +569,7 @@ User can modify default mapper giving dictionary of types and appropriate fields
 
 ```python
 from decimal import Decimal
-from pkonfig.config import Config, DefaultMapper
-from pkonfig.fields import DecimalField
+from pkonfig import Config, DefaultMapper, DecimalField
 
 
 class AppConfig(Config):
