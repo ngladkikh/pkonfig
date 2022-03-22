@@ -170,7 +170,7 @@ class BaseConfig(metaclass=MetaConfig):
             attr = getattr(self, name)
             if isinstance(attr, BaseConfig):
                 alias = attr._alias if attr._alias else name
-                attr.set_storage(self.get_storage()[alias])
+                attr.set_storage(self.get_storage().get(alias, {}))
                 attr.check_all_fields()
 
 

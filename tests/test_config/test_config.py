@@ -218,3 +218,25 @@ def test_inner_uses_alias():
     storage = dict(foo={"f": 0.1, "i": {"s": "text"}})
     config = TestConfig(storage)
     assert config.inner.f == 0.1
+
+
+def test_inner_config_respects_defaults():
+    class Inner(EmbeddedConfig):
+        attr = 1
+
+    class AppConfig(Config):
+        inner = Inner()
+
+    config = AppConfig({})
+    assert config.inner.attr == 1
+
+
+def test_inner_config_raises_exception():
+    class Inner(EmbeddedConfig):
+        attr: int
+
+    class AppConfig(Config):
+        inner = Inner()
+
+    with pytest.raises(KeyError):
+        AppConfig({})
