@@ -27,7 +27,89 @@ with agile order configuration.
 - High performance.
 - Extendable API.
 
+## Installation
+
+To install basic PKonfig without YAML and TOML support run:
+
+```bash
+pip install pkonfig
+```
+
+YAML files parsing is handled with [PyYaml](https://pypi.org/project/PyYAML/):
+
+```bash
+pip install pkonfig[yaml]
+```
+
+TOML files handled with help of [Tomli](https://pypi.org/project/tomli/):
+
+```bash
+pip install pkonfig[toml]
+```
+
+And if both TOML and YAML is needed:
+
+```bash
+pip install pkonfig[toml,yaml]
+```
+
+For production no __.env__ files are needed but propper environment variables should be set.
+In case some of required variables missing __KeyError__ exception raised while __AppConfig__
+instantiation.
+
 ## Quickstart
+
+The most basic usage example when environment variables are used for production
+environment and DotEnv files are used for local development.
+
+Create __config__ module __config.py__:
+
+```python
+from collections import ChainMap
+from pkonfig import Config, EmbeddedConfig, Env, DotEnv, LogLevel, Choice
+
+
+class PG(EmbeddedConfig):
+  host = "localhost"
+  port = 5432
+  user: str
+  password: str
+
+  
+class AppConfig(Config):
+    db = PG()
+    log_level = LogLevel("INFO")
+    env = Choice(["local", "prod", "test"], default="prod")
+
+
+storage = ChainMap(DotEnv(".env", missing_ok=True), Env())
+config = AppConfig(storage)
+```
+
+For local development create DotEnv file in root app folder __.env__:
+
+```dotenv
+APP_DB_HOST=localhost
+APP_DB_USER=postgres
+APP_DB_PASSWORD=postgres
+APP_ENV=local
+APP_LOG_LEVEL=debug
+```
+
+Then elsewhere in app you could run:
+
+```python
+from config import config
+
+print(config.env)           # local
+print(config.log_level)     # 20
+print(config.db.host)       # localhost
+print(config.db.port)       # 5432
+print(config.db.user)       # postgres
+print(config.db.password)   # postgres
+```
+
+## Usage
 
 ### Config sources
 
@@ -390,7 +472,7 @@ print(config.int_attr)    # None
 
 In this example `None` comes from storage and type casting is omitted.
 
-### Implement custom descriptor or property
+### Custom descriptor or property
 
 ```python
 from pkonfig import Config
@@ -583,4 +665,77 @@ class AppConfig(Config):
 
 config = AppConfig(dict(foo=1/3))
 assert isinstance(config.foo, Decimal)  # True
+```
+
+### Per-environment config files
+
+When your app is configured with different configuration files 
+and each file is used only in an appropriate environment you can create a function
+to find which file should be used:
+
+```python
+from pkonfig import Env, Yaml, Config, Choice
+
+
+CONFIG_FILES = {
+    "prod": "configs/prod.yaml",
+    "staging": "configs/staging.yaml",
+    "local": "configs/local.yaml",
+}
+
+
+def get_config_file():
+    class _Config(Config):
+        env = Choice(
+          ["prod", "local", "staging"], 
+          cast_function=str.lower,
+          default="prod"
+        )
+    
+    _config = _Config(Env())
+    return CONFIG_FILES[_config.env]
+```
+
+__get_config_file__ uses environment variables and predefined config files pathes
+to check whether __APP_ENV__ var is set, validate this variable and return appropriate
+config file name.
+Then actual application configuration:
+
+```python
+from collections import ChainMap
+from pkonfig import Env, Yaml, Config, Choice
+
+
+CONFIG_FILES = {
+    "prod": "configs/prod.yaml",
+    "staging": "configs/staging.yaml",
+    "local": "configs/local.yaml",
+}
+
+
+def get_config_file():
+    class _Config(Config):
+        env = Choice(
+          ["prod", "local", "staging"], 
+          cast_function=str.lower,
+          default="prod"
+        )
+    
+    _config = _Config(Env())
+    return CONFIG_FILES[_config.env]
+
+
+class AppConfig(Config):
+    env = Choice(
+        ["prod", "local", "staging"], 
+        cast_function=str.lower,
+        default="prod"
+    )
+    ...
+
+storage = ChainMap(
+  Env(),
+  Yaml(get_config_file()),
+)
+config = AppConfig(storage)
 ```
