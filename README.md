@@ -342,29 +342,50 @@ In this example we customized delimiter with two underscores, default is '**_**'
 
 ### Aliases
 
-Previous example might be simplified using `alias` attribute 
-that is used to get raw values from given storage:
+All __Config__ fields accept __alias__ argument. 
+When storage class searches for config attribute in its source either attribute
+name is used or alias when it is set.
 
+__config.py__:
 ```python
-from pkonfig import DotEnv, Config, EmbeddedConfig
+from pkonfig import DotEnv, EmbeddedConfig, Config, Int, Str
 
 
 class HostConfig(EmbeddedConfig):
     host: str
     port: int
+    user: str
+    password = Str(alias="pass")
 
 
 class AppConfig(Config):
-    pg = HostConfig(alias="pg")
-    redis = HostConfig(alias="redis")
+    pg = HostConfig(alias="db")
+    foo_baz = Int(alias="my_alias")
 
 
-config = AppConfig(
-    DotEnv(".env", delimiter="__", prefix="APP")
-)
+config = AppConfig(DotEnv(".env", delimiter="__"))
+```
+
+__.env__ content:
+
+```dotenv
+APP__DB__HOST=db_host
+APP__DB__PORT=6432
+APP__DB__PASS=password
+APP__DB__USER=postgres
+APP__MY_ALIAS=123
 ```
 
 In this example storage will seek in dotenv file parameters named by given alias.
+Elsewhere in an app:
+
+```python
+from config import config
+
+
+print(config.foo_baz)       # 123
+print(config.pg.password)   # password
+```
 
 ### PKonfig fields
 
