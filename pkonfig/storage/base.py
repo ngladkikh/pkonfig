@@ -106,12 +106,12 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorage):
 
     @staticmethod
     def split(param_line: str) -> Tuple[str, str]:
-        key, value = param_line.split("=", maxsplit=2)
+        key, value = param_line.split("=", maxsplit=1)
         return key.strip(), value.strip()
 
     @staticmethod
     def filter(param_line: str) -> bool:
-        return bool(param_line) and (not param_line.startswith(("#", "//")))
+        return len(param_line) > 2 and (not param_line.startswith(("#", "//")))
 
 
 class Json(BaseFileStorage):
