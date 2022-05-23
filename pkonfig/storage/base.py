@@ -51,11 +51,11 @@ class BaseFileStorage(AbstractStorage, ABC):
 
 class PlainStructureParserMixin:
     delimiter: str = "_"
-    prefix: str = "APP" + delimiter
+    prefix: str = "APP"
     data: Dict
 
     def save_key_value(self, key: str, value: Any) -> None:
-        if key.startswith(self.prefix):
+        if self.prefix is None or key.startswith(self.prefix):
             levels, leaf = self.split_and_normalize(key)
             storage = self.leaf_level_storage(levels)
             storage[leaf] = value
@@ -69,16 +69,23 @@ class PlainStructureParserMixin:
         return storage
 
     def split_and_normalize(self, key: str) -> Tuple[List[str], str]:
-        _, *parts = key.split(self.delimiter)
-        normalized_parts = [p.lower() for p in parts if p]
+        parts = key.split(self.delimiter)
+        normalized_parts = [p.lower() for p in filter(self.is_key_part, parts)]
         leaf = normalized_parts.pop()
         return normalized_parts, leaf
+
+    def is_key_part(self, key: str) -> bool:
+        if key:
+            if self.prefix:
+                return key != self.prefix
+            return True
+        return False
 
 
 class Env(PlainStructureParserMixin, AbstractStorage):
     def __init__(self, delimiter="_", prefix="APP", **kwargs):
         self.delimiter = delimiter
-        self.prefix = prefix + self.delimiter
+        self.prefix = prefix
         super(Env, self).__init__(**kwargs)
 
     def load(self) -> None:
@@ -96,7 +103,7 @@ class DotEnv(PlainStructureParserMixin, BaseFileStorage):
         **kwargs
     ):
         self.delimiter = delimiter
-        self.prefix = prefix + self.delimiter
+        self.prefix = prefix
         super().__init__(file=file, missing_ok=missing_ok, **kwargs)
 
     def load_file_content(self, handler: IO) -> None:

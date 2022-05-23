@@ -33,10 +33,16 @@ def test_no_prefix_ignored(env_file_no_prefix):
     assert len(storage) == 1
 
 
+def test_no_prefix_allowed(env_file_no_prefix):
+    storage = DotEnv(env_file_no_prefix, prefix=None)
+    assert storage["app"]["env"] == "local"
+    assert storage["some"] == "other"
+
+
 @pytest.fixture
 def env_file_no_prefix(env_file):
     with open(env_file, "w") as fh:
-        fh.write("APP_ENV=local\nSOME=OTHER\n")
+        fh.write("APP_ENV=local\nSOME=other\n")
     return env_file
 
 
