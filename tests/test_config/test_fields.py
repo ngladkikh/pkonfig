@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 
 import pytest
 
@@ -105,9 +105,9 @@ def test_is_dir_checked(tmp_path):
 @pytest.fixture
 def enum_attr_config():
     class Color(Enum):
-        red = auto()
-        green = auto()
-        blue = auto()
+        red = 1
+        green = 2
+        blue = 3
 
     return build_config(EnumField(Color)), Color
 
