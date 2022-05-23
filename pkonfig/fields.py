@@ -117,3 +117,8 @@ class Choice(Field, Generic[T]):
     def validate(self, value):
         if value not in self.choices:
             raise TypeError(f"'{value}' is not in {self.choices}")
+
+
+class DebugFlag(Field):
+    def cast(self, value: str) -> T:
+        return value.lower() == "true"

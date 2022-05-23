@@ -152,6 +152,19 @@ print(source["nope"])           # raises KeyError
 ```
 
 `Env` ignores key cases and ignores all keys starting not from __prefix__.
+To change this behaviour set __prefix__ to `None`.
+In this case you will get all key value pairs:
+
+```python
+from os import environ
+from pkonfig import Env
+
+environ["NOPE"] = "qwe"
+
+source = Env(prefix=None)
+
+print(source["nope"])   # qwe
+```
 
 #### DotEnv
 
@@ -652,6 +665,33 @@ config = AppConfig({"one_of_attr": "2"})    # raises TypeError exception
 ```
 
 When `cast_function` is not given raw values from storage are used.
+
+#### DebugFlag
+
+`DebugFlag` helps to set widely used __debug__ option.
+`DebugFlag` ignores value case and treats __'true'__ string as `True` and any other value as `False`:
+
+```python
+from pkonfig import Config, DebugFlag
+
+
+class AppConfig(Config):
+    lower_case = DebugFlag()
+    upper_case = DebugFlag()
+    random_string = DebugFlag()
+
+
+config = AppConfig(
+  {
+    "lower_case": "true",
+    "upper_case": "TRUE",
+    "random_string": "foo",
+  }
+)
+print(config.lower_case)        # True
+print(config.upper_case)        # True
+print(config.random_string)     # False
+```
 
 ### Types to Fields mapping
 

@@ -1,9 +1,11 @@
 from enum import Enum
+from uuid import uuid4
 
 import pytest
 
 from pkonfig.base import BaseOuterConfig
 from pkonfig.fields import (
+    DebugFlag,
     Int,
     Float,
     Str,
@@ -160,3 +162,19 @@ def test_log_level_case_insensitive(level, value):
     cls = build_config(LogLevel())
     config = cls(attr=level)
     assert config.attr == value
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["false", "FALSE", "some", "", str(uuid4())]
+)
+def test_falsy_debug(value):
+    cls = build_config(DebugFlag())
+    config = cls(attr=value)
+    assert not config.attr
+
+
+def test_truthy_debug():
+    cls = build_config(DebugFlag())
+    config = cls(attr='true')
+    assert config.attr

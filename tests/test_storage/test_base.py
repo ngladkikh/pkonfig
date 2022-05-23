@@ -50,6 +50,12 @@ def test_empty_values_skipped(key, levels, monkeypatch):
     assert storage == "VALUE"
 
 
+def test_no_prefix_gets_all(monkeypatch):
+    monkeypatch.setenv("SOME", "VALUE")
+    storage = Env(prefix=None)
+    assert storage["some"] == "VALUE"
+
+
 def test_file_storage_read_file(
     storage_file, file_storage_cls
 ):

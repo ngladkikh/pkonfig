@@ -19,5 +19,6 @@ from pkonfig.fields import (
     EnumField,
     LogLevel,
     Choice,
+    DebugFlag,
 )
 from pkonfig.config import DefaultMapper, Config, EmbeddedConfig
