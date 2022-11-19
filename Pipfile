@@ -12,6 +12,7 @@ coverage = "*"
 pytest = "*"
 mypy = "*"
 types-pyyaml = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.9"
