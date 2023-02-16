@@ -64,8 +64,8 @@ class Field(Generic[T]):
         self.nullable = default is None or nullable
         self.path: Optional[str] = None
 
-    def __set_name__(self, obj: "BaseConfig", name: str) -> None:
-        self.alias = self.alias if self.alias is not None else name.upper()
+    def __set_name__(self, _, name: str) -> None:
+        self.alias = self.alias if self.alias is not None else name
 
     def __set__(self, _, value) -> None:
         value = self.cast(value)
@@ -206,7 +206,7 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
         return self._storage
 
     def __set_name__(self, cls: Type["BaseConfig"], name: str) -> None:
-        self._alias = self._alias if self._alias is not DEFAULT_PREFIX else name.upper()
+        self._alias = self._alias if self._alias is not DEFAULT_PREFIX else name
 
     def __get__(self: T, instance: "BaseConfig", _=None) -> T:
         if self._storage.empty():

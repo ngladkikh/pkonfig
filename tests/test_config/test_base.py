@@ -186,10 +186,10 @@ def test_config_alias_is_replaced(config_cls):
     assert c._alias == DEFAULT_PREFIX
 
     c.__set_name__(config_cls, "new_awesome_name")
-    assert c._alias == "NEW_AWESOME_NAME"
+    assert c._alias == "new_awesome_name"
     cget = c.__get__(config_cls())
-    assert cget._root_path == "APP__NEW_AWESOME_NAME__"
-    assert c._root_path == "APP__NEW_AWESOME_NAME__"
+    assert cget._root_path == "APP__new_awesome_name__"
+    assert c._root_path == "APP__new_awesome_name__"
 
 
 def test_storage_uppers_all_keys():
