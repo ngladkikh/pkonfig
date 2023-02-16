@@ -4,46 +4,55 @@ from typing import Any, Type, get_type_hints
 import pytest
 
 from pkonfig.base import Field, NOT_SET, TypeMapper
-from pkonfig.config import Config, DefaultMapper, EmbeddedConfig
+from pkonfig.config import Config, DefaultMapper
 from pkonfig.fields import DecimalField, Int, Str
 
 
-def test_outer_config():
+@pytest.fixture
+def config4test():
     class TestConfig(Config):
+        def __init__(self, storage):
+            super().__init__(storage=storage, alias=None)
+    return TestConfig
+
+
+def test_outer_config(config4test):
+    class TestConfig(config4test):
         s: str
         i = 1
 
-    storage = dict(s="some", i="12")
+    storage = dict(S="some", I="12")
     config = TestConfig(storage)
     assert config.s == "some"
     assert config.i == 12
 
 
-def test_raises_key_error():
-    class TestConfig(Config):
+def test_raises_key_error(config4test):
+    class TestConfig(config4test):
         s: str
 
     with pytest.raises(KeyError):
-        TestConfig({})
+        c = TestConfig({})
+        assert c.s
 
 
-def test_raises_value_error():
-    class TestConfig(Config):
+def test_raises_value_error(config4test):
+    class TestConfig(config4test):
         s: int
 
-    storage = dict(s='a')
+    storage = dict(S='a')
     with pytest.raises(ValueError):
-        TestConfig(storage)
+        assert TestConfig(storage).s
 
 
-def test_inner_config():
-    class Inner(EmbeddedConfig):
+def test_inner_config(config4test):
+    class Inner(Config):
         f: float
 
-    class TestConfig(Config):
+    class TestConfig(config4test):
         inner = Inner()
 
-    storage = dict(inner={"f": 0.1})
+    storage = {"INNER__F": 0.1}
     config = TestConfig(storage)
     assert config.inner.f == 0.1
 
@@ -59,8 +68,8 @@ def test_not_annotated():
     class TestConfig(Config):
         i: int = 1
         s = "some value"
-    storage = dict(s="new")
-    config = TestConfig(storage)
+    storage = dict(S="new")
+    config = TestConfig(storage, alias=None)
     assert config.s == "new"
     assert config.i == 1
 
@@ -69,8 +78,8 @@ def test_descriptor():
     class TestConfig(Config):
         s = Str("test")
         i = Int(1)
-    storage = dict(s="new")
-    config = TestConfig(storage)
+    storage = dict(S="new")
+    config = TestConfig(storage, alias=None)
     assert config.s == "new"
     assert config.i == 1
 
@@ -80,7 +89,7 @@ def test_descriptor_no_default():
         s = Str()
     storage = dict()
     with pytest.raises(KeyError):
-        TestConfig(storage)
+        assert TestConfig(storage).s
 
 
 def test_methods_ignored():
@@ -96,30 +105,19 @@ def test_methods_ignored():
     assert config.m() == 10
 
 
-def test_dynamic_config():
-    class TestConfig(Config):
-        i = Int(no_cache=True)
-    storage = {"i": "2"}
-    config = TestConfig(storage)
-    assert config.i == 2
-
-    storage["i"] = "3"
-    assert config.i == 3
-
-
 def test_fail_fast():
     class TestConfig(Config):
         i: int
 
     with pytest.raises(KeyError):
-        TestConfig({})
+        assert TestConfig({}).i
 
 
 def test_three_level():
-    class InnerMost(EmbeddedConfig):
+    class InnerMost(Config):
         s: str
 
-    class Inner(EmbeddedConfig):
+    class Inner(Config):
         f: float
         i = InnerMost()
 
@@ -127,7 +125,7 @@ def test_three_level():
         inner = Inner()
 
     storage = dict(inner={"f": 0.1, "i": {"s": "text"}})
-    config = TestConfig(storage)
+    config = TestConfig(storage, alias=None)
     assert config.inner.f == 0.1
     assert config.inner.i.s == "text"
 
@@ -196,7 +194,7 @@ def test_change_type_mapping_on_init():
 
 
 def test_embedded_config_type_remains():
-    class Inner(EmbeddedConfig):
+    class Inner(Config):
         f: float
 
     class TestConfig(Config):
@@ -209,7 +207,7 @@ def test_embedded_config_type_remains():
 
 
 def test_inner_uses_alias():
-    class Inner(EmbeddedConfig):
+    class Inner(Config):
         f: float
 
     class TestConfig(Config):
@@ -221,7 +219,7 @@ def test_inner_uses_alias():
 
 
 def test_inner_config_respects_defaults():
-    class Inner(EmbeddedConfig):
+    class Inner(Config):
         attr = 1
 
     class AppConfig(Config):
@@ -232,11 +230,11 @@ def test_inner_config_respects_defaults():
 
 
 def test_inner_config_raises_exception():
-    class Inner(EmbeddedConfig):
+    class Inner(Config):
         attr: int
 
     class AppConfig(Config):
         inner = Inner()
 
     with pytest.raises(KeyError):
-        AppConfig({})
+        assert AppConfig({}).inner.attr

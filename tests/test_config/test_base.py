@@ -3,18 +3,19 @@ from typing import Any, get_type_hints
 import pytest
 
 from pkonfig.base import (
-    BaseOuterConfig, MetaConfig,
     BaseConfig,
     NOT_SET,
-    TypeMapper, Field,
+    TypeMapper,
+    Field,
+    MetaConfig,
+    DEFAULT_PREFIX, Storage,
 )
-from pkonfig.config import EmbeddedConfig
 from pkonfig.fields import Int
 
 
 @pytest.fixture
 def config_cls():
-    class TestConfig(metaclass=MetaConfig):
+    class TestConfig(BaseConfig):
         first: int
         second = 0.1
         third: bytes = b'test'
@@ -79,7 +80,7 @@ def config_with_descriptor(any_type_descriptor):
         attr = any_type_descriptor()
 
         def __init__(self, **kwargs):
-            self._storage = kwargs
+            super().__init__(kwargs)
 
     return Config
 
@@ -95,7 +96,7 @@ def test_attr_changed(config_with_descriptor):
 def test_no_value_raised(config_with_descriptor):
     config = config_with_descriptor()
     with pytest.raises(KeyError):
-        config.attr
+        assert config.attr
 
 
 def test_attribute_uses_alias(any_type_descriptor):
@@ -103,7 +104,7 @@ def test_attribute_uses_alias(any_type_descriptor):
         attr = any_type_descriptor(alias="attr_alias")
 
         def __init__(self, **kwargs):
-            self._storage = kwargs
+            super().__init__(kwargs)
 
     config = Config(attr_alias=1)
     assert config.attr == 1
@@ -114,7 +115,7 @@ def test_no_value_default_used(any_type_descriptor):
         attr = any_type_descriptor(1)
 
         def __init__(self, **kwargs):
-            self._storage = kwargs
+            super().__init__(kwargs)
 
     config = Config()
     assert config.attr == 1
@@ -125,15 +126,15 @@ def test_default_value_validated(descriptor):
         attr = descriptor("a")
 
         def __init__(self, **kwargs):
-            self._storage = kwargs
+            super().__init__(kwargs)
 
     config = Config()
     with pytest.raises(ValueError):
-        config.attr
+        assert config.attr
 
 
-def test_none_omits_validation(descriptor):
-    class Config(BaseOuterConfig):
+def test_none_omits_cast(descriptor):
+    class Config(BaseConfig):
         attr = descriptor(None)
 
     config = Config({})
@@ -141,7 +142,7 @@ def test_none_omits_validation(descriptor):
 
 
 def test_nullable_field(descriptor):
-    class Config(BaseOuterConfig):
+    class Config(BaseConfig):
         attr = descriptor(nullable=True)
 
     config = Config({"attr": None})
@@ -149,11 +150,12 @@ def test_nullable_field(descriptor):
 
 
 def test_non_nullable_field_raises(descriptor):
-    class Config(BaseOuterConfig):
+    class Config(BaseConfig):
         attr = descriptor()
 
-    with pytest.raises(ValueError):
-        Config({"attr": None})
+    with pytest.raises(TypeError):
+        c = Config({"attr": None})
+        assert c.attr
 
 
 def test_extend_annotations(attributes):
@@ -177,3 +179,24 @@ def test_replace_not_set():
 
 def test_replace_descriptor():
     assert not TypeMapper.replace(Int())
+
+
+def test_config_alias_is_replaced(config_cls):
+    c = config_cls()
+    assert c._alias == DEFAULT_PREFIX
+
+    c.__set_name__(config_cls, "new_awesome_name")
+    assert c._alias == "NEW_AWESOME_NAME"
+    cget = c.__get__(config_cls())
+    assert cget._root_path == "APP__NEW_AWESOME_NAME__"
+    assert c._root_path == "APP__NEW_AWESOME_NAME__"
+
+
+def test_storage_uppers_all_keys():
+    s = Storage({"a": 1, "BB": 2}, prefix="")
+    assert s["A"] == 1
+    assert s["BB"] == 2
+    assert s["a"] == 1
+    assert s["bb"] == 2
+    assert s["bB"] == 2
+    assert s["Bb"] == 2

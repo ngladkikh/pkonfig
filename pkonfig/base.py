@@ -16,67 +16,14 @@ from typing import (
 
 T = TypeVar("T")
 NOT_SET = object()
-
-
-class Field(ABC, Generic[T]):
-    default: Union[T, object]
-    value: Union[T, object]
-    nullable: bool
-
-    def __init__(
-        self,
-        default=NOT_SET,
-        no_cache=False,
-        alias: Optional[str] = None,
-        nullable=False,
-    ):
-        self.no_cache = no_cache
-        self.default: Union[T, object] = default
-        self.value: Union[T, object] = NOT_SET
-        self.alias = alias
-        self.nullable = default is None or nullable
-
-    def __set_name__(self, _, name):
-        self.name = self.alias if self.alias is not None else name
-
-    def __set__(self, _, value):
-        value = self.cast(value)
-        self.validate(value)
-        self.value = value
-
-    def __get__(self, instance: "BaseConfig", _=None) -> Union[T, object]:
-        if self.should_get_from_storage():
-            value = self.get_from_storage(instance)
-            if value is not None:
-                value = self.cast(value)
-                self.validate(value)
-            self.value = value
-        return self.value
-
-    def get_from_storage(self, instance: "BaseConfig") -> Any:
-        storage = instance.get_storage()
-        value = storage.get(self.name, self.default)
-        if value is None and not self.nullable:
-            raise ValueError(f"{self.name} is not nullable")
-        elif value is NOT_SET:
-            raise KeyError(self.name)
-        return value
-
-    def should_get_from_storage(self) -> bool:
-        return self.value is NOT_SET or self.no_cache
-
-    @abstractmethod
-    def cast(self, value: Any) -> T:
-        pass
-
-    def validate(self, value: Any) -> None:
-        pass
-
-
-TypeMapping = Dict[Type, Type[Field]]
+DEFAULT_PREFIX = "APP"
+DEFAULT_DELIMITER = "__"
+TypeMapping = Dict[Type, Type["Attribute"]]
 
 
 class TypeMapper(ABC):
+    """Replaces user defined attributes with typed descriptors"""
+
     type_mapping: TypeMapping = {}
 
     def __init__(self, mappings: Optional[TypeMapping] = None):
@@ -98,7 +45,62 @@ class TypeMapper(ABC):
         return not (isdatadescriptor(attribute) or isclass(attribute))
 
     @abstractmethod
-    def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
+    def descriptor(self, type_: Type, value: Any = NOT_SET) -> "Field":
+        pass
+
+
+class Field(Generic[T]):
+    """Base config attribute descriptor"""
+
+    def __init__(
+        self,
+        default=NOT_SET,
+        alias: Optional[str] = None,
+        nullable=False,
+    ):
+        self.default: Union[T, object] = default
+        self.value: Union[T, object] = NOT_SET
+        self.alias = alias
+        self.nullable = default is None or nullable
+        self.path: Optional[str] = None
+
+    def __set_name__(self, obj: "BaseConfig", name: str) -> None:
+        self.alias = self.alias if self.alias is not None else name.upper()
+
+    def __set__(self, _, value) -> None:
+        value = self.cast(value)
+        self.validate(value)
+        self.value = value
+
+    def __get__(self, instance: "BaseConfig", _=None) -> Union[T, object]:
+        if self.value is NOT_SET:
+            value = self.get_from_storage(instance)
+            if value is not None:
+                value = self.cast(value)
+                self.validate(value)
+            else:
+                if not self.nullable:
+                    raise TypeError(f"{self.path} value is None")
+            self.value = value
+        return self.value
+
+    def get_from_storage(self, instance: "BaseConfig") -> Any:
+        storage = instance.get_storage()
+        if storage is None:
+            raise AttributeError("no storage")
+        self.path = instance.get_roo_path() + self.alias
+        try:
+            return storage[self.path]
+        except KeyError:
+            if self.default is not NOT_SET:
+                return self.default
+            raise
+
+    @abstractmethod
+    def cast(self, value: Any) -> T:
+        pass
+
+    def validate(self, value: Any) -> None:
         pass
 
 
@@ -141,16 +143,77 @@ class MetaConfig(ABCMeta):
         return None
 
 
-class BaseConfig(metaclass=MetaConfig):
-    _mapper: TypeMapper
-    _storage: Mapping
-    _alias: Optional[str] = None
+class Storage:
+    """Plain config data storage"""
+    def __init__(
+        self,
+        multilevel_mapping: Optional[Mapping] = None,
+        delimiter: str = DEFAULT_DELIMITER,
+        prefix: str = DEFAULT_PREFIX,
+    ) -> None:
+        self.delimiter = delimiter
+        self.prefix = prefix
+        if multilevel_mapping:
+            parent = self.prefix + self.delimiter if self.prefix else ""
+            self._data = self.flatten(multilevel_mapping, parent)
+        else:
+            self._data = {}
 
-    def get_storage(self) -> Mapping:
+    def __getitem__(self, key: str) -> Any:
+        return self._data[key.upper()]
+
+    def get(self, key: str, default: Any) -> Any:
+        return self._data.get(key.upper(), default)
+
+    def empty(self) -> bool:
+        return not bool(self._data)
+
+    def flatten(
+        self,
+        multilevel_mapping: Mapping,
+        parent: str = "",
+    ) -> Mapping:
+        res = {}
+        for key, value in multilevel_mapping.items():
+            key = parent + key.upper()
+            if isinstance(value, Mapping):
+                res.update(self.flatten(value, key + self.delimiter))
+            else:
+                res[key] = value
+        return res
+
+
+class BaseConfig(Generic[T], metaclass=MetaConfig):
+
+    def __init__(
+        self,
+        storage: Union[None, dict, Storage] = None,
+        alias: Optional[str] = DEFAULT_PREFIX,
+        delimiter: str = DEFAULT_DELIMITER,
+    ) -> None:
+        self._storage: Storage = storage if isinstance(storage, Storage) else Storage(storage, delimiter, alias)
+        self._alias = alias
+        self._delimiter = delimiter
+        self._root_path: str = alias + delimiter if alias else ""
+
+    def get_delimiter(self) -> str:
+        return self._delimiter
+
+    def get_roo_path(self) -> str:
+        return self._root_path
+
+    def get_storage(self) -> Storage:
         return self._storage
 
-    def set_storage(self, storage: Mapping) -> None:
-        self._storage = storage
+    def __set_name__(self, cls: Type["BaseConfig"], name: str) -> None:
+        self._alias = self._alias if self._alias is not DEFAULT_PREFIX else name.upper()
+
+    def __get__(self: T, instance: "BaseConfig", _=None) -> T:
+        if self._storage.empty():
+            self._delimiter = instance.get_delimiter()
+            self._root_path = instance.get_roo_path() + self._alias + self._delimiter
+            self._storage = instance.get_storage()
+        return self
 
     def is_user_attr(self, name: str) -> bool:
         if name.startswith("_"):
@@ -161,20 +224,3 @@ class BaseConfig(metaclass=MetaConfig):
             return not (ismethod(attribute) or isclass(attribute))
 
         return True
-
-    def user_fields(self):
-        return filter(self.is_user_attr, get_type_hints(self).keys())
-
-    def check_all_fields(self):
-        for name in self.user_fields():
-            attr = getattr(self, name)
-            if isinstance(attr, BaseConfig):
-                alias = attr._alias if attr._alias else name
-                attr.set_storage(self.get_storage().get(alias, {}))
-                attr.check_all_fields()
-
-
-class BaseOuterConfig(BaseConfig):
-    def __init__(self, storage: Mapping):
-        self.set_storage(storage)
-        self.check_all_fields()

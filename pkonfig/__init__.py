@@ -2,7 +2,6 @@ from pkonfig.base import (
     Field,
     TypeMapper,
     BaseConfig,
-    BaseOuterConfig,
 )
 from pkonfig.storage import *
 from pkonfig.fields import (
@@ -21,4 +20,4 @@ from pkonfig.fields import (
     Choice,
     DebugFlag,
 )
-from pkonfig.config import DefaultMapper, Config, EmbeddedConfig
+from pkonfig.config import DefaultMapper, Config

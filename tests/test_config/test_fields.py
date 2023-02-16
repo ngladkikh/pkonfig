@@ -1,9 +1,10 @@
 from enum import Enum
+from typing import Type
 from uuid import uuid4
 
 import pytest
 
-from pkonfig.base import BaseOuterConfig
+from pkonfig.config import Config
 from pkonfig.fields import (
     DebugFlag,
     Int,
@@ -18,20 +19,20 @@ from pkonfig.fields import (
 )
 
 
-def build_config(descriptor) -> "Config":
-    class Config(BaseOuterConfig):
+def build_config(descriptor) -> Type["Config"]:
+    class TestConfig(Config):
         attr = descriptor
 
         def __init__(self, **kwargs):
-            super().__init__(kwargs)
+            super().__init__(storage=kwargs, alias=None)
 
-    return Config
+    return TestConfig
 
 
 @pytest.fixture
 def int_config():
     cls = build_config(Int())
-    return cls(attr=3)
+    return cls(ATTR=3)
 
 
 def test_int_param(int_config):
@@ -56,27 +57,27 @@ def test_float_only_accepted(float_config):
 
 def test_string_param_casts():
     cls = build_config(Str())
-    config = cls(attr=2)
+    config = cls(ATTR=2)
     assert config.attr == "2"
 
 
 def test_path_cast():
     cls = build_config(PathField(missing_ok=True))
-    config = cls(attr="/some")
+    config = cls(ATTR="/some")
     assert config.attr.name == "some"
 
 
 def test_path_not_exists_raises():
     cls = build_config(PathField())
     with pytest.raises(FileNotFoundError):
-        cls(attr="/some")
+        assert cls(ATTR="/some").attr
 
 
 def test_is_file_checked(tmp_path):
     cls = build_config(File())
     existing_file = tmp_path / "test"
     with open(existing_file, "w"):
-        config = cls(attr=existing_file)
+        config = cls(ATTR=existing_file)
         assert config.attr.name == "test"
 
     with pytest.raises(TypeError):
@@ -85,19 +86,19 @@ def test_is_file_checked(tmp_path):
 
 def test_file_field_respects_missing_ok():
     cls = build_config(File(missing_ok=True))
-    config = cls(attr="not_exists")
+    config = cls(ATTR="not_exists")
     assert not config.attr.exists()
 
 
 def test_folder_field_respects_missing_ok():
     cls = build_config(Folder(missing_ok=True))
-    config = cls(attr="not_exists")
+    config = cls(ATTR="not_exists")
     assert not config.attr.exists()
 
 
 def test_is_dir_checked(tmp_path):
     cls = build_config(Folder())
-    config = cls(attr=tmp_path)
+    config = cls(ATTR=tmp_path)
     existing_file = tmp_path / "test"
     with open(existing_file, "w"):
         with pytest.raises(TypeError):
@@ -116,25 +117,25 @@ def enum_attr_config():
 
 def test_enum_param_returns_value(enum_attr_config):
     cls, enum_cls = enum_attr_config
-    config = cls(attr="red")
+    config = cls(ATTR="red")
     assert config.attr is enum_cls.red
 
 
 def test_enum_raises_error(enum_attr_config):
     enum_attr_config, _ = enum_attr_config
     with pytest.raises(KeyError):
-        enum_attr_config(attr="foo")
+        assert enum_attr_config(ATTR="foo").attr
 
 
 def test_choice_raises_error():
     cls = build_config(Choice(["foo", "bar"]))
     with pytest.raises(TypeError):
-        cls(attr="test")
+        assert cls(ATTR="test").attr
 
 
 def test_choice():
     cls = build_config(Choice(["foo", "bar"]))
-    config = cls(attr="foo")
+    config = cls(ATTR="foo")
     assert config.attr == "foo"
 
 
@@ -145,7 +146,7 @@ def test_choice_casts_values():
             int
         )
     )
-    config = cls(attr="10")
+    config = cls(ATTR="10")
     assert config.attr == 10
 
 
@@ -160,7 +161,7 @@ def test_choice_casts_values():
 )
 def test_log_level_case_insensitive(level, value):
     cls = build_config(LogLevel())
-    config = cls(attr=level)
+    config = cls(ATTR=level)
     assert config.attr == value
 
 
@@ -170,11 +171,11 @@ def test_log_level_case_insensitive(level, value):
 )
 def test_falsy_debug(value):
     cls = build_config(DebugFlag())
-    config = cls(attr=value)
+    config = cls(ATTR=value)
     assert not config.attr
 
 
 def test_truthy_debug():
     cls = build_config(DebugFlag())
-    config = cls(attr='true')
+    config = cls(ATTR='true')
     assert config.attr

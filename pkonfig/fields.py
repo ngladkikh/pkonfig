@@ -46,9 +46,9 @@ class PathField(Field):
     value: Path
     missing_ok: bool
 
-    def __init__(self, default=NOT_SET, no_cache=False, missing_ok=False):
+    def __init__(self, default=NOT_SET, missing_ok=False):
         self.missing_ok = missing_ok
-        super().__init__(default, no_cache)
+        super().__init__(default)
 
     def cast(self, value) -> Path:
         return Path(value)
@@ -73,9 +73,9 @@ class Folder(PathField):
 
 
 class EnumField(Field):
-    def __init__(self, enum_cls: Type[Enum], default=NOT_SET, no_cache=False):
+    def __init__(self, enum_cls: Type[Enum], default=NOT_SET):
         self.enum_cls = enum_cls
-        super().__init__(default, no_cache)
+        super().__init__(default)
 
     def cast(self, value: str) -> Enum:
         return self.enum_cls[value]
@@ -103,11 +103,10 @@ class Choice(Field, Generic[T]):
         choices: Sequence[T],
         cast_function: Optional[Callable[[Any], T]] = None,
         default=NOT_SET,
-        no_cache=False,
     ):
         self.choices = choices
         self.cast_function = cast_function
-        super().__init__(default, no_cache)
+        super().__init__(default)
 
     def cast(self, value: T) -> T:
         if self.cast_function is not None:
