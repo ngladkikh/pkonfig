@@ -1,5 +1,5 @@
 from abc import ABC, ABCMeta, abstractmethod
-from inspect import isclass, isdatadescriptor, ismethod
+from inspect import isclass, isdatadescriptor
 from typing import (
     Any,
     Dict,
@@ -104,7 +104,9 @@ class Field(Generic[T]):
 
 
 class MetaConfig(ABCMeta):
-    def __new__(mcs, name, parents, attributes):
+    """Replaces class-level attributes with Field descriptors"""
+
+    def __new__(mcs, name, parents, attributes) -> "MetaConfig":
         MetaConfig.extend_annotations(attributes)
         mapper = MetaConfig.get_mapper(attributes, parents)
         if mapper:
@@ -116,6 +118,8 @@ class MetaConfig(ABCMeta):
 
     @staticmethod
     def extend_annotations(attributes: Dict[str, Any]) -> None:
+        """Extends class annotations using default values types or fields cast method annotation"""
+
         annotations = attributes.get("__annotations__", {})
         for name, attr in attributes.items():
             if not name.startswith("_") or isclass(attr):
@@ -132,9 +136,12 @@ class MetaConfig(ABCMeta):
     def get_mapper(
         attributes: Dict[str, Any], parents: Iterable[Type]
     ) -> Optional[TypeMapper]:
-        for name, attribute in attributes.items():
-            if isinstance(attribute, TypeMapper):
-                return attribute
+        """Get mapper from class attribute or take it from parent"""
+
+        mapper = attributes.get("_mapper")
+        if mapper and isinstance(mapper, TypeMapper):
+            return mapper
+
         for cls in parents:
             mapper = getattr(cls, "_mapper", None)
             if mapper and isinstance(mapper, TypeMapper):
