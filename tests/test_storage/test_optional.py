@@ -3,12 +3,14 @@ from pkonfig.storage import Yaml, Toml
 
 def test_yaml():
     storage = Yaml("tests/test_storage/test.yaml")
-    assert storage == {
+    data = {
         "str": "some",
         "int": 1,
         "float": 0.33,
-        "inner": {"key": "value"}
     }
+    for key, value in data.items():
+        assert storage[key] == value
+    assert storage["inner__key"] == "value"
 
 
 def test_toml():
