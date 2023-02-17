@@ -1,7 +1,6 @@
 from pkonfig.storage.base import (
     AbstractStorage,
     BaseFileStorage,
-    PlainStructureParserMixin,
     Env,
     DotEnv,
     Json,
@@ -11,7 +10,6 @@ from pkonfig.storage.base import (
 __all__ = [
     "AbstractStorage",
     "BaseFileStorage",
-    "PlainStructureParserMixin",
     "Env",
     "DotEnv",
     "Json",

@@ -8,7 +8,7 @@ from pkonfig.base import (
     TypeMapper,
     Field,
     MetaConfig,
-    DEFAULT_PREFIX, Storage,
+    Storage,
 )
 from pkonfig.fields import Int
 
@@ -183,13 +183,13 @@ def test_replace_descriptor():
 
 def test_config_alias_is_replaced(config_cls):
     c = config_cls()
-    assert c._alias == DEFAULT_PREFIX
+    assert c._alias is None
 
     c.__set_name__(config_cls, "new_awesome_name")
     assert c._alias == "new_awesome_name"
     cget = c.__get__(config_cls())
-    assert cget._root_path == "APP__new_awesome_name__"
-    assert c._root_path == "APP__new_awesome_name__"
+    assert cget._root_path == "new_awesome_name__"
+    assert c._root_path == "new_awesome_name__"
 
 
 def test_storage_uppers_all_keys():

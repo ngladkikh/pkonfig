@@ -16,7 +16,6 @@ from typing import (
 
 T = TypeVar("T")
 NOT_SET = object()
-DEFAULT_PREFIX = "APP"
 DEFAULT_DELIMITER = "__"
 TypeMapping = Dict[Type, Type["Attribute"]]
 
@@ -149,7 +148,7 @@ class Storage:
         self,
         multilevel_mapping: Optional[Mapping] = None,
         delimiter: str = DEFAULT_DELIMITER,
-        prefix: str = DEFAULT_PREFIX,
+        prefix: Optional[str] = None,
     ) -> None:
         self.delimiter = delimiter
         self.prefix = prefix
@@ -188,7 +187,7 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
     def __init__(
         self,
         storage: Union[None, dict, Storage] = None,
-        alias: Optional[str] = DEFAULT_PREFIX,
+        alias: Optional[str] = None,
         delimiter: str = DEFAULT_DELIMITER,
     ) -> None:
         self._storage: Storage = storage if isinstance(storage, Storage) else Storage(storage, delimiter, alias)
@@ -206,7 +205,7 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
         return self._storage
 
     def __set_name__(self, cls: Type["BaseConfig"], name: str) -> None:
-        self._alias = self._alias if self._alias is not DEFAULT_PREFIX else name
+        self._alias = self._alias if self._alias is not None else name
 
     def __get__(self: T, instance: "BaseConfig", _=None) -> T:
         if self._storage.empty():
