@@ -22,7 +22,7 @@ class AbstractStorage(Storage, metaclass=ABCMeta):
     def __init__(self, delimiter: str = DEFAULT_DELIMITER, **kwargs) -> None:
         mapping = kwargs
         mapping.update(self.load())
-        super().__init__(multilevel_mapping=mapping, delimiter=delimiter)
+        super().__init__(mapping, delimiter=delimiter)
 
     @abstractmethod
     def load(self) -> dict:

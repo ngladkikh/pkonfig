@@ -11,6 +11,7 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
+    Iterator,
 )
 
 
@@ -149,21 +150,26 @@ class MetaConfig(ABCMeta):
         return None
 
 
-class Storage:
+class Storage(Mapping):
     """Plain config data storage"""
+
     def __init__(
         self,
-        multilevel_mapping: Optional[Mapping] = None,
+        *multilevel_mapping: Mapping,
         delimiter: str = DEFAULT_DELIMITER,
+        **defaults,
     ) -> None:
         self.delimiter = delimiter
-        self._data = self.flatten(multilevel_mapping) if multilevel_mapping else {}
+        self._data = self.flatten(defaults)
+        for mapping in reversed(multilevel_mapping):
+            if mapping:
+                self._data.update(self.flatten(mapping))
 
     def __getitem__(self, key: str) -> Any:
         return self._data[key.upper()]
 
-    def get(self, key: str, default: Any) -> Any:
-        return self._data.get(key.upper(), default)
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._data.keys())
 
     def __len__(self) -> int:
         return len(self._data)
@@ -175,7 +181,7 @@ class Storage:
         self,
         multilevel_mapping: Mapping,
         parent: str = "",
-    ) -> Mapping:
+    ) -> dict[str, Any]:
         res = {}
         for key, value in multilevel_mapping.items():
             key = parent + key.upper()
@@ -194,7 +200,7 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
         alias: Optional[str] = None,
         delimiter: str = DEFAULT_DELIMITER,
     ) -> None:
-        self._storage: Storage = storage if isinstance(storage, Storage) else Storage(storage, delimiter)
+        self._storage: Storage = storage if isinstance(storage, Storage) else Storage(storage, delimiter=delimiter)
         self._alias = alias
         self._delimiter = delimiter
         self._root_path: str = alias + delimiter if alias else ""

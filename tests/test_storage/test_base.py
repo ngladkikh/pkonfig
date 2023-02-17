@@ -4,6 +4,7 @@ from typing import IO, Any
 
 import pytest
 
+from base import Storage
 from pkonfig.storage import (
     Env,
     BaseFileStorage,
@@ -18,9 +19,12 @@ def test_env_config_outer(monkeypatch):
     assert storage["key"] == "VALUE"
 
 
-@pytest.fixture
-def storage():
-    return Env()
+def test_default_values_added(monkeypatch):
+    monkeypatch.setenv("APP_SOME", "VALUE")
+    storage = Env(delimiter="_", foo="baz", fiz="buz", some="ignored")
+    assert storage["SOME"] == "VALUE"
+    assert storage["foo"] == "baz"
+    assert storage["fiz"] == "buz"
 
 
 def test_second_level_variable(monkeypatch):
@@ -105,3 +109,19 @@ def ini_file():
 @pytest.fixture
 def file(tmp_path):
     return tmp_path / "test_config"
+
+
+def test_multilevel(monkeypatch, ini_file, json_configs, file):
+    monkeypatch.setenv("APP__STR", "env")
+    monkeypatch.setenv("APP__BITBUCKET.ORG__USER", "foo")
+    storage = Storage(
+        Env(),
+        Ini(ini_file),
+        Json(file),
+        fiz="buz",
+    )
+    assert storage["str"] == "env"
+    assert storage["bitbucket.org__user"] == "foo"
+    assert storage["int"] == 1
+    assert storage["BITBUCKET.ORG__SERVERALIVEINTERVAL"] == "45"
+    assert storage["fiz"] == "buz"
