@@ -5,13 +5,13 @@ from pkonfig import DotEnv
 
 def test_ignores_empty_string(env_file_with_empty_line):
     storage = DotEnv(env_file_with_empty_line)
-    assert storage["debug"] == "true"
+    assert storage["DEBUG"] == "true"
 
 
 @pytest.fixture
 def env_file_with_empty_line(env_file):
     with open(env_file, "w") as fh:
-        fh.write("APP_DEBUG=true\n\n")
+        fh.write("APP__DEBUG=true\n\n")
     return env_file
 
 
@@ -23,7 +23,7 @@ def test_split_only_two_parts(env_file_with_multiple_eq):
 @pytest.fixture
 def env_file_with_multiple_eq(env_file):
     with open(env_file, "w") as fh:
-        fh.write("APP_MAGIC=first=second\n")
+        fh.write("APP__MAGIC=first=second\n")
     return env_file
 
 
@@ -34,15 +34,15 @@ def test_no_prefix_ignored(env_file_no_prefix):
 
 
 def test_no_prefix_allowed(env_file_no_prefix):
-    storage = DotEnv(env_file_no_prefix, prefix=None)
-    assert storage["app"]["env"] == "local"
+    storage = DotEnv(env_file_no_prefix, prefix="")
+    assert storage["app__env"] == "local"
     assert storage["some"] == "other"
 
 
 @pytest.fixture
 def env_file_no_prefix(env_file):
     with open(env_file, "w") as fh:
-        fh.write("APP_ENV=local\nSOME=other\n")
+        fh.write("APP__ENV=local\nSOME=other\n")
     return env_file
 
 

@@ -165,6 +165,9 @@ class Storage:
     def get(self, key: str, default: Any) -> Any:
         return self._data.get(key.upper(), default)
 
+    def __len__(self) -> int:
+        return len(self._data)
+
     def empty(self) -> bool:
         return not bool(self._data)
 
