@@ -22,24 +22,6 @@ def config_cls():
     return TestConfig
 
 
-def test_user_attribute_filter():
-    class TestConfig(BaseConfig):
-        _f = 0.2
-        f = 0.2
-
-        def m(self):
-            pass
-
-        class Inner:
-            pass
-
-    t = TestConfig()
-    assert t.is_user_attr("f")
-    assert not t.is_user_attr("_f")
-    assert not t.is_user_attr("m")
-    assert not t.is_user_attr("Inner")
-
-
 def test_annotations(config_cls):
     hints = get_type_hints(config_cls)
     assert "first" in hints
@@ -193,7 +175,7 @@ def test_config_alias_is_replaced(config_cls):
 
 
 def test_storage_uppers_all_keys():
-    s = Storage({"a": 1, "BB": 2}, prefix="")
+    s = Storage({"a": 1, "BB": 2})
     assert s["A"] == 1
     assert s["BB"] == 2
     assert s["a"] == 1

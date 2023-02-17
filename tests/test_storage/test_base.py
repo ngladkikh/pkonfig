@@ -7,7 +7,6 @@ import pytest
 from pkonfig.storage import (
     Env,
     BaseFileStorage,
-    PlainStructureParserMixin,
     Json,
     Ini,
 )

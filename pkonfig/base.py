@@ -148,15 +148,9 @@ class Storage:
         self,
         multilevel_mapping: Optional[Mapping] = None,
         delimiter: str = DEFAULT_DELIMITER,
-        prefix: Optional[str] = None,
     ) -> None:
         self.delimiter = delimiter
-        self.prefix = prefix
-        if multilevel_mapping:
-            parent = self.prefix + self.delimiter if self.prefix else ""
-            self._data = self.flatten(multilevel_mapping, parent)
-        else:
-            self._data = {}
+        self._data = self.flatten(multilevel_mapping) if multilevel_mapping else {}
 
     def __getitem__(self, key: str) -> Any:
         return self._data[key.upper()]
@@ -190,7 +184,7 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
         alias: Optional[str] = None,
         delimiter: str = DEFAULT_DELIMITER,
     ) -> None:
-        self._storage: Storage = storage if isinstance(storage, Storage) else Storage(storage, delimiter, alias)
+        self._storage: Storage = storage if isinstance(storage, Storage) else Storage(storage, delimiter)
         self._alias = alias
         self._delimiter = delimiter
         self._root_path: str = alias + delimiter if alias else ""
@@ -213,13 +207,3 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
             self._root_path = instance.get_roo_path() + self._alias + self._delimiter
             self._storage = instance.get_storage()
         return self
-
-    def is_user_attr(self, name: str) -> bool:
-        if name.startswith("_"):
-            return False
-
-        if hasattr(self, name):
-            attribute = getattr(self, name)
-            return not (ismethod(attribute) or isclass(attribute))
-
-        return True
