@@ -15,12 +15,12 @@ def test_yaml():
 
 def test_toml():
     storage = Toml("tests/test_storage/test.toml")
-    assert storage == {
-        "first_section": {
-            "string": "some",
-            "int": 1,
-            "float": 0.33,
-        },
-        "second_section": {"key": "value"},
-        "object": {"inner": {"test_key": "value"}}
+    data = {
+        'FIRST_SECTION__STRING': 'some',
+        'FIRST_SECTION__INT': 1,
+        'FIRST_SECTION__FLOAT': 0.33,
+        'SECOND_SECTION__KEY': 'value',
+        'OBJECT__INNER__TEST_KEY': 'value'
     }
+    for key, value in data.items():
+        assert storage[key] == value
