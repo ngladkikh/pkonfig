@@ -15,10 +15,10 @@ from typing import (
 )
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound="BaseConfig")
 NOT_SET = object()
 DEFAULT_DELIMITER = "__"
-TypeMapping = Dict[Type, Type["Attribute"]]
+TypeMapping = Dict[Type, Type["Field"]]
 
 
 class TypeMapper(ABC):
@@ -55,7 +55,7 @@ class Field(Generic[T]):
     def __init__(
         self,
         default=NOT_SET,
-        alias: Optional[str] = None,
+        alias: str = "",
         nullable=False,
     ):
         self.default: Union[T, object] = default
@@ -65,7 +65,7 @@ class Field(Generic[T]):
         self.path: Optional[str] = None
 
     def __set_name__(self, _, name: str) -> None:
-        self.alias = self.alias if self.alias is not None else name
+        self.alias = self.alias or name
 
     def __set__(self, _, value) -> None:
         value = self.cast(value)
@@ -197,9 +197,10 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
     def __init__(
         self,
         storage: Union[None, dict, Storage] = None,
-        alias: Optional[str] = None,
+        alias: str = "",
         delimiter: str = DEFAULT_DELIMITER,
     ) -> None:
+        storage = storage or {}
         self._storage: Storage = storage if isinstance(storage, Storage) else Storage(storage, delimiter=delimiter)
         self._alias = alias
         self._delimiter = delimiter
@@ -215,7 +216,7 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
         return self._storage
 
     def __set_name__(self, cls: Type["BaseConfig"], name: str) -> None:
-        self._alias = self._alias if self._alias is not None else name
+        self._alias = self._alias or name
 
     def __get__(self: T, instance: "BaseConfig", _=None) -> T:
         if self._storage.empty():

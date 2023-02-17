@@ -165,7 +165,7 @@ def test_replace_descriptor():
 
 def test_config_alias_is_replaced(config_cls):
     c = config_cls()
-    assert c._alias is None
+    assert c._alias == ""
 
     c.__set_name__(config_cls, "new_awesome_name")
     assert c._alias == "new_awesome_name"

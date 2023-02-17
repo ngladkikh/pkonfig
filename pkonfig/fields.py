@@ -90,8 +90,9 @@ class LogLevel(Field):
         ERROR = logging.ERROR
         CRITICAL = logging.CRITICAL
 
-    def cast(self, value: str) -> int:
-        return self.Levels[value.upper()].value
+    @classmethod
+    def cast(cls, value: str) -> int:
+        return cls.Levels[value.upper()].value  # type: ignore
 
 
 T = TypeVar("T")
@@ -119,5 +120,5 @@ class Choice(Field, Generic[T]):
 
 
 class DebugFlag(Field):
-    def cast(self, value: str) -> T:
+    def cast(self, value: str) -> bool:
         return value.lower() == "true"

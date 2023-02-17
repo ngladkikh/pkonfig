@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Tuple, IO, Union, Any
 import configparser
 
-from base import Storage, DEFAULT_DELIMITER
+from pkonfig.base import Storage, DEFAULT_DELIMITER
 
 try:
     from typing import Literal
@@ -147,4 +147,4 @@ class Ini(BaseFileStorage):
 
     def load_file_content(self, handler: IO) -> dict[str, Any]:
         self.parser.read_string(handler.read())
-        return self.parser
+        return self.parser  # type: ignore
