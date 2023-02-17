@@ -193,7 +193,6 @@ class Storage(Mapping):
 
 
 class BaseConfig(Generic[T], metaclass=MetaConfig):
-
     def __init__(
         self,
         storage: Union[None, dict, Storage] = None,
@@ -201,7 +200,11 @@ class BaseConfig(Generic[T], metaclass=MetaConfig):
         delimiter: str = DEFAULT_DELIMITER,
     ) -> None:
         storage = storage or {}
-        self._storage: Storage = storage if isinstance(storage, Storage) else Storage(storage, delimiter=delimiter)
+        self._storage: Storage = (
+            storage
+            if isinstance(storage, Storage)
+            else Storage(storage, delimiter=delimiter)
+        )
         self._alias = alias
         self._delimiter = delimiter
         self._root_path: str = alias + delimiter if alias else ""

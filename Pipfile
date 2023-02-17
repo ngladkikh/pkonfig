@@ -13,6 +13,7 @@ pytest = "*"
 mypy = "*"
 types-pyyaml = "*"
 pytest-cov = "*"
+black = "*"
 
 [requires]
 python_version = "3.9"

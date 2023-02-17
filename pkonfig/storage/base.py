@@ -10,7 +10,7 @@ from pkonfig.base import Storage, DEFAULT_DELIMITER
 try:
     from typing import Literal
 except ImportError:
-    from typing_extensions import Literal   # type:ignore
+    from typing_extensions import Literal  # type:ignore
 
 
 MODE = Literal["r", "rb"]
@@ -18,7 +18,6 @@ DEFAULT_PREFIX = "APP"
 
 
 class AbstractStorage(Storage, metaclass=ABCMeta):
-
     def __init__(self, delimiter: str = DEFAULT_DELIMITER, **kwargs) -> None:
         mapping = kwargs
         mapping.update(self.load())
@@ -62,10 +61,7 @@ class BaseFileStorage(AbstractStorage, ABC):
 
 class Env(AbstractStorage):
     def __init__(
-        self,
-        delimiter=DEFAULT_DELIMITER,
-        prefix=DEFAULT_PREFIX,
-        **kwargs
+        self, delimiter=DEFAULT_DELIMITER, prefix=DEFAULT_PREFIX, **kwargs
     ) -> None:
         self.prefix = prefix + delimiter if prefix else ""
         super().__init__(delimiter=delimiter, **kwargs)
