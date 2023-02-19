@@ -12,13 +12,14 @@ from typing import (
     Union,
     get_type_hints,
     Iterator,
+    Tuple,
 )
 
-
-T = TypeVar("T", bound="BaseConfig")
-NOT_SET = object()
-DEFAULT_DELIMITER = "__"
+T = TypeVar("T")
 TypeMapping = Dict[Type, Type["Field"]]
+InternalKey = Tuple[str, ...]
+InternalStorage = Dict[InternalKey, Any]
+NOT_SET = object()
 
 
 class TypeMapper(ABC):
@@ -45,7 +46,7 @@ class TypeMapper(ABC):
         return not (isdatadescriptor(attribute) or isclass(attribute))
 
     @abstractmethod
-    def descriptor(self, type_: Type, value: Any = NOT_SET) -> "Field":
+    def descriptor(self, type_: T, value: Any = NOT_SET) -> T:
         pass
 
 
@@ -59,21 +60,24 @@ class Field(Generic[T]):
         nullable=False,
     ):
         self.default: Union[T, object] = default
-        self.value: Union[T, object] = NOT_SET
         self.alias = alias
         self.nullable = default is None or nullable
-        self.path: Optional[str] = None
+        self.path: Optional[InternalKey] = None
+        self._cache: InternalStorage = {}
 
     def __set_name__(self, _, name: str) -> None:
         self.alias = self.alias or name
 
-    def __set__(self, _, value) -> None:
+    def __set__(self, instance: "BaseConfig", value) -> None:
         value = self.cast(value)
         self.validate(value)
-        self.value = value
+        path = self.get_path(instance)
+        self._cache[path] = value
 
     def __get__(self, instance: "BaseConfig", _=None) -> Union[T, object]:
-        if self.value is NOT_SET:
+        path = self.get_path(instance)
+        value = self._cache.get(path, NOT_SET)
+        if value is NOT_SET:
             value = self.get_from_storage(instance)
             if value is not None:
                 value = self.cast(value)
@@ -81,20 +85,23 @@ class Field(Generic[T]):
             else:
                 if not self.nullable:
                     raise TypeError(f"{self.path} value is None")
-            self.value = value
-        return self.value
+            self._cache[path] = value
+        return value
+
+    def get_path(self, instance: "BaseConfig") -> InternalKey:
+        return *instance.get_roo_path(), self.alias
 
     def get_from_storage(self, instance: "BaseConfig") -> Any:
         storage = instance.get_storage()
         if storage is None:
             raise AttributeError("no storage")
-        self.path = instance.get_roo_path() + self.alias
+        path = self.get_path(instance)
         try:
-            return storage[self.path]
+            return storage[path]
         except KeyError:
             if self.default is not NOT_SET:
                 return self.default
-            raise
+            raise KeyError({'.'.join(path)})
 
     @abstractmethod
     def cast(self, value: Any) -> T:
@@ -107,7 +114,7 @@ class Field(Generic[T]):
 class MetaConfig(ABCMeta):
     """Replaces class-level attributes with Field descriptors"""
 
-    def __new__(mcs, name, parents, attributes) -> "MetaConfig":
+    def __new__(mcs, name, parents, attributes):
         MetaConfig.extend_annotations(attributes)
         mapper = MetaConfig.get_mapper(attributes, parents)
         if mapper:
@@ -150,25 +157,14 @@ class MetaConfig(ABCMeta):
         return None
 
 
-class Storage(Mapping):
+class BaseStorage(Mapping):
     """Plain config data storage"""
+    _data: InternalStorage
 
-    def __init__(
-        self,
-        *multilevel_mapping: Mapping,
-        delimiter: str = DEFAULT_DELIMITER,
-        **defaults,
-    ) -> None:
-        self.delimiter = delimiter
-        self._data = self.flatten(defaults)
-        for mapping in reversed(multilevel_mapping):
-            if mapping:
-                self._data.update(self.flatten(mapping))
+    def __getitem__(self, key: Tuple[str, ...]) -> Any:
+        return self._data[tuple((s.upper() for s in key))]
 
-    def __getitem__(self, key: str) -> Any:
-        return self._data[key.upper()]
-
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[Tuple[str, ...]]:
         return iter(self._data.keys())
 
     def __len__(self) -> int:
@@ -179,51 +175,63 @@ class Storage(Mapping):
 
     def flatten(
         self,
-        multilevel_mapping: Mapping,
-        parent: str = "",
-    ) -> dict[str, Any]:
+        multilevel_mapping: Mapping[str, Any],
+        parent: Optional[Tuple[str, ...]] = None,
+    ) -> InternalStorage:
         res = {}
+        parent = parent or tuple()
         for key, value in multilevel_mapping.items():
-            key = parent + key.upper()
+            path = (*parent, key.upper())
             if isinstance(value, Mapping):
-                res.update(self.flatten(value, key + self.delimiter))
+                res.update(self.flatten(value, parent=path))
             else:
-                res[key] = value
+                res[path] = value
         return res
 
 
-class BaseConfig(Generic[T], metaclass=MetaConfig):
+class Storage(BaseStorage):
+
     def __init__(
         self,
-        storage: Union[None, dict, Storage] = None,
+        *multilevel_mapping: Mapping,
+        **defaults,
+    ) -> None:
+        self._data = self.flatten(defaults)
+        for mapping in reversed(multilevel_mapping):
+            if mapping:
+                self._data.update(self.flatten(mapping))
+
+
+C = TypeVar("C", bound="BaseConfig")
+
+
+class BaseConfig(metaclass=MetaConfig):
+
+    def __init__(
+        self,
+        storage: Union[None, dict, BaseStorage] = None,
         alias: str = "",
-        delimiter: str = DEFAULT_DELIMITER,
     ) -> None:
         storage = storage or {}
-        self._storage: Storage = (
+        self._storage: BaseStorage = (
             storage
-            if isinstance(storage, Storage)
-            else Storage(storage, delimiter=delimiter)
+            if isinstance(storage, BaseStorage)
+            else Storage(storage)
         )
         self._alias = alias
-        self._delimiter = delimiter
-        self._root_path: str = alias + delimiter if alias else ""
+        self._root_path: InternalKey = (alias, ) if alias else tuple()
 
-    def get_delimiter(self) -> str:
-        return self._delimiter
-
-    def get_roo_path(self) -> str:
+    def get_roo_path(self) -> InternalKey:
         return self._root_path
 
-    def get_storage(self) -> Storage:
+    def get_storage(self) -> BaseStorage:
         return self._storage
 
     def __set_name__(self, cls: Type["BaseConfig"], name: str) -> None:
         self._alias = self._alias or name
 
-    def __get__(self: T, instance: "BaseConfig", _=None) -> T:
+    def __get__(self: C, instance: "BaseConfig", _=None) -> C:
         if self._storage.empty():
-            self._delimiter = instance.get_delimiter()
-            self._root_path = instance.get_roo_path() + self._alias + self._delimiter
+            self._root_path = (*instance.get_roo_path(), self._alias)
             self._storage = instance.get_storage()
         return self

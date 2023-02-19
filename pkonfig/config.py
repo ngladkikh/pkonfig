@@ -7,6 +7,7 @@ from pkonfig.base import (
     NOT_SET,
     TypeMapper,
     Field,
+    T,
 )
 from pkonfig.fields import (
     Bool,
@@ -32,7 +33,7 @@ class DefaultMapper(TypeMapper):
         Decimal: DecimalField,
     }
 
-    def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
+    def descriptor(self, type_: T, value: Any = NOT_SET) -> T:
         try:
             cls = self.type_mapping[type_]
             return cls(value)

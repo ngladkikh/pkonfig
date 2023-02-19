@@ -65,33 +65,33 @@ environment and DotEnv files are used for local development.
 Create __config__ module __config.py__:
 
 ```python
-from collections import ChainMap
-from pkonfig import Config, EmbeddedConfig, Env, DotEnv, LogLevel, Choice
+from pkonfig import Config, Env, DotEnv, LogLevel, Choice, Storage
 
 
-class PG(EmbeddedConfig):
+class PG(Config):
   host = "localhost"
   port = 5432
-  user: str
-  password: str
+  user = "postgres"
+  password = "postgres"
 
   
 class AppConfig(Config):
-    db = PG()
+    db1 = PG()
+    db2 = PG()
     log_level = LogLevel("INFO")
     env = Choice(["local", "prod", "test"], default="prod")
 
 
-storage = ChainMap(DotEnv(".env", missing_ok=True), Env())
+storage = Storage(DotEnv(".env", missing_ok=True), Env())
 config = AppConfig(storage)
 ```
 
 For local development create DotEnv file in root app folder __.env__:
 
 ```dotenv
-APP_DB_HOST=localhost
-APP_DB_USER=postgres
-APP_DB_PASSWORD=postgres
+APP_DB1_HOST=10.10.10.10
+APP_DB1_USER=user
+APP_DB1_PASSWORD=securedPass
 APP_ENV=local
 APP_LOG_LEVEL=debug
 ```
@@ -245,11 +245,10 @@ So it is easy to implement custom or combine existing implementations.
 Recommended way to combine multiple sources of configs is `ChainMap`:
 
 ```python
-from collections import ChainMap
-from pkonfig import Env, DotEnv, Yaml
+from pkonfig import Env, DotEnv, Yaml, Storage
 
 
-config_source = ChainMap(
+config_source = Storage(
     DotEnv("test.env", missing_ok=True),
     Env(),
     Yaml("base_config.yaml")
@@ -286,13 +285,13 @@ print(config.foo)   # 0.33
 print(config.baz)   # 1
 ```
 
-To build more granular config structure `EmbeddedConfig` class is used:
+To build more granular config structure:
 
 ```python
-from pkonfig import Config, EmbeddedConfig
+from pkonfig import Config
 
 
-class Inner(EmbeddedConfig):
+class Inner(Config):
     key: str
 
 
@@ -318,15 +317,15 @@ Grouping might be useful when there are lots of config parameters.
 To achieve this `EmbeddedConfig` class should be inherited:
 
 ```python
-from pkonfig import DotEnv, Config, EmbeddedConfig
+from pkonfig import DotEnv, Config
 
 
-class PgConfig(EmbeddedConfig):
+class PgConfig(Config):
     host: str
     port: int = 5432
 
 
-class RedisConfig(EmbeddedConfig):
+class RedisConfig(Config):
     host: str
     port: int = 6379
 
@@ -361,10 +360,10 @@ name is used or alias when it is set.
 
 __config.py__:
 ```python
-from pkonfig import DotEnv, EmbeddedConfig, Config, Int, Str
+from pkonfig import DotEnv, Config, Int, Str
 
 
-class HostConfig(EmbeddedConfig):
+class HostConfig(Config):
     host: str
     port: int
     user: str

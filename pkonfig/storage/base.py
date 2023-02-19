@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Tuple, IO, Union, Any
 import configparser
 
-from pkonfig.base import Storage, DEFAULT_DELIMITER
+from pkonfig.base import Storage, BaseStorage, InternalStorage
 
 try:
     from typing import Literal
@@ -15,16 +15,16 @@ except ImportError:
 
 MODE = Literal["r", "rb"]
 DEFAULT_PREFIX = "APP"
+DEFAULT_DELIMITER = "_"
 
 
 class AbstractStorage(Storage, metaclass=ABCMeta):
-    def __init__(self, delimiter: str = DEFAULT_DELIMITER, **kwargs) -> None:
-        mapping = kwargs
-        mapping.update(self.load())
-        super().__init__(mapping, delimiter=delimiter)
+    def __init__(self, **defaults) -> None:
+        defaults.update(self.load())
+        super().__init__(defaults)
 
     @abstractmethod
-    def load(self) -> dict:
+    def load(self) -> dict[str, Any]:
         """Load storage from source to cache"""
         pass
 
@@ -38,14 +38,13 @@ class BaseFileStorage(AbstractStorage, ABC):
         self,
         file: Union[Path, str],
         missing_ok: bool = False,
-        delimiter: str = DEFAULT_DELIMITER,
         **kwargs
     ) -> None:
         self.file = file
         self.missing_ok = missing_ok
-        super().__init__(delimiter=delimiter, **kwargs)
+        super().__init__(**kwargs)
 
-    def load(self) -> dict:
+    def load(self):
         try:
             with open(self.file, self.mode) as fh:
                 return self.load_file_content(fh)
@@ -55,22 +54,26 @@ class BaseFileStorage(AbstractStorage, ABC):
             raise
 
     @abstractmethod
-    def load_file_content(self, handler: IO) -> dict[str, Any]:
+    def load_file_content(self, handler: IO):
         pass
 
 
-class Env(AbstractStorage):
+class Env(BaseStorage):
     def __init__(
-        self, delimiter=DEFAULT_DELIMITER, prefix=DEFAULT_PREFIX, **kwargs
+        self, delimiter=DEFAULT_DELIMITER, prefix=DEFAULT_PREFIX, **defaults
     ) -> None:
         self.prefix = prefix + delimiter if prefix else ""
-        super().__init__(delimiter=delimiter, **kwargs)
+        self.delimiter = delimiter
+        self._data = self.flatten(defaults)
+        self._data.update(self.load())
 
-    def load(self) -> dict:
+    def load(self) -> InternalStorage:
         res = {}
         for key, value in os.environ.items():
             if key.startswith(self.prefix):
-                res[key.replace(self.prefix, "").upper()] = value
+                no_prefixed = key.replace(self.prefix, "").upper()
+                path = tuple(no_prefixed.split(self.delimiter))
+                res[path] = value
         return res
 
 
@@ -81,22 +84,24 @@ class DotEnv(BaseFileStorage):
         delimiter=DEFAULT_DELIMITER,
         prefix=DEFAULT_PREFIX,
         missing_ok: bool = False,
-        **kwargs
+        **defaults
     ):
         self.prefix = prefix + delimiter if prefix else ""
+        self.delimiter = delimiter
         super().__init__(
             file=file,
             missing_ok=missing_ok,
-            delimiter=delimiter,
-            **kwargs,
+            **defaults,
         )
 
-    def load_file_content(self, handler: IO) -> dict[str, Any]:
+    def load_file_content(self, handler: IO) -> InternalStorage:
         res = {}
         for line in filter(self.filter, handler.readlines()):
             key, value = self.split(line)
             if key.startswith(self.prefix):
-                res[key.replace(self.prefix, "")] = value
+                no_prefixed = key.replace(self.prefix, "").upper()
+                path = tuple(no_prefixed.split(self.delimiter))
+                res[path] = value
         return res
 
     @staticmethod
@@ -112,7 +117,7 @@ class DotEnv(BaseFileStorage):
 
 
 class Json(BaseFileStorage):
-    def load_file_content(self, handler: IO) -> dict[str, Any]:
+    def load_file_content(self, handler: IO) -> dict:
         return json.load(handler)
 
 
@@ -141,6 +146,6 @@ class Ini(BaseFileStorage):
         )
         super().__init__(file=file, missing_ok=missing_ok, **kwargs)
 
-    def load_file_content(self, handler: IO) -> dict[str, Any]:
+    def load_file_content(self, handler: IO) -> InternalStorage:
         self.parser.read_string(handler.read())
-        return self.parser  # type: ignore
+        return self.parser

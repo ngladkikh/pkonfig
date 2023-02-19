@@ -22,21 +22,21 @@ def test_env_config_outer(monkeypatch):
 def test_default_values_added(monkeypatch):
     monkeypatch.setenv("APP_SOME", "VALUE")
     storage = Env(delimiter="_", foo="baz", fiz="buz", some="ignored")
-    assert storage["SOME"] == "VALUE"
-    assert storage["foo"] == "baz"
-    assert storage["fiz"] == "buz"
+    assert storage[("SOME",)] == "VALUE"
+    assert storage[("foo",)] == "baz"
+    assert storage[("fiz",)] == "buz"
 
 
 def test_second_level_variable(monkeypatch):
     monkeypatch.setenv("APP_KEY1_KEY2", "VALUE2")
-    storage = Env(delimiter="_")
-    assert storage["key1_key2"] == "VALUE2"
+    storage = Env(delimiter="_", prefix="APP")
+    assert storage[("key1", "key2")] == "VALUE2"
 
 
 def test_no_prefix_gets_all(monkeypatch):
     monkeypatch.setenv("SOME", "VALUE")
     storage = Env(delimiter="_", prefix="")
-    assert storage["some"] == "VALUE"
+    assert storage[("some",)] == "VALUE"
 
 
 def test_file_storage_read_file(storage_file, file_storage_cls):
@@ -74,7 +74,7 @@ def storage_file(tmp_path):
 def test_json_storage(json_configs, file):
     storage = Json(file)
     for key, value in json_configs.items():
-        assert storage[key] == value
+        assert storage[(key,)] == value
 
 
 @pytest.fixture
@@ -92,13 +92,13 @@ def json_configs(file):
 
 def test_ini_storage(ini_file):
     storage = Ini(ini_file)
-    assert storage["BITBUCKET.ORG__USER"] == "hg"
-    assert storage["BITBUCKET.ORG__SERVERALIVEINTERVAL"] == "45"
+    assert storage[("BITBUCKET.ORG", "USER")] == "hg"
+    assert storage[("BITBUCKET.ORG", "SERVERALIVEINTERVAL")] == "45"
 
 
 def test_ini_storage_respects_defaults(ini_file):
     storage = Ini(ini_file, attr="some")
-    assert storage["attr"] == "some"
+    assert storage[("attr",)] == "some"
 
 
 @pytest.fixture
@@ -120,8 +120,8 @@ def test_multilevel(monkeypatch, ini_file, json_configs, file):
         Json(file),
         fiz="buz",
     )
-    assert storage["str"] == "env"
-    assert storage["bitbucket.org__user"] == "foo"
-    assert storage["int"] == 1
-    assert storage["BITBUCKET.ORG__SERVERALIVEINTERVAL"] == "45"
-    assert storage["fiz"] == "buz"
+    assert storage[("str",)] == "env"
+    assert storage[("bitbucket.org", "user")] == "foo"
+    assert storage[("int",)] == 1
+    assert storage[("BITBUCKET.ORG", "SERVERALIVEINTERVAL")] == "45"
+    assert storage[("fiz",)] == "buz"
