@@ -1,5 +1,5 @@
 from pkonfig.storage.base import Env
-from storage.file import DotEnv, Json, Ini, FileStorage, BaseFileStorage
+from pkonfig.storage.file import DotEnv, Json, Ini, FileStorage, BaseFileStorage
 
 __all__ = [
     "Env",

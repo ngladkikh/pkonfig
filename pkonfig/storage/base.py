@@ -13,7 +13,9 @@ DEFAULT_DELIMITER = "_"
 
 
 class EnvMixin:
-    def __init__(self, delimiter=DEFAULT_DELIMITER, prefix=Optional[DEFAULT_PREFIX]) -> None:
+    def __init__(
+        self, delimiter=DEFAULT_DELIMITER, prefix=Optional[DEFAULT_PREFIX]
+    ) -> None:
         self.prefix = prefix
         self.delimiter = delimiter
 

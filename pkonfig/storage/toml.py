@@ -3,7 +3,7 @@ from typing import BinaryIO, Any
 import tomli
 
 from pkonfig.storage.file import FileStorage
-from storage.file import MODE
+from pkonfig.storage.file import MODE
 
 
 class Toml(FileStorage):

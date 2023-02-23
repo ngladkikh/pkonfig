@@ -1,13 +1,12 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, TypeVar
 
 from pkonfig.base import (
     BaseConfig,
     NOT_SET,
     TypeMapper,
     Field,
-    T,
 )
 from pkonfig.fields import (
     Bool,
@@ -33,7 +32,7 @@ class DefaultMapper(TypeMapper):
         Decimal: DecimalField,
     }
 
-    def descriptor(self, type_: T, value: Any = NOT_SET) -> T:
+    def descriptor(self, type_, value: Any = NOT_SET) -> Field[Any]:
         try:
             cls = self.type_mapping[type_]
             return cls(value)

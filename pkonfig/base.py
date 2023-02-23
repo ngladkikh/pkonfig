@@ -14,42 +14,13 @@ from typing import (
     Iterator,
     Tuple,
     Reversible,
+    MutableMapping,
 )
 
 InternalKey = Tuple[str, ...]
-InternalStorage = Dict[InternalKey, Any]
+InternalStorage = Union[Dict[InternalKey, Any], ChainMap[InternalKey, Any]]
 NOT_SET = object()
-
-TypeMapping = Dict[Type, Type["Field"]]
 T = TypeVar("T")
-
-
-class TypeMapper(ABC):
-    """Replaces user defined attributes with typed descriptors"""
-
-    type_mapping: TypeMapping = {}
-
-    def __init__(self, mappings: Optional[TypeMapping] = None):
-        if mappings:
-            self.type_mapping.update(mappings)
-
-    def replace_fields_with_descriptors(
-        self, attributes: Dict[str, Any], type_hints: Dict[str, Type]
-    ) -> None:
-        for name in filter(lambda x: not x.startswith("_"), type_hints.keys()):
-            attribute = attributes.get(name, NOT_SET)
-            if self.replace(attribute):
-                hint = type_hints[name]
-                descriptor = self.descriptor(hint, attribute)
-                attributes[name] = descriptor
-
-    @staticmethod
-    def replace(attribute):
-        return not (isdatadescriptor(attribute) or isclass(attribute))
-
-    @abstractmethod
-    def descriptor(self, type_: T, value: Any = NOT_SET) -> T:
-        pass
 
 
 class Field(Generic[T]):
@@ -105,13 +76,44 @@ class Field(Generic[T]):
         except KeyError:
             if self.default is not NOT_SET:
                 return self.default
-            raise KeyError({'.'.join(path)})
+            raise KeyError({".".join(path)})
 
     @abstractmethod
     def cast(self, value: Any) -> T:
         pass
 
     def validate(self, value: Any) -> None:
+        pass
+
+
+TypeMapping = Dict[Type, Type["Field"]]
+
+
+class TypeMapper(ABC):
+    """Replaces user defined attributes with typed descriptors"""
+
+    type_mapping: TypeMapping = {}
+
+    def __init__(self, mappings: Optional[TypeMapping] = None):
+        if mappings:
+            self.type_mapping.update(mappings)
+
+    def replace_fields_with_descriptors(
+        self, attributes: Dict[str, Any], type_hints: Dict[str, Type]
+    ) -> None:
+        for name in filter(lambda x: not x.startswith("_"), type_hints.keys()):
+            attribute = attributes.get(name, NOT_SET)
+            if self.replace(attribute):
+                hint = type_hints[name]
+                descriptor = self.descriptor(hint, attribute)
+                attributes[name] = descriptor
+
+    @staticmethod
+    def replace(attribute):
+        return not (isdatadescriptor(attribute) or isclass(attribute))
+
+    @abstractmethod
+    def descriptor(self, type_: T, value: Any = NOT_SET) -> Field[T]:
         pass
 
 
@@ -180,19 +182,24 @@ class MetaConfig(ABCMeta):
         return None
 
 
-class BaseStorage(Mapping, ABC):
+class BaseStorage(MutableMapping, ABC):
     """Plain config data storage"""
 
     @abstractmethod
     def __getitem__(self, key: Tuple[str, ...]) -> Any:
         ...
 
+    def __delitem__(self, key: Tuple[str, ...]) -> Any:
+        raise NotImplemented
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        raise NotImplemented
+
     def __iter__(self) -> Iterator[Any]:
         raise NotImplemented
 
 
 class Storage(BaseStorage):
-
     def __init__(
         self,
         *multilevel_mappings: Mapping,
@@ -213,7 +220,6 @@ class Storage(BaseStorage):
 
 
 class BaseConfig(metaclass=MetaConfig):
-
     def __init__(
         self,
         *storages: Union[dict, BaseStorage],
@@ -225,14 +231,14 @@ class BaseConfig(metaclass=MetaConfig):
                 internal_storages.append(s)
             else:
                 internal_storages.append(Storage(s))
-        self._storage = ChainMap(*internal_storages)
+        self._storage: InternalStorage = ChainMap(*internal_storages)
         self._alias = alias
-        self._root_path: InternalKey = (alias, ) if alias else tuple()
+        self._root_path: InternalKey = (alias,) if alias else tuple()
 
     def get_roo_path(self) -> InternalKey:
         return self._root_path
 
-    def get_storage(self) -> BaseStorage:
+    def get_storage(self) -> InternalStorage:
         return self._storage
 
     def set_alias(self, alias: str) -> None:

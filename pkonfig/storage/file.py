@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal, Union, Mapping, IO, Tuple, Any
 
 from pkonfig.base import InternalStorage, BaseStorage, Storage
-from storage.base import DEFAULT_DELIMITER, DEFAULT_PREFIX, EnvMixin
+from pkonfig.storage.base import DEFAULT_DELIMITER, DEFAULT_PREFIX, EnvMixin
 
 MODE = Literal["r", "rb"]
 
@@ -42,14 +42,13 @@ class BaseFileStorage(ABC):
 
 
 class DotEnv(BaseFileStorage, BaseStorage):
-
     def __init__(
         self,
         file: Union[Path, str],
         delimiter=DEFAULT_DELIMITER,
         prefix=DEFAULT_PREFIX,
         missing_ok: bool = False,
-        **defaults
+        **defaults,
     ):
         self.prefix = prefix + delimiter if prefix else ""
         self.delimiter = delimiter
@@ -88,7 +87,6 @@ class DotEnv(BaseFileStorage, BaseStorage):
 
 
 class FileStorage(BaseStorage, BaseFileStorage, ABC):
-
     def __init__(
         self,
         file: Union[Path, str],
@@ -141,4 +139,4 @@ class Ini(FileStorage):
 
     def load_file_content(self, handler: IO) -> InternalStorage:
         self.parser.read_string(handler.read())
-        return self.parser
+        return self.parser  # type: ignore
