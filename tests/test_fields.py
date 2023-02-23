@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 
+from pkonfig import Storage
 from pkonfig.config import Config
 from pkonfig.fields import (
     DebugFlag,
@@ -179,3 +180,25 @@ def test_truthy_debug():
     cls = build_config(DebugFlag())
     config = cls(attr='true')
     assert config.attr
+
+
+def test_no_cache_used():
+    class TConf(Config):
+        attr = Int(no_cache=True)
+
+    config = TConf(Storage({"attr": 1}))
+    assert config.attr == 1
+
+    config._storage = Storage({"attr": 2})
+    assert config.attr == 2
+
+
+def test_cache_used():
+    class TConf(Config):
+        attr = Int(no_cache=False)
+
+    config = TConf(Storage({"attr": 1}))
+    assert config.attr == 1
+
+    config._storage = Storage({"attr": 2})
+    assert config.attr == 1

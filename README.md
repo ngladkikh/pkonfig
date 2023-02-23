@@ -147,9 +147,9 @@ environ["NOPE"] = "qwe"
 
 source = Env(delimiter="_", prefix="APP", some_key="some")
 
-print(source["outer"])          # foo
-print(source["inner"]["key"])   # baz
-print(source["nope"])           # raises KeyError
+print(source[("outer",)])          # foo
+print(source[("inner", "key")])    # baz
+print(source[("nope",)])           # raises KeyError
 ```
 
 `Env` ignores key cases and ignores all keys starting not from __prefix__.
@@ -164,7 +164,7 @@ environ["NOPE"] = "qwe"
 
 source = Env(prefix=None)
 
-print(source["nope"])   # qwe
+print(source[("nope",)])   # qwe
 ```
 
 #### DotEnv
@@ -191,8 +191,8 @@ is build on top of [`configparser.ConfigParser`](https://docs.python.org/3/libra
 from storage import Ini
 
 storage = Ini("config.ini", missing_ok=False)
-print(storage["bitbucket.org"]["User"])  # hg
-print(storage["bitbucket.org"]["ServerAliveInterval"])  # 45
+print(storage[("bitbucket.org", "User")])  # hg
+print(storage[("bitbucket.org", "ServerAliveInterval")])  # 45
 ```
 
 In case when __config.ini__:
@@ -739,7 +739,7 @@ and each file is used only in an appropriate environment you can create a functi
 to find which file should be used:
 
 ```python
-from pkonfig import Env, Yaml, Config, Choice
+from pkonfig import Env, Config, Choice
 
 
 CONFIG_FILES = {
@@ -767,7 +767,6 @@ config file name.
 Then actual application configuration:
 
 ```python
-from collections import ChainMap
 from pkonfig import Env, Yaml, Config, Choice
 
 
@@ -799,5 +798,5 @@ class AppConfig(Config):
     ...
 
 
-config = AppConfig(Env, Yaml(get_config_file()))
+config = AppConfig(Env(), Yaml(get_config_file()))
 ```

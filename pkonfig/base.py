@@ -60,10 +60,12 @@ class Field(Generic[T]):
         default=NOT_SET,
         alias: str = "",
         nullable=False,
+        no_cache: bool = False,
     ):
         self.default: Union[T, object] = default
         self.alias = alias
         self.nullable = default is None or nullable
+        self.no_cache = no_cache
         self.path: Optional[InternalKey] = None
         self._cache: InternalStorage = {}
 
@@ -78,7 +80,7 @@ class Field(Generic[T]):
 
     def __get__(self, instance: "BaseConfig", _=None) -> Union[T, object]:
         path = self.get_path(instance)
-        value = self._cache.get(path, NOT_SET)
+        value = NOT_SET if self.no_cache else self._cache.get(path, NOT_SET)
         if value is NOT_SET:
             value = self.get_from_storage(instance)
             if value is not None:
