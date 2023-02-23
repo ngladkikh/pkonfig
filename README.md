@@ -65,7 +65,8 @@ environment and DotEnv files are used for local development.
 Create __config__ module __config.py__:
 
 ```python
-from pkonfig import Config, Env, DotEnv, LogLevel, Choice, Storage
+from pkonfig import Config, Env, LogLevel, Choice, Storage
+from storage import DotEnv
 
 
 class PG(Config):
@@ -74,12 +75,12 @@ class PG(Config):
   user = "postgres"
   password = "postgres"
 
-  
+
 class AppConfig(Config):
-    db1 = PG()
-    db2 = PG()
-    log_level = LogLevel("INFO")
-    env = Choice(["local", "prod", "test"], default="prod")
+  db1 = PG()
+  db2 = PG()
+  log_level = LogLevel("INFO")
+  env = Choice(["local", "prod", "test"], default="prod")
 
 
 storage = Storage(DotEnv(".env", missing_ok=True), Env())
@@ -174,8 +175,8 @@ In the same manner as environment variables DotEnv files could be used.
 When file not found and `missing_ok` is set `DotEnv` contains empty dictionary.
 
 ```python
-from pkonfig import DotEnv
 
+from storage import DotEnv
 
 config_source = DotEnv("test.env", delimiter="_", prefix="APP", missing_ok=True)
 ```
@@ -186,7 +187,8 @@ __INI__ files are quite common and class `Ini`
 is build on top of [`configparser.ConfigParser`](https://docs.python.org/3/library/configparser.html):
 
 ```python
-from pkonfig import Ini
+
+from storage import Ini
 
 storage = Ini("config.ini", missing_ok=False)
 print(storage["bitbucket.org"]["User"])  # hg
@@ -211,8 +213,8 @@ Most of `ConfigParser` arguments are also accepted to modify parser behaviour.
 `Json` class uses `json.load` to read given JSON file and respects `missing_ok` argument:
 
 ```python
-from pkonfig import Json
 
+from storage import Json
 
 storage = Json("config.json", missing_ok=False)
 ```
@@ -245,13 +247,13 @@ So it is easy to implement custom or combine existing implementations.
 Recommended way to combine multiple sources of configs is `ChainMap`:
 
 ```python
-from pkonfig import Env, DotEnv, Yaml, Storage
-
+from pkonfig import Env, Yaml, Storage
+from storage import DotEnv
 
 config_source = Storage(
-    DotEnv("test.env", missing_ok=True),
-    Env(),
-    Yaml("base_config.yaml")
+  DotEnv("test.env", missing_ok=True),
+  Env(),
+  Yaml("base_config.yaml")
 )
 ```
 
@@ -317,31 +319,32 @@ Grouping might be useful when there are lots of config parameters.
 To achieve this `EmbeddedConfig` class should be inherited:
 
 ```python
-from pkonfig import DotEnv, Config
+from pkonfig import Config
+from storage import DotEnv
 
 
 class PgConfig(Config):
-    host: str
-    port: int = 5432
+  host: str
+  port: int = 5432
 
 
 class RedisConfig(Config):
-    host: str
-    port: int = 6379
+  host: str
+  port: int = 6379
 
 
 class AppConfig(Config):
-    pg = PgConfig()
-    redis = RedisConfig()
+  pg = PgConfig()
+  redis = RedisConfig()
 
 
 config = AppConfig(
-    DotEnv(".env", delimiter="__", prefix="APP")
+  DotEnv(".env", delimiter="__", prefix="APP")
 )
 
-print(config.pg.host)       # db_host
-print(config.pg.port)       # 6432
-print(config.redis.host)    # redis
+print(config.pg.host)  # db_host
+print(config.pg.port)  # 6432
+print(config.redis.host)  # redis
 ```
 
 __.env__ content:
@@ -359,20 +362,22 @@ When storage class searches for config attribute in its source either attribute
 name is used or alias when it is set.
 
 __config.py__:
+
 ```python
-from pkonfig import DotEnv, Config, Int, Str
+from pkonfig import Config, Int, Str
+from storage import DotEnv
 
 
 class HostConfig(Config):
-    host: str
-    port: int
-    user: str
-    password = Str(alias="pass")
+  host: str
+  port: int
+  user: str
+  password = Str(alias="pass")
 
 
 class AppConfig(Config):
-    pg = HostConfig(alias="db")
-    foo_baz = Int(alias="my_alias")
+  pg = HostConfig(alias="db")
+  foo_baz = Int(alias="my_alias")
 
 
 config = AppConfig(DotEnv(".env", delimiter="__"))

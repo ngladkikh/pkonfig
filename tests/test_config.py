@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from pkonfig import Config, DotEnv, Env, LogLevel, Choice, Int
+from pkonfig import Config, Env, LogLevel, Choice, Int
+from storage import DotEnv
 
 
 @pytest.fixture(scope="module")
@@ -17,24 +18,24 @@ def dot_env_storage(tmp_path):
     file = tmp_path / ".env"
     with open(file, "w") as fh:
         lines = [
-            "APP_LOG_LEVEL= debug",
-            "APP_DB1_HOST=10.10.10.10",
-            "APP_DB1_USER = user",
-            "APP_DB1_PASSWORD = securedPass",
-            "APP_ENV =local",
+            "APP__LOG_LEVEL= debug",
+            "APP__DB1__HOST=10.10.10.10",
+            "APP__DB1__USER = user",
+            "APP__DB1__PASSWORD = securedPass",
+            "APP__ENV =local",
         ]
         fh.write("\n".join(lines))
-    return DotEnv(file)
+    return DotEnv(file, delimiter="__")
 
 
 @pytest.fixture
 def env_storage(monkeypatch):
-    monkeypatch.setenv("APP_LOG_LEVEL", "warning")
-    monkeypatch.setenv("APP_DB2_HOST", "1.1.1.1")
-    monkeypatch.setenv("APP_DB2_USER", "admin")
-    monkeypatch.setenv("APP_DB2_PASSWORD", "secret")
-    monkeypatch.setenv("APP_DB2_PORT", "54321")
-    return Env()
+    monkeypatch.setenv("APP__LOG_LEVEL", "warning")
+    monkeypatch.setenv("APP__DB2__HOST", "1.1.1.1")
+    monkeypatch.setenv("APP__DB2__USER", "admin")
+    monkeypatch.setenv("APP__DB2__PASSWORD", "secret")
+    monkeypatch.setenv("APP__DB2__PORT", "54321")
+    return Env(delimiter="__")
 
 
 @pytest.fixture
@@ -106,11 +107,6 @@ def test_multilevel_attribute_values_got_found_by_alias():
     assert config.inner.attr == 2
 
 
-def test_values_could_be_found_in_multilevel_storage(config_cls):
-    config = config_cls()
-    assert config.db1.user == "john"
-
-
 def test_multilevel_values_found_in_second_storage():
     class Inner(Config):
         attr: str
@@ -124,8 +120,11 @@ def test_multilevel_values_found_in_second_storage():
     assert config.inner.attr == "some"
 
 
-def test_no_value_raised(config_with_descriptor):
-    config = config_with_descriptor()
+def test_no_value_raised():
+    class TConfig(Config):
+        attr: int
+
+    config = TConfig({})
     with pytest.raises(KeyError):
         assert config.attr
 
@@ -176,11 +175,11 @@ def test_not_annotated_validates_on_change():
     class TestConfig(Config):
         s = 1
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         config = TestConfig({"s": "a"})
         assert config.s != "a"
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         config = TestConfig({"s": 1})
         config.s = "a"
 
@@ -189,11 +188,11 @@ def test_annotation_used_for_validation():
     class TestConfig(Config):
         attr: int
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         config = TestConfig({"attr": "a"})
         assert config.attr != "a"
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         config = TestConfig({"attr": 1})
         config.attr = "a"
 

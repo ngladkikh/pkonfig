@@ -6,9 +6,8 @@ import pytest
 from base import Storage
 from pkonfig.storage import (
     Env,
-    Json,
-    Ini,
 )
+from storage import Json, Ini
 
 
 def test_env_config_outer(monkeypatch):

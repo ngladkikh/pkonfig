@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod, ABCMeta
-from functools import reduce
-from operator import or_
+from collections import ChainMap
 from inspect import isclass, isdatadescriptor
-from itertools import chain
 from typing import (
     Any,
     Dict,
@@ -123,7 +121,7 @@ C = TypeVar("C", bound="BaseConfig")
 
 
 def get(config: C, parent: "BaseConfig", _=None) -> C:
-    if config.get_storage().empty():
+    if not config.get_storage():
         config._root_path = (*parent.get_roo_path(), config.get_alias())
         config._storage = parent.get_storage()
     return config
@@ -187,9 +185,8 @@ class BaseStorage(Mapping, ABC):
     def __getitem__(self, key: Tuple[str, ...]) -> Any:
         ...
 
-    @abstractmethod
-    def empty(self) -> bool:
-        ...
+    def __iter__(self) -> Iterator[Any]:
+        raise NotImplemented
 
 
 class Storage(BaseStorage):
@@ -209,14 +206,8 @@ class Storage(BaseStorage):
                 return mapping[key[-1]]
         raise KeyError(key)
 
-    def empty(self) -> bool:
-        return reduce(or_, map(bool, self._multilevel_mappings), False)
-
-    def __iter__(self) -> Iterator[Any]:
-        return chain(self._multilevel_mappings)
-
     def __len__(self) -> int:
-        return max(map(len, self._multilevel_mappings))
+        return len(self._multilevel_mappings)
 
 
 class BaseConfig(metaclass=MetaConfig):
@@ -226,10 +217,13 @@ class BaseConfig(metaclass=MetaConfig):
         *storages: Union[dict, BaseStorage],
         alias: str = "",
     ) -> None:
-        if len(storages) == 1 and isinstance(storages[0], Storage):
-            self._storage = storages[0]
-        else:
-            self._storage = Storage(*storages)
+        internal_storages = []
+        for s in storages:
+            if isinstance(s, BaseStorage):
+                internal_storages.append(s)
+            else:
+                internal_storages.append(Storage(s))
+        self._storage = ChainMap(*internal_storages)
         self._alias = alias
         self._root_path: InternalKey = (alias, ) if alias else tuple()
 
