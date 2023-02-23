@@ -50,7 +50,6 @@ def config_cls():
         db2 = PG()
         log_level = LogLevel("INFO")
         env = Choice(["local", "prod", "test"], default="prod")
-
     return AppConfig
 
 

@@ -3,6 +3,7 @@ from pkonfig.base import (
     TypeMapper,
     BaseConfig,
     Storage,
+    MetaConfig,
 )
 from pkonfig.storage import *
 from pkonfig.fields import (

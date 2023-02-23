@@ -1,10 +1,12 @@
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod, ABCMeta
+from functools import reduce
+from operator import or_
 from inspect import isclass, isdatadescriptor
+from itertools import chain
 from typing import (
     Any,
     Dict,
     Generic,
-    Iterable,
     Mapping,
     Optional,
     Type,
@@ -13,13 +15,15 @@ from typing import (
     get_type_hints,
     Iterator,
     Tuple,
+    Reversible,
 )
 
-T = TypeVar("T")
-TypeMapping = Dict[Type, Type["Field"]]
 InternalKey = Tuple[str, ...]
 InternalStorage = Dict[InternalKey, Any]
 NOT_SET = object()
+
+TypeMapping = Dict[Type, Type["Field"]]
+T = TypeVar("T")
 
 
 class TypeMapper(ABC):
@@ -111,6 +115,20 @@ class Field(Generic[T]):
         pass
 
 
+def set_name(config: "BaseConfig", _, name: str) -> None:
+    config.set_alias(name)
+
+
+C = TypeVar("C", bound="BaseConfig")
+
+
+def get(config: C, parent: "BaseConfig", _=None) -> C:
+    if config.get_storage().empty():
+        config._root_path = (*parent.get_roo_path(), config.get_alias())
+        config._storage = parent.get_storage()
+    return config
+
+
 class MetaConfig(ABCMeta):
     """Replaces class-level attributes with Field descriptors"""
 
@@ -121,7 +139,12 @@ class MetaConfig(ABCMeta):
             mapper.replace_fields_with_descriptors(
                 attributes, attributes.get("__annotations__", {})
             )
+
         cls = super().__new__(mcs, name, parents, attributes)
+        if not getattr(cls, "__get__", None):
+            cls.__set_name__ = set_name
+            cls.__get__ = get
+
         return cls
 
     @staticmethod
@@ -142,7 +165,7 @@ class MetaConfig(ABCMeta):
 
     @staticmethod
     def get_mapper(
-        attributes: Dict[str, Any], parents: Iterable[Type]
+        attributes: Dict[str, Any], parents: Reversible[Type]
     ) -> Optional[TypeMapper]:
         """Get mapper from class attribute or take it from parent"""
 
@@ -150,74 +173,63 @@ class MetaConfig(ABCMeta):
         if mapper and isinstance(mapper, TypeMapper):
             return mapper
 
-        for cls in parents:
+        for cls in reversed(parents):
             mapper = getattr(cls, "_mapper", None)
             if mapper and isinstance(mapper, TypeMapper):
                 return mapper
         return None
 
 
-class BaseStorage(Mapping):
+class BaseStorage(Mapping, ABC):
     """Plain config data storage"""
-    _data: InternalStorage
 
+    @abstractmethod
     def __getitem__(self, key: Tuple[str, ...]) -> Any:
-        return self._data[tuple((s.upper() for s in key))]
+        ...
 
-    def __iter__(self) -> Iterator[Tuple[str, ...]]:
-        return iter(self._data.keys())
-
-    def __len__(self) -> int:
-        return len(self._data)
-
+    @abstractmethod
     def empty(self) -> bool:
-        return not bool(self._data)
-
-    def flatten(
-        self,
-        multilevel_mapping: Mapping[str, Any],
-        parent: Optional[Tuple[str, ...]] = None,
-    ) -> InternalStorage:
-        res = {}
-        parent = parent or tuple()
-        for key, value in multilevel_mapping.items():
-            path = (*parent, key.upper())
-            if isinstance(value, Mapping):
-                res.update(self.flatten(value, parent=path))
-            else:
-                res[path] = value
-        return res
+        ...
 
 
 class Storage(BaseStorage):
 
     def __init__(
         self,
-        *multilevel_mapping: Mapping,
-        **defaults,
+        *multilevel_mappings: Mapping,
     ) -> None:
-        self._data = self.flatten(defaults)
-        for mapping in reversed(multilevel_mapping):
-            if mapping:
-                self._data.update(self.flatten(mapping))
+        self._multilevel_mappings = multilevel_mappings
 
+    def __getitem__(self, key: Tuple[str, ...]) -> Any:
+        for mapping in self._multilevel_mappings:
+            for partial_key in key[:-1]:
+                if partial_key in mapping:
+                    mapping = mapping[partial_key]
+            if key[-1] in mapping:
+                return mapping[key[-1]]
+        raise KeyError(key)
 
-C = TypeVar("C", bound="BaseConfig")
+    def empty(self) -> bool:
+        return reduce(or_, map(bool, self._multilevel_mappings), False)
+
+    def __iter__(self) -> Iterator[Any]:
+        return chain(self._multilevel_mappings)
+
+    def __len__(self) -> int:
+        return max(map(len, self._multilevel_mappings))
 
 
 class BaseConfig(metaclass=MetaConfig):
 
     def __init__(
         self,
-        storage: Union[None, dict, BaseStorage] = None,
+        *storages: Union[dict, BaseStorage],
         alias: str = "",
     ) -> None:
-        storage = storage or {}
-        self._storage: BaseStorage = (
-            storage
-            if isinstance(storage, BaseStorage)
-            else Storage(storage)
-        )
+        if len(storages) == 1 and isinstance(storages[0], Storage):
+            self._storage = storages[0]
+        else:
+            self._storage = Storage(*storages)
         self._alias = alias
         self._root_path: InternalKey = (alias, ) if alias else tuple()
 
@@ -227,11 +239,8 @@ class BaseConfig(metaclass=MetaConfig):
     def get_storage(self) -> BaseStorage:
         return self._storage
 
-    def __set_name__(self, cls: Type["BaseConfig"], name: str) -> None:
-        self._alias = self._alias or name
+    def set_alias(self, alias: str) -> None:
+        self._alias = self._alias or alias
 
-    def __get__(self: C, instance: "BaseConfig", _=None) -> C:
-        if self._storage.empty():
-            self._root_path = (*instance.get_roo_path(), self._alias)
-            self._storage = instance.get_storage()
-        return self
+    def get_alias(self) -> str:
+        return self._alias

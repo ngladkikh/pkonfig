@@ -793,9 +793,6 @@ class AppConfig(Config):
     )
     ...
 
-storage = ChainMap(
-  Env(),
-  Yaml(get_config_file()),
-)
-config = AppConfig(storage)
+
+config = AppConfig(Env, Yaml(get_config_file()))
 ```

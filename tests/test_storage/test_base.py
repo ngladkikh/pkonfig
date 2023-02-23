@@ -1,13 +1,11 @@
 import json
 from pathlib import Path
-from typing import IO, Any
 
 import pytest
 
 from base import Storage
 from pkonfig.storage import (
     Env,
-    BaseFileStorage,
     Json,
     Ini,
 )
@@ -52,16 +50,6 @@ def test_file_storage_missing_raises(file_storage_cls):
 def test_file_storage_missing_ok(file_storage_cls):
     storage = file_storage_cls(Path("test"), missing_ok=True)
     assert storage._data == {}
-
-
-@pytest.fixture
-def file_storage_cls(storage_file):
-    class FileStorage(BaseFileStorage):
-
-        def load_file_content(self, handler: IO) -> dict[str, Any]:
-            return {"content": handler.read()}
-
-    return FileStorage
 
 
 @pytest.fixture

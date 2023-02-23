@@ -18,7 +18,7 @@ DEFAULT_PREFIX = "APP"
 DEFAULT_DELIMITER = "_"
 
 
-class AbstractStorage(Storage, metaclass=ABCMeta):
+class AbstractStorage(BaseStorage, ABC):
     def __init__(self, **defaults) -> None:
         defaults.update(self.load())
         super().__init__(defaults)
