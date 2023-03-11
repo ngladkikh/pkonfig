@@ -40,8 +40,8 @@ jobs:
 
       - name: Format with black
         run: |
-          pipenv run black --check --diff pkonfig
+          black --check --diff pkonfig
 
       - name: Lint with pylint
         run: |
-          pipenv run pylint pkonfig
+          pylint pkonfig
