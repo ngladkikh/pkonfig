@@ -26,9 +26,9 @@ class BaseFileStorage(ABC):
 
     def load(self) -> Mapping:
         try:
-            with open(
+            with open(  # pylint: disable=unspecified-encoding
                 self.file, self.mode
-            ) as fh:  # pylint: disable=unspecified-encoding
+            ) as fh:
                 return self.load_file_content(fh)
         except FileNotFoundError:
             if self.missing_ok:
