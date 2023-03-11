@@ -1,6 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Type, TypeVar
+from typing import Any, Dict, Type
 
 from pkonfig.base import NOT_SET, BaseConfig, Field, TypeMapper
 from pkonfig.fields import (

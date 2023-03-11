@@ -187,7 +187,8 @@ good-names=i,
            _,
            kc,
            id,
-           fh
+           fh,
+           s
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted

@@ -71,10 +71,10 @@ class Field(Generic[T]):
         path = self.get_path(instance)
         try:
             return storage[path]
-        except KeyError:
+        except KeyError as exc:
             if self.default is not NOT_SET:
                 return self.default
-            raise KeyError({".".join(path)})
+            raise KeyError({".".join(path)}) from exc
 
     @abstractmethod
     def cast(self, value: Any) -> T:
@@ -123,6 +123,7 @@ C = TypeVar("C", bound="BaseConfig")
 
 
 def get(config: C, parent: "BaseConfig", _=None) -> C:
+    # pylint: disable=protected-access
     if not config.get_storage():
         config._root_path = (*parent.get_roo_path(), config.get_alias())
         config._storage = parent.get_storage()
@@ -132,7 +133,7 @@ def get(config: C, parent: "BaseConfig", _=None) -> C:
 class MetaConfig(ABCMeta):
     """Replaces class-level attributes with Field descriptors"""
 
-    def __new__(mcs, name, parents, attributes):
+    def __new__(mcs, name, parents, attributes):  # pylint: disable=arguments-differ
         MetaConfig.extend_annotations(attributes)
         mapper = MetaConfig.get_mapper(attributes, parents)
         if mapper:
@@ -188,13 +189,13 @@ class BaseStorage(MutableMapping, ABC):
         ...
 
     def __delitem__(self, key: Tuple[str, ...]) -> Any:
-        raise NotImplemented
+        raise NotImplementedError
 
     def __setitem__(self, key: str, value: Any) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
     def __iter__(self) -> Iterator[Any]:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class Storage(BaseStorage):

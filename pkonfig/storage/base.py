@@ -3,16 +3,13 @@ from typing import Any, Optional, Tuple
 
 from pkonfig.base import BaseStorage, InternalKey, Storage
 
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal  # type:ignore
-
 DEFAULT_PREFIX = "APP"
 DEFAULT_DELIMITER = "_"
 
 
 class EnvMixin:
+    # pylint: disable=too-few-public-methods
+
     def __init__(
         self, delimiter=DEFAULT_DELIMITER, prefix=Optional[DEFAULT_PREFIX]
     ) -> None:

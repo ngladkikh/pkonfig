@@ -90,9 +90,8 @@ class LogLevel(Field):
         ERROR = logging.ERROR
         CRITICAL = logging.CRITICAL
 
-    @classmethod
-    def cast(cls, value: str) -> int:
-        return cls.Levels[value.upper()].value  # type: ignore
+    def cast(self, value: str) -> int:
+        return self.Levels[value.upper()].value  # type: ignore
 
 
 T = TypeVar("T")

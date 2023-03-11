@@ -26,7 +26,9 @@ class BaseFileStorage(ABC):
 
     def load(self) -> Mapping:
         try:
-            with open(self.file, self.mode) as fh:
+            with open(
+                self.file, self.mode
+            ) as fh:  # pylint: disable=unspecified-encoding
                 return self.load_file_content(fh)
         except FileNotFoundError:
             if self.missing_ok:
@@ -93,7 +95,7 @@ class FileStorage(BaseStorage, BaseFileStorage, ABC):
         missing_ok: bool = False,
         **defaults,
     ) -> None:
-        super(FileStorage, self).__init__(file, missing_ok)
+        super().__init__(file, missing_ok)
         self.internal_storage = Storage(self.file_data, defaults)
 
     def __getitem__(self, key: Tuple[str, ...]) -> Any:
@@ -113,7 +115,7 @@ class Json(FileStorage):
 
 
 class Ini(FileStorage):
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         file: Union[Path, str],
         missing_ok=False,
