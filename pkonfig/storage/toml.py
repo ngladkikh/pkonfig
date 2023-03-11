@@ -1,9 +1,8 @@
-from typing import BinaryIO, Any
+from typing import Any, BinaryIO
 
 import tomli
 
-from pkonfig.storage.file import FileStorage
-from pkonfig.storage.file import MODE
+from pkonfig.storage.file import MODE, FileStorage
 
 
 class Toml(FileStorage):

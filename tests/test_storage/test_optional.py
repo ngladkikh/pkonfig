@@ -1,4 +1,4 @@
-from pkonfig.storage import Yaml, Toml
+from pkonfig.storage import Toml, Yaml
 
 
 def test_yaml():
@@ -16,11 +16,11 @@ def test_yaml():
 def test_toml():
     storage = Toml("tests/test_storage/test.toml")
     data = {
-        ('first_section', 'string'): 'some',
-        ('first_section', 'int'): 1,
-        ('first_section', 'float'): 0.33,
-        ('second_section', 'key'): 'value',
-        ('object', 'inner', 'test_key'): 'value'
+        ("first_section", "string"): "some",
+        ("first_section", "int"): 1,
+        ("first_section", "float"): 0.33,
+        ("second_section", "key"): "value",
+        ("object", "inner", "test_key"): "value",
     }
     for key, value in data.items():
         assert storage[key] == value

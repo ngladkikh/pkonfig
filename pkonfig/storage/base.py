@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, Any, Optional
+from typing import Any, Optional, Tuple
 
 from pkonfig.base import BaseStorage, InternalKey, Storage
 

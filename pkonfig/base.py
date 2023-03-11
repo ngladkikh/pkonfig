@@ -1,20 +1,20 @@
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from collections import ChainMap
 from inspect import isclass, isdatadescriptor
 from typing import (
     Any,
     Dict,
     Generic,
+    Iterator,
     Mapping,
+    MutableMapping,
     Optional,
+    Reversible,
+    Tuple,
     Type,
     TypeVar,
     Union,
     get_type_hints,
-    Iterator,
-    Tuple,
-    Reversible,
-    MutableMapping,
 )
 
 InternalKey = Tuple[str, ...]

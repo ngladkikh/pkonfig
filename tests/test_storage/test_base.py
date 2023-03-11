@@ -4,11 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from base import Storage
-from pkonfig.storage import (
-    Env,
-)
-from storage import Json, Ini
+from pkonfig.base import Storage
+from pkonfig.storage import Env, Ini, Json
 
 
 def test_env_config_outer(monkeypatch):
@@ -55,7 +52,7 @@ def json_configs(file):
     data = {
         "str": "value",
         "int": 1,
-        "float": 1/3,
+        "float": 1 / 3,
         "bool": True,
     }
     with open(file, "w") as fh:

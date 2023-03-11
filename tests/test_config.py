@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from pkonfig import Config, Env, LogLevel, Choice, Int
-from storage import DotEnv
+from pkonfig import Choice, Config, Env, Int, LogLevel
+from pkonfig.storage import DotEnv
 
 
 @pytest.fixture(scope="module")
@@ -51,6 +51,7 @@ def config_cls():
         db2 = PG()
         log_level = LogLevel("INFO")
         env = Choice(["local", "prod", "test"], default="prod")
+
     return AppConfig
 
 

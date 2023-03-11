@@ -2,21 +2,16 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Type, TypeVar
 
-from pkonfig.base import (
-    BaseConfig,
-    NOT_SET,
-    TypeMapper,
-    Field,
-)
+from pkonfig.base import NOT_SET, BaseConfig, Field, TypeMapper
 from pkonfig.fields import (
     Bool,
-    Int,
-    Float,
-    Str,
     Byte,
     ByteArray,
-    PathField,
     DecimalField,
+    Float,
+    Int,
+    PathField,
+    Str,
 )
 
 

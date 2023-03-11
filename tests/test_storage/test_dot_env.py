@@ -1,6 +1,6 @@
 import pytest
 
-from storage import DotEnv
+from pkonfig.storage import DotEnv
 
 
 def test_ignores_empty_string(env_file_with_empty_line):

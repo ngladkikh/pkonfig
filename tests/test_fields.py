@@ -7,16 +7,16 @@ import pytest
 from pkonfig import Storage
 from pkonfig.config import Config
 from pkonfig.fields import (
-    DebugFlag,
-    Int,
-    Float,
-    Str,
-    PathField,
-    File,
-    Folder,
-    EnumField,
-    LogLevel,
     Choice,
+    DebugFlag,
+    EnumField,
+    File,
+    Float,
+    Folder,
+    Int,
+    LogLevel,
+    PathField,
+    Str,
 )
 
 
@@ -42,7 +42,7 @@ def test_int_param(int_config):
 
 def test_only_int_accepted(int_config):
     with pytest.raises(ValueError):
-        int_config.attr = 'a'
+        int_config.attr = "a"
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def float_config():
 
 def test_float_only_accepted(float_config):
     with pytest.raises(ValueError):
-        float_config.attr = 'a'
+        float_config.attr = "a"
 
 
 def test_string_param_casts():
@@ -141,24 +141,13 @@ def test_choice():
 
 
 def test_choice_casts_values():
-    cls = build_config(
-        Choice(
-            [10, 100],
-            int
-        )
-    )
+    cls = build_config(Choice([10, 100], int))
     config = cls(attr="10")
     assert config.attr == 10
 
 
 @pytest.mark.parametrize(
-    "level,value",
-    [
-        ("info", 20),
-        ("INFO", 20),
-        ("Error", 40),
-        ("WaRnInG", 30)
-    ]
+    "level,value", [("info", 20), ("INFO", 20), ("Error", 40), ("WaRnInG", 30)]
 )
 def test_log_level_case_insensitive(level, value):
     cls = build_config(LogLevel())
@@ -166,10 +155,7 @@ def test_log_level_case_insensitive(level, value):
     assert config.attr == value
 
 
-@pytest.mark.parametrize(
-    "value",
-    ["false", "FALSE", "some", "", str(uuid4())]
-)
+@pytest.mark.parametrize("value", ["false", "FALSE", "some", "", str(uuid4())])
 def test_falsy_debug(value):
     cls = build_config(DebugFlag())
     config = cls(attr=value)
@@ -178,7 +164,7 @@ def test_falsy_debug(value):
 
 def test_truthy_debug():
     cls = build_config(DebugFlag())
-    config = cls(attr='true')
+    config = cls(attr="true")
     assert config.attr
 
 
