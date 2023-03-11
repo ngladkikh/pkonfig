@@ -68,8 +68,6 @@ class Field(Generic[T]):
 
     def get_from_storage(self, instance: "BaseConfig") -> Any:
         storage = instance.get_storage()
-        if storage is None:
-            raise AttributeError("no storage")
         path = self.get_path(instance)
         try:
             return storage[path]
