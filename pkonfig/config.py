@@ -1,23 +1,17 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
-from pkonfig.base import (
-    BaseOuterConfig,
-    BaseConfig,
-    NOT_SET,
-    TypeMapper,
-    Field,
-)
+from pkonfig.base import NOT_SET, BaseConfig, Field, TypeMapper
 from pkonfig.fields import (
     Bool,
-    Int,
-    Float,
-    Str,
     Byte,
     ByteArray,
-    PathField,
     DecimalField,
+    Float,
+    Int,
+    PathField,
+    Str,
 )
 
 
@@ -33,7 +27,7 @@ class DefaultMapper(TypeMapper):
         Decimal: DecimalField,
     }
 
-    def descriptor(self, type_: Type, value: Any = NOT_SET) -> Field:
+    def descriptor(self, type_, value: Any = NOT_SET) -> Field[Any]:
         try:
             cls = self.type_mapping[type_]
             return cls(value)
@@ -41,12 +35,5 @@ class DefaultMapper(TypeMapper):
             return value
 
 
-class Config(BaseOuterConfig):
+class Config(BaseConfig):
     _mapper = DefaultMapper()
-
-
-class EmbeddedConfig(BaseConfig):
-    _mapper = DefaultMapper()
-
-    def __init__(self, alias: Optional[str] = None):
-        self._alias = alias

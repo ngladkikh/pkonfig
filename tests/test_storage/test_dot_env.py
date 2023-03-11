@@ -1,11 +1,11 @@
 import pytest
 
-from pkonfig import DotEnv
+from pkonfig.storage import DotEnv
 
 
 def test_ignores_empty_string(env_file_with_empty_line):
     storage = DotEnv(env_file_with_empty_line)
-    assert storage["debug"] == "true"
+    assert storage[("DEBUG",)] == "true"
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def env_file_with_empty_line(env_file):
 
 def test_split_only_two_parts(env_file_with_multiple_eq):
     storage = DotEnv(env_file_with_multiple_eq)
-    assert storage["magic"] == "first=second"
+    assert storage[("magic",)] == "first=second"
 
 
 @pytest.fixture
@@ -29,14 +29,15 @@ def env_file_with_multiple_eq(env_file):
 
 def test_no_prefix_ignored(env_file_no_prefix):
     storage = DotEnv(env_file_no_prefix)
-    assert storage["env"] == "local"
-    assert len(storage) == 1
+    assert storage[("env",)] == "local"
+    with pytest.raises(KeyError):
+        assert storage[("some",)]
 
 
 def test_no_prefix_allowed(env_file_no_prefix):
-    storage = DotEnv(env_file_no_prefix, prefix=None)
-    assert storage["app"]["env"] == "local"
-    assert storage["some"] == "other"
+    storage = DotEnv(env_file_no_prefix, prefix="")
+    assert storage[("app_env",)] == "local"
+    assert storage[("some",)] == "other"
 
 
 @pytest.fixture

@@ -65,33 +65,34 @@ environment and DotEnv files are used for local development.
 Create __config__ module __config.py__:
 
 ```python
-from collections import ChainMap
-from pkonfig import Config, EmbeddedConfig, Env, DotEnv, LogLevel, Choice
+from pkonfig import Config, Env, LogLevel, Choice, Storage
+from storage import DotEnv
 
 
-class PG(EmbeddedConfig):
+class PG(Config):
   host = "localhost"
   port = 5432
-  user: str
-  password: str
+  user = "postgres"
+  password = "postgres"
 
-  
+
 class AppConfig(Config):
-    db = PG()
-    log_level = LogLevel("INFO")
-    env = Choice(["local", "prod", "test"], default="prod")
+  db1 = PG()
+  db2 = PG()
+  log_level = LogLevel("INFO")
+  env = Choice(["local", "prod", "test"], default="prod")
 
 
-storage = ChainMap(DotEnv(".env", missing_ok=True), Env())
+storage = Storage(DotEnv(".env", missing_ok=True), Env())
 config = AppConfig(storage)
 ```
 
 For local development create DotEnv file in root app folder __.env__:
 
 ```dotenv
-APP_DB_HOST=localhost
-APP_DB_USER=postgres
-APP_DB_PASSWORD=postgres
+APP_DB1_HOST=10.10.10.10
+APP_DB1_USER=user
+APP_DB1_PASSWORD=securedPass
 APP_ENV=local
 APP_LOG_LEVEL=debug
 ```
@@ -146,9 +147,9 @@ environ["NOPE"] = "qwe"
 
 source = Env(delimiter="_", prefix="APP", some_key="some")
 
-print(source["outer"])          # foo
-print(source["inner"]["key"])   # baz
-print(source["nope"])           # raises KeyError
+print(source[("outer",)])          # foo
+print(source[("inner", "key")])    # baz
+print(source[("nope",)])           # raises KeyError
 ```
 
 `Env` ignores key cases and ignores all keys starting not from __prefix__.
@@ -163,7 +164,7 @@ environ["NOPE"] = "qwe"
 
 source = Env(prefix=None)
 
-print(source["nope"])   # qwe
+print(source[("nope",)])   # qwe
 ```
 
 #### DotEnv
@@ -174,8 +175,8 @@ In the same manner as environment variables DotEnv files could be used.
 When file not found and `missing_ok` is set `DotEnv` contains empty dictionary.
 
 ```python
-from pkonfig import DotEnv
 
+from storage import DotEnv
 
 config_source = DotEnv("test.env", delimiter="_", prefix="APP", missing_ok=True)
 ```
@@ -186,11 +187,12 @@ __INI__ files are quite common and class `Ini`
 is build on top of [`configparser.ConfigParser`](https://docs.python.org/3/library/configparser.html):
 
 ```python
-from pkonfig import Ini
+
+from storage import Ini
 
 storage = Ini("config.ini", missing_ok=False)
-print(storage["bitbucket.org"]["User"])  # hg
-print(storage["bitbucket.org"]["ServerAliveInterval"])  # 45
+print(storage[("bitbucket.org", "User")])  # hg
+print(storage[("bitbucket.org", "ServerAliveInterval")])  # 45
 ```
 
 In case when __config.ini__:
@@ -211,8 +213,8 @@ Most of `ConfigParser` arguments are also accepted to modify parser behaviour.
 `Json` class uses `json.load` to read given JSON file and respects `missing_ok` argument:
 
 ```python
-from pkonfig import Json
 
+from storage import Json
 
 storage = Json("config.json", missing_ok=False)
 ```
@@ -245,14 +247,13 @@ So it is easy to implement custom or combine existing implementations.
 Recommended way to combine multiple sources of configs is `ChainMap`:
 
 ```python
-from collections import ChainMap
-from pkonfig import Env, DotEnv, Yaml
+from pkonfig import Env, Yaml, Storage
+from storage import DotEnv
 
-
-config_source = ChainMap(
-    DotEnv("test.env", missing_ok=True),
-    Env(),
-    Yaml("base_config.yaml")
+config_source = Storage(
+  DotEnv("test.env", missing_ok=True),
+  Env(),
+  Yaml("base_config.yaml")
 )
 ```
 
@@ -286,13 +287,13 @@ print(config.foo)   # 0.33
 print(config.baz)   # 1
 ```
 
-To build more granular config structure `EmbeddedConfig` class is used:
+To build more granular config structure:
 
 ```python
-from pkonfig import Config, EmbeddedConfig
+from pkonfig import Config
 
 
-class Inner(EmbeddedConfig):
+class Inner(Config):
     key: str
 
 
@@ -318,31 +319,32 @@ Grouping might be useful when there are lots of config parameters.
 To achieve this `EmbeddedConfig` class should be inherited:
 
 ```python
-from pkonfig import DotEnv, Config, EmbeddedConfig
+from pkonfig import Config
+from storage import DotEnv
 
 
-class PgConfig(EmbeddedConfig):
-    host: str
-    port: int = 5432
+class PgConfig(Config):
+  host: str
+  port: int = 5432
 
 
-class RedisConfig(EmbeddedConfig):
-    host: str
-    port: int = 6379
+class RedisConfig(Config):
+  host: str
+  port: int = 6379
 
 
 class AppConfig(Config):
-    pg = PgConfig()
-    redis = RedisConfig()
+  pg = PgConfig()
+  redis = RedisConfig()
 
 
 config = AppConfig(
-    DotEnv(".env", delimiter="__", prefix="APP")
+  DotEnv(".env", delimiter="__", prefix="APP")
 )
 
-print(config.pg.host)       # db_host
-print(config.pg.port)       # 6432
-print(config.redis.host)    # redis
+print(config.pg.host)  # db_host
+print(config.pg.port)  # 6432
+print(config.redis.host)  # redis
 ```
 
 __.env__ content:
@@ -360,20 +362,22 @@ When storage class searches for config attribute in its source either attribute
 name is used or alias when it is set.
 
 __config.py__:
+
 ```python
-from pkonfig import DotEnv, EmbeddedConfig, Config, Int, Str
+from pkonfig import Config, Int, Str
+from storage import DotEnv
 
 
-class HostConfig(EmbeddedConfig):
-    host: str
-    port: int
-    user: str
-    password = Str(alias="pass")
+class HostConfig(Config):
+  host: str
+  port: int
+  user: str
+  password = Str(alias="pass")
 
 
 class AppConfig(Config):
-    pg = HostConfig(alias="db")
-    foo_baz = Int(alias="my_alias")
+  pg = HostConfig(alias="db")
+  foo_baz = Int(alias="my_alias")
 
 
 config = AppConfig(DotEnv(".env", delimiter="__"))
@@ -735,7 +739,7 @@ and each file is used only in an appropriate environment you can create a functi
 to find which file should be used:
 
 ```python
-from pkonfig import Env, Yaml, Config, Choice
+from pkonfig import Env, Config, Choice
 
 
 CONFIG_FILES = {
@@ -763,7 +767,6 @@ config file name.
 Then actual application configuration:
 
 ```python
-from collections import ChainMap
 from pkonfig import Env, Yaml, Config, Choice
 
 
@@ -794,9 +797,6 @@ class AppConfig(Config):
     )
     ...
 
-storage = ChainMap(
-  Env(),
-  Yaml(get_config_file()),
-)
-config = AppConfig(storage)
+
+config = AppConfig(Env(), Yaml(get_config_file()))
 ```

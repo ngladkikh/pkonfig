@@ -1,0 +1,5 @@
+[run]
+include = pkonfig/*
+omit =
+  tests/*
+  setup.py
