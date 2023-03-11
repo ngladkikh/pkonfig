@@ -15,6 +15,7 @@ types-pyyaml = "*"
 pylint = "*"
 isort = "*"
 black = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.11"
