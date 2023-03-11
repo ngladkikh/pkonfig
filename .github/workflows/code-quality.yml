@@ -12,6 +12,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        step: [ test, mypy, black, isort, pylint ]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -27,21 +31,26 @@ jobs:
           pipenv install --dev --deploy --system
 
       - name: Run tests with pytest
+        if: matrix.step == 'test'
         run: |
           pytest tests/
 
       - name: Check with mypy
+        if: matrix.step == 'mypy'
         run: |
           mypy pkonfig/
 
       - name: Check imports order
+        if: matrix.step == 'isort'
         run: |
           isort --check-only pkonfig
 
       - name: Format with black
+        if: matrix.step == 'black'
         run: |
           black --check --diff pkonfig
 
       - name: Lint with pylint
+        if: matrix.step == 'pylint'
         run: |
           pylint pkonfig
