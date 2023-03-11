@@ -28,16 +28,20 @@ jobs:
 
       - name: Run tests with pytest
         run: |
-          pipenv run pytest tests/
+          pytest tests/
 
       - name: Check with mypy
         run: |
-          pipenv run mypy your_module/
+          mypy pkonfig/
+
+      - name: Check imports order
+        run: |
+          isort --check-only pkonfig
 
       - name: Format with black
         run: |
-          pipenv run black --check --diff .
+          pipenv run black --check --diff pkonfig
 
       - name: Lint with pylint
         run: |
-          pipenv run pylint your_module/
+          pipenv run pylint pkonfig
