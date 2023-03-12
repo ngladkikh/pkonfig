@@ -65,7 +65,7 @@ class Field(Generic[T]):
         return value
 
     def get_path(self, instance: "BaseConfig") -> InternalKey:
-        return *instance.get_roo_path(), self.alias
+        return tuple(instance.get_roo_path() + (self.alias,))
 
     def get_from_storage(self, instance: "BaseConfig") -> Any:
         storage = instance.get_storage()
