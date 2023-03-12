@@ -1,0 +1,42 @@
+{% set name = "pkonfig" %}
+
+package:
+  name: {{ name|lower }}
+  version: "{{  setuptools_scm.parse(version_scheme='post-release', local_scheme='dirty', write_to='{{ name|lower }}/version.py') }}"
+
+source:
+  url: https://files.pythonhosted.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: ""
+
+build:
+  script: python -m pip install . --no-deps --ignore-installed -vv
+  number: 0
+
+requirements:
+  host:
+    - python
+    - setuptools >=42
+    - wheel
+    - pip
+  run:
+    - python
+    - setuptools_scm
+    - typing_extensions  # [py<37]
+
+test:
+  imports:
+    - pkonfig
+  commands:
+    - python -m pytest --pyargs pkonfig
+  requires:
+    - pytest
+    - pip
+
+about:
+  home: https://github.com/ngladkikh/pkonfig
+  license: MIT
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - NikitaGladkikh
