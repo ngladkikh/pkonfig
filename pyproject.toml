@@ -47,7 +47,6 @@ classifiers = [
     "Typing :: Typed"
 ]
 dependencies = [
-    'toml',
     "typing_extensions;python_version<'3.7'"
 ]
 dynamic = ["version", "readme"]
@@ -62,7 +61,7 @@ version = {attr = "setuptools_scm.get_version"}
 readme = {file = ["README.md"]}
 
 [tool.setuptools.packages.find]
-where = ["pkonfig"]
+where = ["."]
 include = ["pkonfig*"]
 
 [project.urls]
@@ -75,7 +74,7 @@ profile = "black"
 
 [tool.black]
 line-length = 79
-target-version = ["py36", "py37", "py38", "py39", "py310", "py311"]
+target-version = ["py37", "py38", "py39", "py310", "py311"]
 include-trailing-comma = true
 force-grid-wrap = 0
 use-parentheses = true

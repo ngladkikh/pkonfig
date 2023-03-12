@@ -26,8 +26,6 @@ test:
     - pyyaml
   source_files:
     ./tests/*
-  imports:
-    - pkonfig
   commands:
     - python -m pytest tests
 
@@ -36,7 +34,3 @@ about:
   license: MIT
   license_file: LICENSE
   summary: "Python app configuration framework."
-
-extra:
-  recipe-maintainers:
-    - NikitaGladkikh
