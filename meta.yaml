@@ -1,0 +1,36 @@
+package:
+  name: pkonfig
+  version: 2.0b
+
+source:
+  path: .
+
+build:
+  script: python -m pip install . --no-deps --ignore-installed -vv
+  noarch: python
+  number: 0
+
+requirements:
+  host:
+    - python
+    - setuptools >=42
+    - wheel
+    - pip
+    - setuptools_scm
+    - pyyaml # [py<310]
+    - typing_extensions  # [py<37]
+
+test:
+  requires:
+    - pytest
+    - pyyaml
+  source_files:
+    ./tests/*
+  commands:
+    - python -m pytest tests
+
+about:
+  home: https://github.com/ngladkikh/pkonfig
+  license: MIT
+  license_file: LICENSE
+  summary: "Python app configuration framework."

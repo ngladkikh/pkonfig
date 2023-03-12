@@ -1,8 +1,9 @@
 from abc import ABC, ABCMeta, abstractmethod
 from collections import ChainMap
 from inspect import isclass, isdatadescriptor
+from typing import Any
+from typing import ChainMap as ChainMapT
 from typing import (
-    Any,
     Dict,
     Generic,
     Iterator,
@@ -18,7 +19,7 @@ from typing import (
 )
 
 InternalKey = Tuple[str, ...]
-InternalStorage = Union[Dict[InternalKey, Any], ChainMap[InternalKey, Any]]
+InternalStorage = Union[Dict[InternalKey, Any], ChainMapT[InternalKey, Any]]
 NOT_SET = object()
 T = TypeVar("T")
 
@@ -64,7 +65,7 @@ class Field(Generic[T]):
         return value
 
     def get_path(self, instance: "BaseConfig") -> InternalKey:
-        return *instance.get_roo_path(), self.alias
+        return tuple(instance.get_roo_path() + (self.alias,))
 
     def get_from_storage(self, instance: "BaseConfig") -> Any:
         storage = instance.get_storage()
