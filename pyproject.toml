@@ -54,6 +54,8 @@ dynamic = ["version", "readme"]
 
 [project.optional-dependencies]
 yaml = ["pyyaml"]
+toml = ["tomli"]
+
 [tool.setuptools_scm]
 [tool.setuptools.dynamic]
 version = {attr = "setuptools_scm.get_version"}
