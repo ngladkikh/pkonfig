@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from collections import ChainMap
 from inspect import isclass, isdatadescriptor
 from typing import (
@@ -131,7 +131,7 @@ def get(config: C, parent: "BaseConfig", _=None) -> C:
     return config
 
 
-class MetaConfig(ABC):
+class MetaConfig(ABCMeta):
     """Replaces class-level attributes with Field descriptors"""
 
     def __new__(mcs, name, parents, attributes):  # pylint: disable=arguments-differ
