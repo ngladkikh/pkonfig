@@ -15,10 +15,11 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
+    ChainMap as ChainMapT,
 )
 
 InternalKey = Tuple[str, ...]
-InternalStorage = Union[Dict[InternalKey, Any], ChainMap[InternalKey, Any]]
+InternalStorage = Union[Dict[InternalKey, Any], ChainMapT[InternalKey, Any]]
 NOT_SET = object()
 T = TypeVar("T")
 
