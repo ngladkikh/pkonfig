@@ -182,21 +182,15 @@ class MetaConfig(ABCMeta):
         return None
 
 
-class BaseStorage(MutableMapping, ABC):
+class BaseStorage(Mapping, ABC):
     """Plain config data storage"""
 
     @abstractmethod
     def __getitem__(self, key: Tuple[str, ...]) -> Any:
         ...
 
-    def __delitem__(self, key: Tuple[str, ...]) -> Any:
-        raise NotImplementedError
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        raise NotImplementedError
-
     def __iter__(self) -> Iterator[Any]:
-        raise NotImplementedError
+        return tuple()
 
 
 class Storage(BaseStorage):

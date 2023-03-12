@@ -88,7 +88,7 @@ class DotEnv(BaseFileStorage, BaseStorage):
         return len(param_line) > 2 and (not param_line.startswith(("#", "//")))
 
 
-class FileStorage(BaseStorage, BaseFileStorage, ABC):
+class FileStorage(BaseStorage, BaseFileStorage):
     def __init__(
         self,
         file: Union[Path, str],
