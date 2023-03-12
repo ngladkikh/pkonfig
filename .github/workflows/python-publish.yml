@@ -20,14 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ 3.7, 3.8, 3.9, 3.10, 3.11 ]
+        python-version: [ "3.6", "3.7", "3.8", "3.9", "3.10", "3.11" ]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -44,9 +44,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.11'
     - name: Install dependencies
@@ -63,20 +63,11 @@ jobs:
     - name: Install Conda
       uses: conda-incubator/setup-miniconda@v2
       with:
-        python-version: 3.8
+        python-version: 3.11
         activate-environment: conda-forge
     - name: Install conda dependencies
       run: |
-        conda config --set channel_priority strict
-        conda install -y conda-build conda-verify
-        conda update -y -n base -c defaults conda
-        conda install -y -c conda-forge setuptools-scm
+        conda install -y conda-build conda-verify setuptools-scm pyyaml pytest
     - name: Build conda package
       run: |
-        conda-build .
-    - name: Publish to conda-forge
-      uses: conda-incubator/conda-forge-publish-action@v1
-      with:
-        feedstock_name: ngladkikh
-        token: ${{ secrets.ANACONDA }}
-        version: $(python setup.py --version)
+        conda-build  --token=${{ secrets.ANACONDA }} .
