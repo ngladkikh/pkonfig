@@ -1,8 +1,9 @@
 from abc import ABC, ABCMeta, abstractmethod
 from collections import ChainMap
 from inspect import isclass, isdatadescriptor
+from typing import Any
+from typing import ChainMap as ChainMapT
 from typing import (
-    Any,
     Dict,
     Generic,
     Iterator,
@@ -15,7 +16,6 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
-    ChainMap as ChainMapT,
 )
 
 InternalKey = Tuple[str, ...]

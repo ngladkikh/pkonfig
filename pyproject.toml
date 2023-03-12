@@ -73,7 +73,7 @@ repository = "https://github.com/ngladkikh/pkonfig"
 profile = "black"
 
 [tool.black]
-line-length = 79
+line-length = 88
 target-version = ["py37", "py38", "py39", "py310", "py311"]
 include-trailing-comma = true
 force-grid-wrap = 0
