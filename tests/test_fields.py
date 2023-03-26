@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 
+from pkonfig.base import ConfigTypeError
 from pkonfig import Storage
 from pkonfig.config import Config
 from pkonfig.fields import (
@@ -41,7 +42,7 @@ def test_int_param(int_config):
 
 
 def test_only_int_accepted(int_config):
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigTypeError):
         int_config.attr = "a"
 
 
@@ -52,7 +53,7 @@ def float_config():
 
 
 def test_float_only_accepted(float_config):
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigTypeError):
         float_config.attr = "a"
 
 
@@ -81,7 +82,7 @@ def test_is_file_checked(tmp_path):
         config = cls(attr=existing_file)
         assert config.attr.name == "test"
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ConfigTypeError):
         config.attr = tmp_path
 
 
@@ -102,7 +103,7 @@ def test_is_dir_checked(tmp_path):
     config = cls(attr=tmp_path)
     existing_file = tmp_path / "test"
     with open(existing_file, "w"):
-        with pytest.raises(TypeError):
+        with pytest.raises(ConfigTypeError):
             config.attr = existing_file
 
 
@@ -130,7 +131,7 @@ def test_enum_raises_error(enum_attr_config):
 
 def test_choice_raises_error():
     cls = build_config(Choice(["foo", "bar"]))
-    with pytest.raises(TypeError):
+    with pytest.raises(ConfigTypeError):
         assert cls(attr="test").attr
 
 

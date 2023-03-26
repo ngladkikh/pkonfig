@@ -5,6 +5,7 @@ import pytest
 
 from pkonfig import Choice, Config, Env, Int, LogLevel
 from pkonfig.storage import DotEnv
+from pkonfig.base import ConfigValueNotFoundError, ConfigTypeError
 
 
 @pytest.fixture(scope="module")
@@ -79,7 +80,7 @@ def test_attr_validates_on_change(app_config):
     app_config.env = "test"
     assert app_config.env == "test"
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ConfigTypeError):
         app_config.env = "some"
 
 
@@ -125,18 +126,16 @@ def test_no_value_raised():
     class TConfig(Config):
         attr: int
 
-    config = TConfig({})
-    with pytest.raises(KeyError):
-        assert config.attr
+    with pytest.raises(ConfigValueNotFoundError):
+        TConfig({})
 
 
 def test_default_value_validated():
     class TConfig(Config):
         attr: int = "a"
 
-    config = TConfig({})
-    with pytest.raises(ValueError):
-        assert config.attr
+    with pytest.raises(ConfigTypeError):
+        TConfig({})
 
 
 def test_none_omits_cast():
@@ -159,7 +158,7 @@ def test_non_nullable_field_raises_exception_on_null():
     class TConfig(Config):
         attr = Int()
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ConfigTypeError):
         c = TConfig({"attr": None})
         assert c.attr
 
@@ -176,11 +175,11 @@ def test_not_annotated_validates_on_change():
     class TestConfig(Config):
         s = 1
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigTypeError):
         config = TestConfig({"s": "a"})
         assert config.s != "a"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigTypeError):
         config = TestConfig({"s": 1})
         config.s = "a"
 
@@ -189,11 +188,11 @@ def test_annotation_used_for_validation():
     class TestConfig(Config):
         attr: int
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigTypeError):
         config = TestConfig({"attr": "a"})
         assert config.attr != "a"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigTypeError):
         config = TestConfig({"attr": 1})
         config.attr = "a"
 

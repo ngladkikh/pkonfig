@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
-from pkonfig.base import NOT_SET, Field
+from pkonfig.base import NOT_SET, Field, ConfigTypeError
 
 
 class Bool(Field):
@@ -115,7 +115,7 @@ class Choice(Field, Generic[T]):
 
     def validate(self, value):
         if value not in self.choices:
-            raise TypeError(f"'{value}' is not in {self.choices}")
+            raise ConfigTypeError(f"'{value}' is not in {self.choices}")
 
 
 class DebugFlag(Field):
