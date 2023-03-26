@@ -18,7 +18,6 @@ from typing import (
 
 InternalKey = Tuple[str, ...]
 InternalStorage = MutableMapping[InternalKey, Any]
-# InternalStorage = Union[Dict[InternalKey, Any], ChainMapT[InternalKey, Any]]
 NOT_SET = object()
 T = TypeVar("T")
 
@@ -213,7 +212,7 @@ class MetaConfig(ABCMeta):
         return config
 
 
-class BaseStorage(Mapping, ABC):
+class BaseStorage(MutableMapping, ABC):
     """Plain config data storage"""
 
     @abstractmethod
@@ -222,6 +221,12 @@ class BaseStorage(Mapping, ABC):
 
     def __iter__(self) -> Iterator[Any]:
         return iter(())
+
+    def __setitem__(self, __k: Any, __v: Any) -> None:
+        pass
+
+    def __delitem__(self, __v: Any) -> None:
+        pass
 
 
 class Storage(BaseStorage):
