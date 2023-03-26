@@ -8,7 +8,6 @@ from typing import (
     Generic,
     Iterator,
     Mapping,
-    MutableMapping,
     Optional,
     Reversible,
     Tuple,
@@ -22,6 +21,18 @@ InternalKey = Tuple[str, ...]
 InternalStorage = Union[Dict[InternalKey, Any], ChainMapT[InternalKey, Any]]
 NOT_SET = object()
 T = TypeVar("T")
+
+
+class ConfigError(Exception):
+    """Configuration error"""
+
+
+class ConfigValueNotFoundError(ConfigError):
+    """Failed to find value in given storage(s)"""
+
+
+class ConfigTypeError(ConfigError):
+    """Value has wrong type"""
 
 
 class Field(Generic[T]):
@@ -116,19 +127,7 @@ class TypeMapper(ABC):
         pass
 
 
-def set_name(config: "BaseConfig", _, name: str) -> None:
-    config.set_alias(name)
-
-
 C = TypeVar("C", bound="BaseConfig")
-
-
-def get(config: C, parent: "BaseConfig", _=None) -> C:
-    # pylint: disable=protected-access
-    if not config.get_storage():
-        config._root_path = (*parent.get_roo_path(), config.get_alias())
-        config._storage = parent.get_storage()
-    return config
 
 
 class MetaConfig(ABCMeta):
@@ -136,7 +135,7 @@ class MetaConfig(ABCMeta):
 
     def __new__(mcs, name, parents, attributes):  # pylint: disable=arguments-differ
         MetaConfig.extend_annotations(attributes)
-        mapper = MetaConfig.get_mapper(attributes, parents)
+        mapper = mcs.get_mapper(attributes, parents)
         if mapper:
             mapper.replace_fields_with_descriptors(
                 attributes, attributes.get("__annotations__", {})
@@ -144,8 +143,8 @@ class MetaConfig(ABCMeta):
 
         cls = super().__new__(mcs, name, parents, attributes)
         if not getattr(cls, "__get__", None):
-            cls.__set_name__ = set_name
-            cls.__get__ = get
+            cls.__set_name__ = mcs.__set_name
+            cls.__get__ = mcs.__get
 
         return cls
 
@@ -180,6 +179,18 @@ class MetaConfig(ABCMeta):
             if mapper and isinstance(mapper, TypeMapper):
                 return mapper
         return None
+
+    @staticmethod
+    def __set_name(config: C, _, name: str) -> None:
+        config.set_alias(name)
+
+    @staticmethod
+    def __get(config: C, parent: C, _=None) -> C:
+        # pylint: disable=protected-access
+        if not config.get_storage():
+            config._root_path = (*parent.get_roo_path(), config.get_alias())
+            config._storage = parent.get_storage()
+        return config
 
 
 class BaseStorage(Mapping, ABC):
