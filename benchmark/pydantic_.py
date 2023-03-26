@@ -2,6 +2,7 @@ import os
 from time import time
 
 import pydantic
+
 from pkonfig.config import Config, EmbeddedConfig
 from pkonfig.fields import Float
 from pkonfig.storage import Env
@@ -14,11 +15,11 @@ def read_py(kwargs):
 
     class Settings(pydantic.BaseSettings):
         inner: InnerPy
-        s = 'test'
+        s = "test"
 
         class Config:
-            env_prefix = 'APP_'
-            env_nested_delimiter = '__'
+            env_prefix = "APP_"
+            env_nested_delimiter = "__"
             case_sensitive = False
 
     return Settings(**kwargs)
@@ -44,13 +45,7 @@ def read_pk(kwargs):
 
 def main():
     iterations = 500
-    kwargs = {
-        "s": "some",
-        "inner": {
-            "i": 1,
-            "f": 0.2
-        }
-    }
+    kwargs = {"s": "some", "inner": {"i": 1, "f": 0.2}}
     test_pydantic_read(iterations, kwargs)
     test_pkonfig_read(iterations, kwargs)
 

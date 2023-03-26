@@ -1,12 +1,12 @@
 from abc import ABC, ABCMeta, abstractmethod
 from collections import ChainMap
 from inspect import isclass, isdatadescriptor
-from typing import Any
-from typing import ChainMap as ChainMapT
 from typing import (
+    Any,
     Dict,
     Generic,
     Iterator,
+    List,
     Mapping,
     MutableMapping,
     Optional,
@@ -19,9 +19,21 @@ from typing import (
 )
 
 InternalKey = Tuple[str, ...]
-InternalStorage = Union[Dict[InternalKey, Any], ChainMapT[InternalKey, Any]]
+InternalStorage = MutableMapping[InternalKey, Any]
 NOT_SET = object()
 T = TypeVar("T")
+
+
+class ConfigError(Exception):
+    """Configuration error"""
+
+
+class ConfigValueNotFoundError(ConfigError):
+    """Failed to find value in given storage(s)"""
+
+
+class ConfigTypeError(ConfigError):
+    """Value has wrong type"""
 
 
 class Field(Generic[T]):
@@ -45,8 +57,8 @@ class Field(Generic[T]):
         self.alias = self.alias or name
 
     def __set__(self, instance: "BaseConfig", value) -> None:
-        value = self.cast(value)
-        self.validate(value)
+        value = self._cast(value)
+        self._validate(value)
         path = self.get_path(instance)
         self._cache[path] = value
 
@@ -56,11 +68,11 @@ class Field(Generic[T]):
         if value is NOT_SET:
             value = self.get_from_storage(instance)
             if value is not None:
-                value = self.cast(value)
-                self.validate(value)
+                value = self._cast(value)
+                self._validate(value)
             else:
                 if not self.nullable:
-                    raise TypeError(f"{self.path} value is None")
+                    raise ConfigTypeError(f"{self.path} value is None")
             self._cache[path] = value
         return value
 
@@ -70,22 +82,34 @@ class Field(Generic[T]):
     def get_from_storage(self, instance: "BaseConfig") -> Any:
         storage = instance.get_storage()
         path = self.get_path(instance)
-        try:
+        if path in storage:
             return storage[path]
-        except KeyError as exc:
-            if self.default is not NOT_SET:
-                return self.default
-            raise KeyError({".".join(path)}) from exc
+        if self.default is not NOT_SET:
+            return self.default
+        raise ConfigValueNotFoundError({".".join(path)})
+
+    def _cast(self, value: Any) -> T:
+        try:
+            return self.cast(value)
+        except (ValueError, TypeError) as exc:
+            raise ConfigTypeError(f"{value} casting error") from exc
 
     @abstractmethod
     def cast(self, value: Any) -> T:
         pass
+
+    def _validate(self, value: Any) -> None:
+        try:
+            return self.validate(value)
+        except TypeError as exc:
+            raise ConfigTypeError(f"{value} validation error") from exc
 
     def validate(self, value: Any) -> None:
         pass
 
 
 TypeMapping = Dict[Type, Type["Field"]]
+C = TypeVar("C", bound="BaseConfig")
 
 
 class TypeMapper(ABC):
@@ -100,35 +124,32 @@ class TypeMapper(ABC):
     def replace_fields_with_descriptors(
         self, attributes: Dict[str, Any], type_hints: Dict[str, Type]
     ) -> None:
-        for name in filter(lambda x: not x.startswith("_"), type_hints.keys()):
+        inner_configs = []
+        attribute_names = []
+        for name in filter(self.public_attribute, type_hints.keys()):
             attribute = attributes.get(name, NOT_SET)
             if self.replace(attribute):
                 hint = type_hints[name]
                 descriptor = self.descriptor(hint, attribute)
                 attributes[name] = descriptor
+                if isinstance(attribute, BaseConfig):
+                    inner_configs.append(attribute)
+                else:
+                    attribute_names.append(name)
+        attributes["_inner_configs"] = inner_configs
+        attributes["_field_names"] = attribute_names
 
     @staticmethod
-    def replace(attribute):
+    def public_attribute(attr_name: str) -> bool:
+        return not attr_name.startswith("_")
+
+    @staticmethod
+    def replace(attribute: Any):
         return not (isdatadescriptor(attribute) or isclass(attribute))
 
     @abstractmethod
     def descriptor(self, type_: T, value: Any = NOT_SET) -> Field[T]:
         pass
-
-
-def set_name(config: "BaseConfig", _, name: str) -> None:
-    config.set_alias(name)
-
-
-C = TypeVar("C", bound="BaseConfig")
-
-
-def get(config: C, parent: "BaseConfig", _=None) -> C:
-    # pylint: disable=protected-access
-    if not config.get_storage():
-        config._root_path = (*parent.get_roo_path(), config.get_alias())
-        config._storage = parent.get_storage()
-    return config
 
 
 class MetaConfig(ABCMeta):
@@ -144,8 +165,8 @@ class MetaConfig(ABCMeta):
 
         cls = super().__new__(mcs, name, parents, attributes)
         if not getattr(cls, "__get__", None):
-            cls.__set_name__ = set_name
-            cls.__get__ = get
+            cls.__set_name__ = MetaConfig.__set_name
+            cls.__get__ = MetaConfig.__get
 
         return cls
 
@@ -181,6 +202,17 @@ class MetaConfig(ABCMeta):
                 return mapper
         return None
 
+    @staticmethod
+    def __set_name(config: C, _, name: str) -> None:
+        config.set_alias(name)
+
+    @staticmethod
+    def __get(config: C, parent: C, _=None) -> C:
+        if not config.get_storage():
+            config.set_root_path((*parent.get_roo_path(), config.get_alias()))
+            config.set_storage(parent.get_storage())
+        return config
+
 
 class BaseStorage(MutableMapping, ABC):
     """Plain config data storage"""
@@ -189,14 +221,14 @@ class BaseStorage(MutableMapping, ABC):
     def __getitem__(self, key: Tuple[str, ...]) -> Any:
         ...
 
-    def __delitem__(self, key: Tuple[str, ...]) -> Any:
-        raise NotImplementedError
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        raise NotImplementedError
-
     def __iter__(self) -> Iterator[Any]:
-        raise NotImplementedError
+        return iter(())
+
+    def __setitem__(self, __k: Any, __v: Any) -> None:
+        pass
+
+    def __delitem__(self, __v: Any) -> None:
+        pass
 
 
 class Storage(BaseStorage):
@@ -220,10 +252,16 @@ class Storage(BaseStorage):
 
 
 class BaseConfig(metaclass=MetaConfig):
+    _inner_configs: List["BaseConfig"]
+    _field_names: List[str]
+    _storage: ChainMap
+    _inner: bool = False
+
     def __init__(
         self,
         *storages: Union[dict, BaseStorage],
         alias: str = "",
+        fail_fast: bool = True,
     ) -> None:
         internal_storages = []
         for s in storages:
@@ -231,18 +269,33 @@ class BaseConfig(metaclass=MetaConfig):
                 internal_storages.append(s)
             else:
                 internal_storages.append(Storage(s))
-        self._storage: InternalStorage = ChainMap(*internal_storages)
+        self._storage = ChainMap(*internal_storages)
         self._alias = alias
         self._root_path: InternalKey = (alias,) if alias else tuple()
+        if fail_fast:
+            self.check()
 
     def get_roo_path(self) -> InternalKey:
         return self._root_path
 
-    def get_storage(self) -> InternalStorage:
+    def set_root_path(self, path: InternalKey) -> None:
+        self._root_path = path
+
+    def get_storage(self) -> ChainMap:
         return self._storage
+
+    def set_storage(self, storage: ChainMap) -> None:
+        self._storage = storage
 
     def set_alias(self, alias: str) -> None:
         self._alias = self._alias or alias
 
     def get_alias(self) -> str:
         return self._alias
+
+    def check(self) -> None:
+        if self._storage:
+            for name in self._field_names:
+                getattr(self, name)
+            for config in self._inner_configs:
+                config.check()

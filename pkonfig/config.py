@@ -37,3 +37,8 @@ class DefaultMapper(TypeMapper):
 
 class Config(BaseConfig):
     _mapper = DefaultMapper()
+
+
+class EmbeddedConfig(BaseConfig):
+    _inner: bool = True
+    _mapper = DefaultMapper()

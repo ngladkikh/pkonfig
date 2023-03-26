@@ -1,6 +1,6 @@
 package:
   name: pkonfig
-  version: 2.0b
+  version: {{ environ.get('GITHUB_REF_NAME', '') }}
 
 source:
   path: .

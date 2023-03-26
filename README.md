@@ -24,13 +24,13 @@ with agile order configuration.
 
 ## Features
 
-- User defined config source order.
-- Multilevel configs for environment variables and dotenv config sources.
-- Custom aliases for fields or groups of configs.
-- Configs type casting
-- Config values validation based on type and/or value.
-- High performance.
-- Extendable API.
+- User defined config source order: Define the order in which PKonfig looks for configuration values.
+- Multilevel configs for environment variables and dotenv config sources: Allows for more granular control over configuration values.
+- Custom aliases for fields or groups of configs: Create custom aliases for configuration values to make them easier to reference in code.
+- Configs type casting: Automatically cast configuration values to the correct data type.
+- Config values validation based on type and/or value: Validate configuration values to ensure they meet specific requirements.
+- High performance: Designed to be fast and efficient.
+- Extendable API: Easily extend PKonfig to meet your specific needs.
 
 ## Installation
 
@@ -58,12 +58,14 @@ And if both TOML and YAML is needed:
 pip install pkonfig[toml,yaml]
 ```
 
-For production no __.env__ files are needed but propper environment variables should be set.
-In case some of required variables missing __KeyError__ exception raised while __AppConfig__
+For production no __.env__ files are needed but proper environment variables should be set.
+In case some of required variables missing __ConfigValueNotFoundError__ exception raised while __AppConfig__
 instantiation.
 
 ## Quickstart
 
+The Config class is a Pythonic configuration management helper designed 
+to provide a simple way of managing multiple sources of configuration values in your application.
 The most basic usage example when environment variables are used for production
 environment and DotEnv files are used for local development.
 
@@ -150,7 +152,7 @@ environ["APP_OUTER"] = "foo"
 environ["APP_INNER_KEY"] = "baz"
 environ["NOPE"] = "qwe"
 
-source = Env(delimiter="_", prefix="APP", some_key="some")
+source = Env(delimiter="_", prefix="APP")
 
 print(source[("outer",)])          # foo
 print(source[("inner", "key")])    # baz
@@ -262,14 +264,13 @@ config_source = Storage(
 )
 ```
 
-In this example we created `ChainMap` that looks for key until finds one in the given mappers sequence.
+In this example we created `Storage` that looks for key until finds one in the given mappers sequence.
 The first one source for configs is **test.env** file that might not exist and could be used for local development only.
 Environment variables are used as the second one config source.
 Dotenv file will be preferred source in this example.
 The last one source is **base_config.yaml** that should exist or `FileNotFoundError` exception raised.
 
-You can customize source order in this way or even create your own logic implementing
-`Mapper` protocol.
+You can customize source order in this way.
 
 ### Config
 
@@ -318,10 +319,35 @@ config = AppConfig(storage)
 print(config.inner.key)   # value
 ```
 
+For backwards compatibility class `EmbeddedConfig` was added so that previous example could be:
+```python
+from pkonfig import Config, EmbeddedConfig
+
+
+class Inner(EmbeddedConfig):
+    key: str
+
+
+class AppConfig(Config):
+    inner = Inner()
+    foo: float
+    baz: int
+
+
+storage = {
+    "foo": "0.33", 
+    "baz": 1, 
+    "inner": {"key": "value"}
+}
+config = AppConfig(storage)
+
+print(config.inner.key)   # value
+```
+
 ### Multilevel Config
 
 Grouping might be useful when there are lots of config parameters.
-To achieve this `EmbeddedConfig` class should be inherited:
+To achieve this `Config` class should be inherited like:
 
 ```python
 from pkonfig import Config
@@ -399,7 +425,7 @@ APP__MY_ALIAS=123
 ```
 
 In this example storage will seek in dotenv file parameters named by given alias.
-Elsewhere in an app:
+Elsewhere in the app:
 
 ```python
 from config import config
@@ -474,7 +500,7 @@ class AppConfig(Config):
     attr = Int(no_cache=True)
 ```
 
-In given example `attr` will do type casting and validation every time this attribute is accessed.
+In the given example `attr` will do type casting and validation every time this attribute is accessed.
 
 #### Default values
 
@@ -494,7 +520,7 @@ print(config.str_attr)    # None
 print(config.int_attr)    # None
 ```
 
-When `None` is default value field is treated as nullable.
+When `None` is default value the field is treated as nullable.
 
 #### Field nullability
 
@@ -513,7 +539,7 @@ config = AppConfig(dict(int_attr=None))
 print(config.int_attr)    # None
 ```
 
-In this example `None` comes from storage and type casting is omitted.
+In this example when `None` comes from storage type casting and validation is omitted.
 
 ### Custom descriptor or property
 
@@ -766,7 +792,7 @@ def get_config_file():
     return CONFIG_FILES[_config.env]
 ```
 
-__get_config_file__ uses environment variables and predefined config files pathes
+__get_config_file__ uses environment variables and predefined config files paths
 to check whether __APP_ENV__ var is set, validate this variable and return appropriate
 config file name.
 Then actual application configuration:
@@ -804,4 +830,28 @@ class AppConfig(Config):
 
 
 config = AppConfig(Env(), Yaml(get_config_file()))
+```
+
+### Fail fast
+
+Very often it is helpful to check app configs existence and validate values before the app does something.
+To achieve this `Config` class runs `check` as the last step in it's `__init__` method.
+`check` recursively gets from storage and verifies all defined config attributes.
+When this behaviour is not desirable for some reason user can set flag `fail_fast` to `False`:
+
+```python
+from pkonfig import Config, DotEnv, ConfigValueNotFoundError
+
+
+class AppConfig(Config):
+    foo: str
+
+
+try:
+    config = AppConfig(DotEnv(".env"))
+except ConfigValueNotFoundError as exc:
+    print(exc)  # config.foo not found
+
+config = AppConfig(DotEnv(".env"), fail_fast=False) # No error raised
+config.foo  # This line actually causes `config.foo not found` exception
 ```
