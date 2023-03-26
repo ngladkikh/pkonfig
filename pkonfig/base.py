@@ -186,10 +186,9 @@ class MetaConfig(ABCMeta):
 
     @staticmethod
     def __get(config: C, parent: C, _=None) -> C:
-        # pylint: disable=protected-access
         if not config.get_storage():
-            config._root_path = (*parent.get_roo_path(), config.get_alias())
-            config._storage = parent.get_storage()
+            config.set_root_path((*parent.get_roo_path(), config.get_alias()))
+            config.set_storage(parent.get_storage())
         return config
 
 
@@ -201,7 +200,7 @@ class BaseStorage(Mapping, ABC):
         ...
 
     def __iter__(self) -> Iterator[Any]:
-        return tuple()
+        return iter(())
 
 
 class Storage(BaseStorage):
@@ -243,8 +242,14 @@ class BaseConfig(metaclass=MetaConfig):
     def get_roo_path(self) -> InternalKey:
         return self._root_path
 
+    def set_root_path(self, path: InternalKey) -> None:
+        self._root_path = path
+
     def get_storage(self) -> InternalStorage:
         return self._storage
+
+    def set_storage(self, storage: InternalStorage) -> None:
+        self._storage = storage
 
     def set_alias(self, alias: str) -> None:
         self._alias = self._alias or alias
