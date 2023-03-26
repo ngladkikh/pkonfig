@@ -4,8 +4,8 @@ from uuid import uuid4
 
 import pytest
 
-from pkonfig.base import ConfigTypeError
 from pkonfig import Storage
+from pkonfig.base import ConfigTypeError
 from pkonfig.config import Config
 from pkonfig.fields import (
     Choice,

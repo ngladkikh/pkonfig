@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
-from pkonfig.base import NOT_SET, Field, ConfigTypeError
+from pkonfig.base import NOT_SET, ConfigTypeError, Field
 
 
 class Bool(Field):

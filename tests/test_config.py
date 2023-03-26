@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from pkonfig import Choice, Config, Env, Int, LogLevel
+from pkonfig.base import ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.storage import DotEnv
-from pkonfig.base import ConfigValueNotFoundError, ConfigTypeError
 
 
 @pytest.fixture(scope="module")

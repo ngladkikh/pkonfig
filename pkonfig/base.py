@@ -1,12 +1,14 @@
 from abc import ABC, ABCMeta, abstractmethod
 from collections import ChainMap
 from inspect import isclass, isdatadescriptor
-from typing import Any, List, MutableMapping
 from typing import (
+    Any,
     Dict,
     Generic,
     Iterator,
+    List,
     Mapping,
+    MutableMapping,
     Optional,
     Reversible,
     Tuple,
