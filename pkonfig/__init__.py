@@ -8,7 +8,7 @@ from pkonfig.base import (
     Storage,
     TypeMapper,
 )
-from pkonfig.config import Config, DefaultMapper
+from pkonfig.config import Config, DefaultMapper, EmbeddedConfig
 from pkonfig.fields import (
     Bool,
     Byte,
