@@ -18,22 +18,12 @@ from typing import (
     get_type_hints,
 )
 
+from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
+
 InternalKey = Tuple[str, ...]
 InternalStorage = MutableMapping[InternalKey, Any]
 NOT_SET = object()
 T = TypeVar("T")
-
-
-class ConfigError(Exception):
-    """Configuration error"""
-
-
-class ConfigValueNotFoundError(ConfigError):
-    """Failed to find value in given storage(s)"""
-
-
-class ConfigTypeError(ConfigError):
-    """Value has wrong type"""
 
 
 class Field(Generic[T]):

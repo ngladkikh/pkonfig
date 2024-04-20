@@ -1,6 +1,6 @@
+from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.base import (
     BaseConfig,
-    ConfigError,
     ConfigTypeError,
     ConfigValueNotFoundError,
     Field,
