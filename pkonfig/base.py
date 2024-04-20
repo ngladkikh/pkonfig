@@ -218,8 +218,7 @@ class BaseStorage(MutableMapping, ABC):
     """Plain config data storage"""
 
     @abstractmethod
-    def __getitem__(self, key: Tuple[str, ...]) -> Any:
-        ...
+    def __getitem__(self, key: Tuple[str, ...]) -> Any: ...
 
     def __iter__(self) -> Iterator[Any]:
         return iter(())
