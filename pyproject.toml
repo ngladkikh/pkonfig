@@ -1,17 +1,10 @@
-[build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=6.2"]   # PEP 508 specifications.
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "pkonfig"
-requires-python = ">=3.6"
+version = "3.0.0"
 description = "Pythonic agile application configuration helpers"
-authors = [
-    {name="Nikita Gladkikh", email="gladkikh.nikita@gmail.com"}
-]
-maintainers = [
-    {name="Nikita Gladkikh", email="gladkikh.nikita@gmail.com"}
-]
+authors = ["Nikita Gladkikh <gladkikh.nikita@gmail.com>"]
+license = "MIT"
+readme = "README.md"
 keywords = [
     "config",
     "configuration",
@@ -27,7 +20,6 @@ keywords = [
     "toml",
     "ini"
 ]
-license = {file = "LICENSE"}
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
@@ -39,6 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
@@ -46,10 +39,34 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed"
 ]
-dependencies = [
-    "typing_extensions;python_version<'3.7'"
-]
-dynamic = ["version", "readme"]
+
+[tool.poetry.urls]
+"homepage" = "https://github.com/ngladkikh/pkonfig"
+"documentation" = "https://github.com/ngladkikh/pkonfig"
+"repository" = "https://github.com/ngladkikh/pkonfig"
+
+[tool.poetry.dependencies]
+python = ">3.9"
+pyyaml = { version = "*", optional = true }
+tomli = { version = "*", python = "<3.11", optional = true }
+
+[tool.poetry.extras]
+yaml = ["pyyaml"]
+toml = ["tomli"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+mypy = "*"
+types-PyYAML = "*"
+pylint = "*"
+isort = "*"
+black = "*"
+pytest-cov = "*"
+pyyaml = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [project.optional-dependencies]
 yaml = ["pyyaml"]
@@ -58,7 +75,6 @@ toml = ["tomli"]
 [tool.setuptools_scm]
 [tool.setuptools.dynamic]
 version = {attr = "setuptools_scm.get_version"}
-readme = {file = ["README.md"]}
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -74,7 +90,57 @@ profile = "black"
 
 [tool.black]
 line-length = 88
-target-version = ["py37", "py38", "py39", "py310", "py311"]
-include-trailing-comma = true
-force-grid-wrap = 0
-use-parentheses = true
+target-version = ["py39", "py310", "py311", "py312"]
+
+[tool.coverage.run]
+include = ["pkonfig/*"]
+omit = [
+    "tests/*",
+    "benchmark/*"
+]
+
+[tool.pylint.MASTER]
+disable = [
+  "C0114",  # missing module docstring
+  "C0115",  # missing class docstring
+  "C0116",  # missing function or method docstring
+]
+
+[tool.pylint."STRING"]
+check-quote-consistency = "no"
+check-str-concat-over-line-jumps = "no"
+
+[tool.pylint."TYPECHECK"]
+contextmanager-decorators = "contextlib.contextmanager"
+ignore-none = "yes"
+ignore-on-opaque-inference = "yes"
+ignored-checks-for-mixins = [
+  "no-member",
+  "not-async-context-manager",
+  "not-context-manager",
+  "attribute-defined-outside-init",
+]
+ignored-classes = [
+  "optparse.Values",
+  "thread._local",
+  "_thread._local",
+  "argparse.Namespace",
+]
+missing-member-hint = "yes"
+missing-member-hint-distance = 1
+missing-member-max-choices = 1
+mixin-class-rgx = ".*[Mm]ixin"
+
+[tool.pylint."VARIABLES"]
+allow-global-unused-variables = "yes"
+callbacks = ["cb_", "_cb"]
+dummy-variables-rgx = "_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)|dummy|^ignored_|^unused_"
+ignored-argument-names = "_.*|^ignored_|^unused_"
+init-import = "no"
+redefining-builtins-modules = [
+  "six.moves",
+  "past.builtins",
+  "future.builtins",
+  "builtins",
+  "io",
+]
