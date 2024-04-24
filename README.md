@@ -73,7 +73,7 @@ Create __config__ module __config.py__:
 
 ```python
 from pkonfig import Config, Env, LogLevel, Choice, Storage
-from storage import DotEnv
+from pkonfig import DotEnv
 
 
 class PG(Config):
@@ -182,8 +182,7 @@ In the same manner as environment variables DotEnv files could be used.
 When file not found and `missing_ok` is set `DotEnv` contains empty dictionary.
 
 ```python
-
-from storage import DotEnv
+from pkonfig import DotEnv
 
 config_source = DotEnv("test.env", delimiter="_", prefix="APP", missing_ok=True)
 ```
@@ -194,8 +193,7 @@ __INI__ files are quite common and class `Ini`
 is build on top of [`configparser.ConfigParser`](https://docs.python.org/3/library/configparser.html):
 
 ```python
-
-from storage import Ini
+from pkonfig import Ini
 
 storage = Ini("config.ini", missing_ok=False)
 print(storage[("bitbucket.org", "User")])  # hg
@@ -220,8 +218,7 @@ Most of `ConfigParser` arguments are also accepted to modify parser behaviour.
 `Json` class uses `json.load` to read given JSON file and respects `missing_ok` argument:
 
 ```python
-
-from storage import Json
+from pkonfig import Json
 
 storage = Json("config.json", missing_ok=False)
 ```
@@ -254,8 +251,8 @@ So it is easy to implement custom or combine existing implementations.
 Recommended way to combine multiple sources of configs is `ChainMap`:
 
 ```python
-from pkonfig import Env, Yaml, Storage
-from storage import DotEnv
+from pkonfig import Env, Yaml, Storage, DotEnv
+
 
 config_source = Storage(
   DotEnv("test.env", missing_ok=True),
@@ -350,8 +347,7 @@ Grouping might be useful when there are lots of config parameters.
 To achieve this `Config` class should be inherited like:
 
 ```python
-from pkonfig import Config
-from storage import DotEnv
+from pkonfig import Config, DotEnv
 
 
 class PgConfig(Config):
@@ -395,8 +391,7 @@ name is used or alias when it is set.
 __config.py__:
 
 ```python
-from pkonfig import Config, Int, Str
-from storage import DotEnv
+from pkonfig import Config, Int, Str, DotEnv
 
 
 class HostConfig(Config):
