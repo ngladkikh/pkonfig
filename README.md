@@ -72,7 +72,8 @@ environment and DotEnv files are used for local development.
 Create __config__ module __config.py__:
 
 ```python
-from pkonfig import Config, Env, LogLevel, Choice, Storage
+from pkonfig import Config, LogLevel, Choice, Storage
+from pkonfig.storage import Env
 from pkonfig import DotEnv
 
 
@@ -145,8 +146,7 @@ PKonfig respects this convention so that `Env` has two optional arguments:
 
 ```python
 from os import environ
-from pkonfig import Env
-
+from pkonfig.storage import Env
 
 environ["APP_OUTER"] = "foo"
 environ["APP_INNER_KEY"] = "baz"
@@ -154,9 +154,9 @@ environ["NOPE"] = "qwe"
 
 source = Env(delimiter="_", prefix="APP")
 
-print(source[("outer",)])          # foo
-print(source[("inner", "key")])    # baz
-print(source[("nope",)])           # raises KeyError
+print(source[("outer",)])  # foo
+print(source[("inner", "key")])  # baz
+print(source[("nope",)])  # raises KeyError
 ```
 
 `Env` ignores key cases and ignores all keys starting not from __prefix__.
@@ -193,7 +193,8 @@ __INI__ files are quite common and class `Ini`
 is build on top of [`configparser.ConfigParser`](https://docs.python.org/3/library/configparser.html):
 
 ```python
-from pkonfig import Ini
+
+from pkonfig.storage import Ini
 
 storage = Ini("config.ini", missing_ok=False)
 print(storage[("bitbucket.org", "User")])  # hg
@@ -218,7 +219,8 @@ Most of `ConfigParser` arguments are also accepted to modify parser behaviour.
 `Json` class uses `json.load` to read given JSON file and respects `missing_ok` argument:
 
 ```python
-from pkonfig import Json
+
+from pkonfig.storage import Json
 
 storage = Json("config.json", missing_ok=False)
 ```

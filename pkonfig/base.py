@@ -1,17 +1,14 @@
 from abc import ABC, ABCMeta, abstractmethod
 from collections import ChainMap
+from collections.abc import Mapping
 from inspect import isclass, isdatadescriptor
 from typing import (
     Any,
     Dict,
     Generic,
-    Iterator,
     List,
-    Mapping,
-    MutableMapping,
     Optional,
     Reversible,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -19,9 +16,8 @@ from typing import (
 )
 
 from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
+from pkonfig.storage.base import BaseStorage, DictStorage, InternalKey
 
-InternalKey = Tuple[str, ...]
-InternalStorage = MutableMapping[InternalKey, Any]
 NOT_SET = object()
 T = TypeVar("T")
 
@@ -41,7 +37,7 @@ class Field(Generic[T]):
         self.nullable = default is None or nullable
         self.no_cache = no_cache
         self.path: Optional[InternalKey] = None
-        self._cache: InternalStorage = {}
+        self._cache: dict[InternalKey, Any] = {}
 
     def __set_name__(self, _, name: str) -> None:
         self.alias = self.alias or name
@@ -204,42 +200,6 @@ class MetaConfig(ABCMeta):
         return config
 
 
-class BaseStorage(MutableMapping, ABC):
-    """Plain config data storage"""
-
-    @abstractmethod
-    def __getitem__(self, key: Tuple[str, ...]) -> Any: ...
-
-    def __iter__(self) -> Iterator[Any]:
-        return iter(())
-
-    def __setitem__(self, __k: Any, __v: Any) -> None:
-        pass
-
-    def __delitem__(self, __v: Any) -> None:
-        pass
-
-
-class Storage(BaseStorage):
-    def __init__(
-        self,
-        *multilevel_mappings: Mapping,
-    ) -> None:
-        self._multilevel_mappings = multilevel_mappings
-
-    def __getitem__(self, key: Tuple[str, ...]) -> Any:
-        for mapping in self._multilevel_mappings:
-            for partial_key in key[:-1]:
-                if partial_key in mapping:
-                    mapping = mapping[partial_key]
-            if key[-1] in mapping:
-                return mapping[key[-1]]
-        raise KeyError(key)
-
-    def __len__(self) -> int:
-        return len(self._multilevel_mappings)
-
-
 class BaseConfig(metaclass=MetaConfig):
     _inner_configs: List["BaseConfig"]
     _field_names: List[str]
@@ -256,9 +216,11 @@ class BaseConfig(metaclass=MetaConfig):
         for s in storages:
             if isinstance(s, BaseStorage):
                 internal_storages.append(s)
+            elif isinstance(s, Mapping):
+                internal_storages.append(DictStorage(**s))
             else:
-                internal_storages.append(Storage(s))
-        self._storage = ChainMap(*internal_storages)
+                raise TypeError(f"Unsupported storage type: {type(s)}")
+        self._storage = ChainMap(*internal_storages)    # type:ignore
         self._alias = alias
         self._root_path: InternalKey = (alias,) if alias else tuple()
         if fail_fast:

@@ -1,44 +1,95 @@
-import os
-from typing import Any, Optional, Tuple
+from abc import ABC, abstractmethod
+from collections.abc import Mapping
+from pathlib import Path
+from typing import IO, Any, Tuple, Union
 
-from pkonfig.base import BaseStorage, InternalKey, Storage
-
+InternalKey = Tuple[str, ...]
 DEFAULT_PREFIX = "APP"
 DEFAULT_DELIMITER = "_"
 
 
-class EnvMixin:
-    # pylint: disable=too-few-public-methods
+class BaseStorage(ABC):
+    """Plain config data storage"""
+
+    def __init__(self) -> None:
+        self._actual_storage: dict[InternalKey, Any] = {}
+
+    def __getitem__(self, key: InternalKey) -> Any:
+        return self._actual_storage[key]
+
+
+class FlattenedStorageMixin(ABC):
+    _actual_storage: dict[InternalKey, Any]
+
+    def flatten(
+        self, multilevel_storage: Mapping[str, Any], path_key: InternalKey
+    ) -> None:
+        for key, value in multilevel_storage.items():
+            current_path = self._build_path_key(path_key, key)
+            if isinstance(value, Mapping):
+                self.flatten(value, current_path)
+            else:
+                self._actual_storage[current_path] = value
+
+    @staticmethod
+    def _build_path_key(
+        path_key: InternalKey, key: Union[str, Tuple[str, ...]]
+    ) -> InternalKey:
+        if isinstance(key, tuple):
+            return *path_key, *key
+        return *path_key, key
+
+
+class FileStorage(BaseStorage, FlattenedStorageMixin, ABC):
+    mode = "r"
 
     def __init__(
-        self, delimiter=DEFAULT_DELIMITER, prefix=Optional[DEFAULT_PREFIX]
+        self,
+        file: Union[Path, str],
+        missing_ok: bool = False,
+        **defaults,
     ) -> None:
-        self.prefix = prefix
+        super().__init__()
+        self.file = file if isinstance(file, Path) else Path(file)
+        self.missing_ok = missing_ok
+        self.flatten(defaults, tuple())
+        self.load()
+
+    def load(self) -> None:
+        if self.file.exists() and self.file.is_file():
+            self.flatten(self._load(), tuple())
+        else:
+            if not self.missing_ok:
+                raise FileNotFoundError()
+
+    def _load(self) -> Mapping[str, Any]:
+        with open(self.file, self.mode) as fh:  # pylint: disable=unspecified-encoding
+            return self.load_file_content(fh)
+
+    @abstractmethod
+    def load_file_content(self, handler: IO) -> Mapping[str, Any]:
+        pass
+
+
+class DictStorage(BaseStorage, FlattenedStorageMixin):
+
+    def __init__(self, **defaults) -> None:
+        super().__init__()
+        self.flatten(defaults, tuple())
+
+    def __getitem__(self, key: InternalKey) -> Any:
+        return self._actual_storage[key]
+
+
+class EnvKeyConverter:
+
+    def __init__(
+        self, delimiter: str = DEFAULT_DELIMITER, prefix: str = DEFAULT_PREFIX
+    ) -> None:
         self.delimiter = delimiter
+        self.prefix = prefix
 
     def to_key(self, internal_key: InternalKey) -> str:
         if self.prefix:
             return self.delimiter.join((self.prefix, *internal_key))
         return self.delimiter.join(internal_key)
-
-
-class Env(BaseStorage, EnvMixin):
-    def __init__(
-        self, delimiter=DEFAULT_DELIMITER, prefix=DEFAULT_PREFIX, **defaults
-    ) -> None:
-        super().__init__(delimiter=delimiter, prefix=prefix)
-        self.default = Storage(defaults)
-
-    def __getitem__(self, key: Tuple[str, ...]) -> Any:
-        str_key = self.to_key(key)
-        upper_str_key = str_key.upper()
-        if upper_str_key in os.environ:
-            return os.environ[upper_str_key]
-
-        if str_key in os.environ:
-            return os.environ[str_key]
-
-        return self.default[key]
-
-    def __len__(self) -> int:
-        return len(os.environ)

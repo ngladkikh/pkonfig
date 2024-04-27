@@ -1,13 +1,15 @@
+from collections import ChainMap
+
 import pytest
 
-from pkonfig import Storage
+from pkonfig import DictStorage
 
 
 def test_multilevel():
-    first = {"foo": "baz"}
-    second = {"foo": "biz", "inner": {"fiz": "buzz"}}
-    third = {"foo": "buz", "inner": {"some": "other"}}
-    storage = Storage(first, second, third)
+    first = DictStorage(**{"foo": "baz"})
+    second = DictStorage(**{"foo": "biz", "inner": {"fiz": "buzz"}})
+    third = DictStorage(**{"foo": "buz", "inner": {"some": "other"}})
+    storage = ChainMap(first, second, third)
 
     assert storage[("foo",)] == "baz"
     assert storage[("inner", "fiz")] == "buzz"

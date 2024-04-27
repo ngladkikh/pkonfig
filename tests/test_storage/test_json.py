@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pkonfig import Json
+from pkonfig.storage import Json
 
 
 def test_json_storage(json_configs, file):

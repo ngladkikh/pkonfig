@@ -1,6 +1,8 @@
+from pathlib import Path
+
 import pytest
 
-from pkonfig import Ini
+from pkonfig.storage import Ini
 
 
 @pytest.fixture
@@ -8,7 +10,7 @@ def ini_file():
     return "tests/test_storage/test.ini"
 
 
-def test_ini_storage(ini_file):
+def test_ini_storage(ini_file: Path):
     storage = Ini(ini_file)
     assert storage[("bitbucket.org", "user")] == "hg"
     assert storage[("bitbucket.org", "serveraliveinterval")] == "45"
