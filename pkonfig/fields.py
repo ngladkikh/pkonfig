@@ -108,12 +108,12 @@ class Str(Field[str]):
         return str(value)
 
 
-class Byte(Field):
+class Byte(Field[bytes]):
     def cast(self, value) -> bytes:
         return bytes(value)
 
 
-class ByteArray(Field):
+class ByteArray(Field[bytearray]):
     def cast(self, value) -> bytearray:
         return bytearray(value)
 
@@ -208,7 +208,7 @@ class Choice(Field[T], Generic[T]):
             raise ConfigTypeError(f"'{value}' is not in {self.choices}")
 
 
-class DebugFlag(Field):
+class DebugFlag(Field[bool]):
     def cast(self, value: str) -> bool:
         if isinstance(value, bool):
             return value
