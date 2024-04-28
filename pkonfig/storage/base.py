@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import IO, Any, Tuple, Union
+from typing import IO, Any, Tuple, Union, Iterator
 
 InternalKey = Tuple[str, ...]
 DEFAULT_PREFIX = "APP"
@@ -16,6 +16,9 @@ class BaseStorage(ABC):
 
     def __getitem__(self, key: InternalKey) -> Any:
         return self._actual_storage[key]
+
+    def __iter__(self) -> Iterator[InternalKey]:
+        return iter(self._actual_storage)
 
 
 class FlattenedStorageMixin(ABC):

@@ -18,7 +18,7 @@ from typing import (
 from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.storage.base import BaseStorage, DictStorage, InternalKey
 
-NOT_SET = object()
+NOT_SET = "NOT_SET"
 T = TypeVar("T")
 
 
@@ -29,50 +29,43 @@ class Field(Generic[T]):
         self,
         default=NOT_SET,
         alias: str = "",
-        nullable=False,
+        nullable: bool = False,
         no_cache: bool = False,
     ):
         self.default: Union[T, object] = default
-        self.alias = alias
+        self.alias: str = alias
         self.nullable = default is None or nullable
         self.no_cache = no_cache
-        self.path: Optional[InternalKey] = None
-        self._cache: dict[InternalKey, Any] = {}
+        self._cache: T = NOT_SET    # type:ignore
 
-    def __set_name__(self, _, name: str) -> None:
+    def __set_name__(self, _: Type["BaseConfig"], name: str) -> None:
         self.alias = self.alias or name
 
     def __set__(self, instance: "BaseConfig", value) -> None:
         value = self._cast(value)
         self._validate(value)
-        path = self.get_path(instance)
-        self._cache[path] = value
+        self._cache = value
 
-    def __get__(self, instance: "BaseConfig", _=None) -> Union[T, object]:
-        path = self.get_path(instance)
-        value = NOT_SET if self.no_cache else self._cache.get(path, NOT_SET)
-        if value is NOT_SET:
-            value = self.get_from_storage(instance)
-            if value is not None:
-                value = self._cast(value)
-                self._validate(value)
-            else:
-                if not self.nullable:
-                    raise ConfigTypeError(f"{self.path} value is None")
-            self._cache[path] = value
+    def __get__(self, instance: "BaseConfig", _=None) -> T:
+        if self._cache is NOT_SET:
+            self._cache = self.get_from_storage(instance)
+        return self._cache
+
+    def get_from_storage(self, instance: "BaseConfig") -> T:
+        value = self._get_from_storage(instance)
+        if value is not None:
+            value = self._cast(value)
+            self._validate(value)
         return value
 
-    def get_path(self, instance: "BaseConfig") -> InternalKey:
-        return tuple(instance.get_roo_path() + (self.alias,))
-
-    def get_from_storage(self, instance: "BaseConfig") -> Any:
+    def _get_from_storage(self, instance: "BaseConfig") -> Any:
         storage = instance.get_storage()
-        path = self.get_path(instance)
+        path = (*instance.get_roo_path(), self.alias)
         if path in storage:
             return storage[path]
-        if self.default is not NOT_SET:
-            return self.default
-        raise ConfigValueNotFoundError({".".join(path)})
+        if self.default is NOT_SET:
+            raise ConfigValueNotFoundError({".".join(path)})
+        return self.default
 
     def _cast(self, value: Any) -> T:
         try:

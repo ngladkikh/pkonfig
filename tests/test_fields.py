@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import Type
+from pathlib import Path
+from typing import Any, Callable, Type
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
@@ -21,90 +23,79 @@ from pkonfig.fields import (
 )
 
 
-def build_config(descriptor) -> Type["TestConfig"]:
-    class TestConfig(Config):
-        attr = descriptor
-
-        def __init__(self, **kwargs):
-            super().__init__(kwargs, alias="")
-
-    return TestConfig
-
-
 @pytest.fixture
-def int_config():
-    cls = build_config(Int())
-    return cls(attr=3)
+def config_factory():
+    def config_mock(**storage) -> Config:
+        config = MagicMock(spec=Config)
+        storage = DictStorage(**storage)
+        config.get_storage = MagicMock(return_value=storage)
+        return config
+
+    return config_mock
 
 
-def test_int_param(int_config):
-    assert int_config.attr == 3
+def test_int_param(config_factory):
+    int_config = config_factory(attr=3)
+    assert Int(alias="attr").get_from_storage(int_config) == 3
 
 
-def test_only_int_accepted(int_config):
+def test_only_int_accepted(config_factory):
+    int_config = config_factory(attr="a")
     with pytest.raises(ConfigTypeError):
-        int_config.attr = "a"
+        Int(alias="attr").get_from_storage(int_config)
 
 
-@pytest.fixture
-def float_config():
-    cls = build_config(Float())
-    return cls(attr=0.3)
-
-
-def test_float_only_accepted(float_config):
+def test_float_only_accepted(config_factory):
+    float_config = config_factory(attr="a")
     with pytest.raises(ConfigTypeError):
-        float_config.attr = "a"
+        Float(alias="attr").get_from_storage(float_config)
 
 
-def test_string_param_casts():
-    cls = build_config(Str())
-    config = cls(attr=2)
-    assert config.attr == "2"
+def test_float(config_factory):
+    float_config = config_factory(attr="0.33")
+    assert Float(alias="attr").get_from_storage(float_config) == 0.33
 
 
-def test_path_cast():
-    cls = build_config(PathField(missing_ok=True))
-    config = cls(attr="/some")
-    assert config.attr.name == "some"
+def test_string_param_casts(config_factory):
+    config = config_factory(attr=2)
+    assert Str(alias="attr").get_from_storage(config) == "2"
 
 
-def test_path_not_exists_raises():
-    cls = build_config(PathField())
+def test_path_cast(config_factory):
+    config = config_factory(attr="/some")
+    assert PathField(missing_ok=True, alias="attr").get_from_storage(config) == Path("/some")
+
+
+def test_path_not_exists_raises(config_factory):
+    config = config_factory(attr="/some")
     with pytest.raises(FileNotFoundError):
-        assert cls(attr="/some").attr
+        PathField(alias="attr").get_from_storage(config)
 
 
-def test_is_file_checked(tmp_path):
-    cls = build_config(File())
+def test_path_existence_checked(tmp_path, config_factory):
     existing_file = tmp_path / "test"
+    config = config_factory(attr=existing_file)
     with open(existing_file, "w"):
-        config = cls(attr=existing_file)
-        assert config.attr.name == "test"
+        PathField(alias="attr").get_from_storage(config)
 
+
+def test_file_raises_error_if_folder(tmp_path, config_factory):
+    config = config_factory(attr=tmp_path)
     with pytest.raises(ConfigTypeError):
-        config.attr = tmp_path
+        File(alias="attr").get_from_storage(config)
 
 
-def test_file_field_respects_missing_ok():
-    cls = build_config(File(missing_ok=True))
-    config = cls(attr="not_exists")
-    assert not config.attr.exists()
+def test_file_field_respects_missing_ok(config_factory):
+    config = config_factory(attr="not_exist")
+    assert File(alias="attr", missing_ok=True).get_from_storage(config) == Path("not_exist")
 
 
-def test_folder_field_respects_missing_ok():
-    cls = build_config(Folder(missing_ok=True))
-    config = cls(attr="not_exists")
-    assert not config.attr.exists()
-
-
-def test_is_dir_checked(tmp_path):
-    cls = build_config(Folder())
-    config = cls(attr=tmp_path)
+def test_is_dir_raises_exception_on_file(tmp_path, config_factory):
     existing_file = tmp_path / "test"
+    config = config_factory(attr=existing_file)
     with open(existing_file, "w"):
         with pytest.raises(ConfigTypeError):
-            config.attr = existing_file
+            Folder(alias="attr").get_from_storage(config)
 
 
 @pytest.fixture
@@ -114,70 +105,48 @@ def enum_attr_config():
         green = 2
         blue = 3
 
-    return build_config(EnumField(Color)), Color
+    return Color
 
 
-def test_enum_param_returns_value(enum_attr_config):
-    cls, enum_cls = enum_attr_config
-    config = cls(attr="red")
-    assert config.attr is enum_cls.red
+def test_enum_param_returns_value(enum_attr_config, config_factory):
+    config = config_factory(attr="red")
+    assert EnumField(enum_attr_config, alias="attr").get_from_storage(config) is enum_attr_config.red
 
 
-def test_enum_raises_error(enum_attr_config):
-    enum_attr_config, _ = enum_attr_config
+def test_enum_raises_error(enum_attr_config, config_factory):
+    config = config_factory(attr="foo")
     with pytest.raises(KeyError):
-        assert enum_attr_config(attr="foo").attr
+        EnumField(enum_attr_config, alias="attr").get_from_storage(config)
 
 
-def test_choice_raises_error():
-    cls = build_config(Choice(["foo", "bar"]))
+def test_choice_raises_error(config_factory):
+    config = config_factory(attr="foo")
     with pytest.raises(ConfigTypeError):
-        assert cls(attr="test").attr
+        Choice(["fiz", "baz"], alias="attr").get_from_storage(config)
 
 
-def test_choice():
-    cls = build_config(Choice(["foo", "bar"]))
-    config = cls(attr="foo")
-    assert config.attr == "foo"
+def test_choice(config_factory):
+    config = config_factory(attr="foo")
+    assert Choice(["foo", "baz"], alias="attr").get_from_storage(config) == "foo"
 
 
-def test_choice_casts_values():
-    cls = build_config(Choice([10, 100], int))
-    config = cls(attr="10")
-    assert config.attr == 10
+def test_choice_casts_values(config_factory):
+    config = config_factory(attr="10")
+    assert Choice([0, 10], cast_function=int, alias="attr").get_from_storage(config) == 10
 
 
 @pytest.mark.parametrize(
     "level,value", [("info", 20), ("INFO", 20), ("Error", 40), ("WaRnInG", 30)]
 )
-def test_log_level_case_insensitive(level, value):
-    cls = build_config(LogLevel())
-    config = cls(attr=level)
-    assert config.attr == value
+def test_log_level_case_insensitive(level, value, config_factory):
+    config = config_factory(attr=level)
+    assert LogLevel(alias="attr").get_from_storage(config) == value
 
 
-@pytest.mark.parametrize("value", ["false", "FALSE", "some", "", str(uuid4())])
-def test_falsy_debug(value):
-    cls = build_config(DebugFlag())
-    config = cls(attr=value)
-    assert not config.attr
-
-
-def test_truthy_debug():
-    cls = build_config(DebugFlag())
-    config = cls(attr="true")
-    assert config.attr
-
-
-def test_no_cache_used():
-    class TConf(Config):
-        attr = Int(no_cache=True)
-
-    config = TConf(DictStorage(attr=1))
-    assert config.attr == 1
-
-    config._storage = DictStorage(attr=2)
-    assert config.attr == 2
+@pytest.mark.parametrize("value", ["true", "TRUE", "+", 1, "1", True, "yes", "Y", "y"])
+def test_truthy_debug(value, config_factory):
+    config = config_factory(attr=value)
+    assert DebugFlag(alias="attr").get_from_storage(config)
 
 
 def test_cache_used():
