@@ -154,15 +154,6 @@ def test_nullable_field_allowed_to_be_null():
     assert config.attr is None
 
 
-def test_non_nullable_field_raises_exception_on_null():
-    class TConfig(Config):
-        attr = Int()
-
-    with pytest.raises(ConfigTypeError):
-        c = TConfig({"attr": None})
-        assert c.attr
-
-
 def test_not_annotated_default():
     class TestConfig(Config):
         s = "some value"

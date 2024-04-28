@@ -51,11 +51,10 @@ class PathField(Field):
         default=NOT_SET,
         alias: str = "",
         nullable: bool = False,
-        no_cache: bool = False,
         missing_ok: bool = False,
     ):
         self.missing_ok = missing_ok
-        super().__init__(default, alias, nullable, no_cache)
+        super().__init__(default, alias, nullable)
 
     def cast(self, value) -> Path:
         return Path(value)
@@ -86,10 +85,9 @@ class EnumField(Field):
         default=NOT_SET,
         alias: str = "",
         nullable: bool = False,
-        no_cache: bool = False,
     ):
         self.enum_cls = enum_cls
-        super().__init__(default, alias, nullable, no_cache)
+        super().__init__(default, alias, nullable)
 
     def cast(self, value: str) -> Enum:
         return self.enum_cls[value]
@@ -119,11 +117,10 @@ class Choice(Field, Generic[T]):
         default=NOT_SET,
         alias: str = "",
         nullable: bool = False,
-        no_cache: bool = False,
     ):
         self.choices = choices
         self.cast_function = cast_function
-        super().__init__(default, alias, nullable, no_cache)
+        super().__init__(default, alias, nullable)
 
     def cast(self, value: T) -> T:
         if self.cast_function is not None:

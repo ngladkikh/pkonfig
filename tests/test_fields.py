@@ -1,8 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Type
 from unittest.mock import MagicMock
-from uuid import uuid4
 
 import pytest
 
@@ -32,6 +30,12 @@ def config_factory():
         return config
 
     return config_mock
+
+
+def test_not_nullable_raises_exception_on_null(config_factory):
+    config = config_factory(attr=None)
+    with pytest.raises(ConfigTypeError):
+        Str(alias="attr", nullable=False).get_from_storage(config)
 
 
 def test_int_param(config_factory):
@@ -151,7 +155,7 @@ def test_truthy_debug(value, config_factory):
 
 def test_cache_used():
     class TConf(Config):
-        attr = Int(no_cache=False)
+        attr = Int()
 
     config = TConf(DictStorage(attr=1))
     assert config.attr == 1

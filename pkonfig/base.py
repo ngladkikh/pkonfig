@@ -30,13 +30,16 @@ class Field(Generic[T]):
         default=NOT_SET,
         alias: str = "",
         nullable: bool = False,
-        no_cache: bool = False,
     ):
         self.default: Union[T, object] = default
         self.alias: str = alias
         self.nullable = default is None or nullable
-        self.no_cache = no_cache
         self._cache: T = NOT_SET    # type:ignore
+        self._path: InternalKey = tuple()
+
+    @property
+    def error_name(self) -> str:
+        return ".".join(self._path)
 
     def __set_name__(self, _: Type["BaseConfig"], name: str) -> None:
         self.alias = self.alias or name
@@ -53,6 +56,8 @@ class Field(Generic[T]):
 
     def get_from_storage(self, instance: "BaseConfig") -> T:
         value = self._get_from_storage(instance)
+        if value is None and not self.nullable:
+            raise ConfigTypeError(f"Field {self.error_name} is not nullable")
         if value is not None:
             value = self._cast(value)
             self._validate(value)
@@ -60,18 +65,18 @@ class Field(Generic[T]):
 
     def _get_from_storage(self, instance: "BaseConfig") -> Any:
         storage = instance.get_storage()
-        path = (*instance.get_roo_path(), self.alias)
-        if path in storage:
-            return storage[path]
+        self._path = (*instance.get_roo_path(), self.alias)
+        if self._path in storage:
+            return storage[self._path]
         if self.default is NOT_SET:
-            raise ConfigValueNotFoundError({".".join(path)})
+            raise ConfigValueNotFoundError(self.error_name)
         return self.default
 
     def _cast(self, value: Any) -> T:
         try:
             return self.cast(value)
         except (ValueError, TypeError) as exc:
-            raise ConfigTypeError(f"{value} casting error") from exc
+            raise ConfigTypeError(f"{self.error_name} failed to cast {value}") from exc
 
     @abstractmethod
     def cast(self, value: Any) -> T:
@@ -81,7 +86,7 @@ class Field(Generic[T]):
         try:
             return self.validate(value)
         except TypeError as exc:
-            raise ConfigTypeError(f"{value} validation error") from exc
+            raise ConfigTypeError(f"{self.error_name}: {value} invalid") from exc
 
     def validate(self, value: Any) -> None:
         pass
