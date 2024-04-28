@@ -2,9 +2,6 @@ from collections import ChainMap
 from inspect import isdatadescriptor
 from typing import Any, Generator, Tuple
 
-# from pkonfig.base import MetaConfig
-# from typing_extensions import Self
-
 from pkonfig.storage.base import BaseStorage, InternalKey
 
 
