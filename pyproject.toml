@@ -102,10 +102,11 @@ omit = [
 
 [tool.pylint.MASTER]
 disable = [
-    "C0114",  # missing module docstring
-    "C0115",  # missing class docstring
-    "C0116",  # missing function or method docstring
-    "too-few-public-methods"
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "too-few-public-methods",
+    "too-many-arguments"
 ]
 
 [tool.pylint."STRING"]
