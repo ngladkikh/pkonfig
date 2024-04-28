@@ -1,78 +1,65 @@
-import tempfile
-from pathlib import Path
-
 import pytest
 
-from pkonfig import Choice, Config, Env, Int, LogLevel
-from pkonfig.base import ConfigTypeError, ConfigValueNotFoundError
-from pkonfig.storage import DotEnv
+from pkonfig import DictStorage, Int, Config, ConfigTypeError, ConfigValueNotFoundError, Str
 
 
-@pytest.fixture(scope="module")
-def tmp_path():
-    with tempfile.TemporaryDirectory() as dir:
-        yield Path(dir)
+class Inner(Config):
+    foo = Str("baz", nullable=False)
+    fiz = Int(123, nullable=False)
+    required = Int()
 
 
-@pytest.fixture(scope="module")
-def dot_env_storage(tmp_path):
-    file = tmp_path / ".env"
-    with open(file, "w") as fh:
-        lines = [
-            "APP__LOG_LEVEL= debug",
-            "APP__DB1__HOST=10.10.10.10",
-            "APP__DB1__USER = user",
-            "APP__DB1__PASSWORD = securedPass",
-            "APP__ENV =local",
-        ]
-        fh.write("\n".join(lines))
-    return DotEnv(file, delimiter="__")
+class AppConfig(Config):
+    inner_1: Inner = Inner()
+    inner_2 = Inner()
+    foo = Int()
 
 
 @pytest.fixture
-def env_storage(monkeypatch):
-    monkeypatch.setenv("APP__LOG_LEVEL", "warning")
-    monkeypatch.setenv("APP__DB2__HOST", "1.1.1.1")
-    monkeypatch.setenv("APP__DB2__USER", "admin")
-    monkeypatch.setenv("APP__DB2__PASSWORD", "secret")
-    monkeypatch.setenv("APP__DB2__PORT", "54321")
-    return Env(delimiter="__")
+def storage():
+    return DictStorage(
+        foo=0,
+        inner_1={"required": 1234, "foo": "biz"},
+        inner_2={"required": 4321, "fiz": 321},
+    )
 
 
 @pytest.fixture
-def config_cls():
-    class PG(Config):
-        host = "localhost"
-        port = 5432
-        user = "postgres"
-        password = "postgres"
-
-    class AppConfig(Config):
-        db1 = PG()
-        db2 = PG()
-        log_level = LogLevel("INFO")
-        env = Choice(["local", "prod", "test"], default="prod")
-
-    return AppConfig
+def config(storage):
+    return AppConfig(storage)
 
 
-@pytest.fixture
-def app_config(config_cls, dot_env_storage, env_storage):
-    config = config_cls(dot_env_storage, env_storage)
-    return config
+def test_app_config_fails_on_root_level_attr_missing():
+    with pytest.raises(ConfigValueNotFoundError):
+        AppConfig(
+            DictStorage(
+                inner_1={"required": 1234, "foo": "biz"},
+                inner_2={"required": 4321, "fiz": 321},
+            )
+        )
 
 
-def test_first_storage_values_used_first(app_config):
-    assert app_config.log_level == 10
+def test_app_config_fails_on_inner_level_attr_missing():
+    with pytest.raises(ConfigValueNotFoundError):
+        AppConfig(
+            DictStorage(
+                foo=0,
+                inner_1={},
+                inner_2={"required": 4321, "fiz": 321},
+            )
+        )
 
 
-def test_value_from_second_storage_taken_when_not_set_before(app_config):
-    assert app_config.db2.user == "admin"
-    assert app_config.db2.password == "secret"
-    assert app_config.db2.port == 54321
+def test_root_level_attributes(config):
+    assert config.foo == 0
 
 
-def test_default_value_used_when_not_set(app_config):
+def test_value_from_second_level_attribute(config: AppConfig):
+    assert config.inner_1 == 1234
+    assert config.inner_2.required == 4321
+
+
+def test_default_value_used_when_not_set(config):
     assert app_config.db1.port == 5432
 
 

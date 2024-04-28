@@ -1,33 +1,109 @@
 import logging
+from abc import abstractmethod
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar, Union
 
-from pkonfig.base import NOT_SET, ConfigTypeError, Field
+from pkonfig.config import Config
+from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
+from pkonfig.storage.base import InternalKey
+
+NOT_SET = "NOT_SET"
+T = TypeVar("T")
 
 
-class Bool(Field):
+class Field(Generic[T]):
+    """Base config attribute descriptor"""
+
+    def __init__(
+        self,
+        default=NOT_SET,
+        alias: str = "",
+        nullable: bool = False,
+    ):
+        self.default: Union[T, object] = default
+        self.alias: str = alias
+        self.nullable = default is None or nullable
+        self._cache: T = NOT_SET    # type:ignore
+        self._path: InternalKey = tuple()
+
+    @property
+    def error_name(self) -> str:
+        return ".".join(self._path)
+
+    def __set_name__(self, _: Type[Config], name: str) -> None:
+        self.alias = self.alias or name
+
+    def __set__(self, instance: Config, value) -> None:
+        value = self._cast(value)
+        self._validate(value)
+        self._cache = value
+
+    def __get__(self, instance: Config, _=None) -> T:
+        if self._cache is NOT_SET:
+            self._cache = self.get_from_storage(instance)
+        return self._cache
+
+    def get_from_storage(self, instance: Config) -> T:
+        value = self._get_from_storage(instance)
+        if value is None and not self.nullable:
+            raise ConfigTypeError(f"Field {self.error_name} is not nullable")
+        if value is not None:
+            value = self._cast(value)
+            self._validate(value)
+        return value
+
+    def _get_from_storage(self, instance: Config) -> Any:
+        storage = instance.get_storage()
+        self._path = (*instance.get_roo_path(), self.alias)
+        if self._path in storage:
+            return storage[self._path]
+        if self.default is NOT_SET:
+            raise ConfigValueNotFoundError(self.error_name)
+        return self.default
+
+    def _cast(self, value: Any) -> T:
+        try:
+            return self.cast(value)
+        except (ValueError, TypeError) as exc:
+            raise ConfigTypeError(f"{self.error_name} failed to cast {value}") from exc
+
+    @abstractmethod
+    def cast(self, value: Any) -> T:
+        pass
+
+    def _validate(self, value: Any) -> None:
+        try:
+            return self.validate(value)
+        except TypeError as exc:
+            raise ConfigTypeError(f"{self.error_name}: {value} invalid") from exc
+
+    def validate(self, value: Any) -> None:
+        pass
+
+
+class Bool(Field[bool]):
     def cast(self, value) -> bool:
         return bool(value)
 
 
-class Int(Field):
+class Int(Field[int]):
     def cast(self, value) -> int:
         return int(value)
 
 
-class Float(Field):
+class Float(Field[float]):
     def cast(self, value) -> float:
         return float(value)
 
 
-class DecimalField(Field):
+class DecimalField(Field[Decimal]):
     def cast(self, value) -> Decimal:
         return Decimal(float(value))
 
 
-class Str(Field):
+class Str(Field[str]):
     def cast(self, value) -> str:
         return str(value)
 
@@ -42,7 +118,7 @@ class ByteArray(Field):
         return bytearray(value)
 
 
-class PathField(Field):
+class PathField(Field[Path]):
     value: Path
     missing_ok: bool
 
@@ -78,10 +154,13 @@ class Folder(PathField):
         raise TypeError(f"{value.absolute()} is not a directory")
 
 
-class EnumField(Field):
+EnumT = TypeVar("EnumT", bound=Enum)
+
+
+class EnumField(Field[EnumT], Generic[EnumT]):
     def __init__(
         self,
-        enum_cls: Type[Enum],
+        enum_cls: Type[EnumT],
         default=NOT_SET,
         alias: str = "",
         nullable: bool = False,
@@ -89,7 +168,7 @@ class EnumField(Field):
         self.enum_cls = enum_cls
         super().__init__(default, alias, nullable)
 
-    def cast(self, value: str) -> Enum:
+    def cast(self, value: str) -> EnumT:
         return self.enum_cls[value]
 
 
@@ -106,10 +185,7 @@ class LogLevel(Field):
         return self.Levels[value.upper()].value  # type: ignore
 
 
-T = TypeVar("T")
-
-
-class Choice(Field, Generic[T]):
+class Choice(Field[T], Generic[T]):
     def __init__(
         self,
         choices: Sequence[T],

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from pkonfig import DictStorage
-from pkonfig.base import ConfigTypeError
+from pkonfig.errors import ConfigTypeError
 from pkonfig.config import Config
 from pkonfig.fields import (
     Choice,

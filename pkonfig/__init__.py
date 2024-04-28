@@ -1,5 +1,5 @@
-from pkonfig.config import Config, DefaultMapper, EmbeddedConfig
 from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
+from pkonfig.config import Config
 from pkonfig.fields import (
     Bool,
     Byte,
