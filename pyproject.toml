@@ -46,7 +46,7 @@ classifiers = [
 "repository" = "https://github.com/ngladkikh/pkonfig"
 
 [tool.poetry.dependencies]
-python = ">3.9"
+python = "<4.0,>=3.9"
 pyyaml = { version = "*", optional = true }
 tomli = { version = "*", python = "<3.11", optional = true }
 
@@ -64,6 +64,7 @@ black = "*"
 pytest-cov = "*"
 pyyaml = "*"
 tomli = "^2.0.1"
+testcontainers = "^4.4.0"
 
 [build-system]
 requires = ["poetry-core"]
