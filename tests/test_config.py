@@ -1,12 +1,6 @@
 import pytest
 
-from pkonfig import (
-    Config,
-    ConfigValueNotFoundError,
-    DictStorage,
-    Int,
-    Str,
-)
+from pkonfig import Config, ConfigValueNotFoundError, DictStorage, Int, Str
 
 
 class Inner(Config):
