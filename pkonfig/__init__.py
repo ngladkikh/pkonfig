@@ -5,7 +5,6 @@ from pkonfig.fields import (
     Byte,
     ByteArray,
     Choice,
-    DebugFlag,
     DecimalField,
     EnumField,
     File,

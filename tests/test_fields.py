@@ -8,8 +8,8 @@ from pkonfig import DictStorage
 from pkonfig.config import Config
 from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.fields import (
+    Bool,
     Choice,
-    DebugFlag,
     EnumField,
     File,
     Float,
@@ -190,9 +190,9 @@ def test_log_level_case_insensitive(level, value, config_factory):
 
 
 @pytest.mark.parametrize("value", ["true", "TRUE", "+", 1, "1", True, "yes", "Y", "y"])
-def test_truthy_debug(value, config_factory):
+def test_truthy_bool(value, config_factory):
     config = config_factory(attr=value)
-    assert DebugFlag(alias="attr").__get__(config)
+    assert Bool(alias="attr").__get__(config)
 
 
 def test_cache_used():

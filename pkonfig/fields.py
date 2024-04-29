@@ -99,8 +99,13 @@ class Field(Generic[T]):
 
 
 class Bool(Field[bool]):
-    def cast(self, value) -> bool:
-        return bool(value)
+    def cast(self, value: str) -> bool:
+        if isinstance(value, bool):
+            return value
+
+        if isinstance(value, int):
+            value = str(value)
+        return value.lower() in ("true", "yes", "y", "1", "+")
 
 
 class Int(Field[int]):
@@ -221,13 +226,3 @@ class Choice(Field[T], Generic[T]):
     def validate(self, value):
         if value not in self.choices:
             raise ConfigTypeError(f"'{value}' is not in {self.choices}")
-
-
-class DebugFlag(Field[bool]):
-    def cast(self, value: str) -> bool:
-        if isinstance(value, bool):
-            return value
-
-        if isinstance(value, int):
-            value = str(value)
-        return value.lower() in ("true", "yes", "y", "1", "+")
