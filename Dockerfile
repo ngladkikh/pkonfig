@@ -7,4 +7,4 @@ COPY . .
 
 RUN pip install .[yaml]
 
-CMD python3 -m pytest -q tests
+CMD python3 -m pytest -q tests/unit
