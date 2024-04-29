@@ -3,10 +3,20 @@ from abc import abstractmethod
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, Generic, Optional, Sequence, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pkonfig.config import Config
-from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
+from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.storage.base import InternalKey
 
 NOT_SET = "NOT_SET"
@@ -31,9 +41,21 @@ class Field(Generic[T]):
         self.alias = self.alias or name
 
     def __set__(self, instance: Config, value: Any) -> None:
-        value = self._cast(value)
-        self._validate(value)
-        self._cache[self._get_path(instance)] = value
+        path = self._get_path(instance)
+        logging.warning(
+            "Setting %s config value in runtime, proceed with caution",
+            self.key_to_name(path),
+        )
+        try:
+            value = self._cast(value)
+            self._validate(value)
+        except ConfigError:
+            raise
+        except Exception as exc:
+            raise ConfigTypeError(
+                f"set {self.key_to_name(path)} to {value} not allowed"
+            ) from exc
+        self._cache[path] = value
 
     def _get_path(self, config: Config) -> InternalKey:
         return *config.get_roo_path(), self.alias
@@ -45,6 +67,8 @@ class Field(Generic[T]):
             try:
                 value = self._cast(raw_value)
                 self._validate(value)
+            except ConfigError:
+                raise
             except Exception as exc:
                 raise ConfigTypeError(f"{self.key_to_name(path)} config error") from exc
             self._cache[path] = value

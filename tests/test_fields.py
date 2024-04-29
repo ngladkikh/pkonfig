@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from pkonfig import DictStorage
-from pkonfig.errors import ConfigTypeError
 from pkonfig.config import Config
+from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.fields import (
     Choice,
     DebugFlag,
@@ -40,13 +40,46 @@ def test_not_nullable_raises_exception_on_null(config_factory):
 
 def test_value_not_found_raises_exception(config_factory):
     config = config_factory()
-    with pytest.raises(ConfigTypeError):
+    with pytest.raises(ConfigValueNotFoundError):
         Str(alias="attr").__get__(config)
 
 
 def test_int_param(config_factory):
     int_config = config_factory(attr=3)
-    assert Int(alias="attr").__get__(int_config, ) == 3
+    assert (
+        Int(alias="attr").__get__(
+            int_config,
+        )
+        == 3
+    )
+
+
+def test_casts_on_set(config_factory):
+    int_config = config_factory(attr=3)
+    attribute = Int()
+    with pytest.raises(ConfigTypeError):
+        attribute.__set__(int_config, "a")
+
+
+def test_validates_value_on_set(config_factory):
+    config = config_factory(attr=10)
+    attr = Choice([10, 20, 30], alias="attr")
+    assert attr.__get__(config) == 10
+    attr.__set__(config, 20)
+    assert attr.__get__(config) == 20
+    with pytest.raises(ConfigTypeError):
+        attr.__set__(config, 40)
+
+
+def test_default_value_is_validated(config_factory):
+    config = config_factory(attr=10)
+    with pytest.raises(ConfigTypeError):
+        Int(default="a").__get__(config)
+
+
+def test_none_is_not_casted(config_factory):
+    assert Int(None, alias="attr").__get__(config_factory()) is None
+    assert Int(alias="attr", nullable=True).__get__(config_factory(attr=None)) is None
 
 
 def test_only_int_accepted(config_factory):
@@ -120,7 +153,10 @@ def enum_attr_config():
 
 def test_enum_param_returns_value(enum_attr_config, config_factory):
     config = config_factory(attr="red")
-    assert EnumField(enum_attr_config, alias="attr").__get__(config) is enum_attr_config.red
+    assert (
+        EnumField(enum_attr_config, alias="attr").__get__(config)
+        is enum_attr_config.red
+    )
 
 
 def test_enum_raises_error(enum_attr_config, config_factory):
