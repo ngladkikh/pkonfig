@@ -1,13 +1,13 @@
 from pkonfig.config import Config
 from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.fields import (
-    Field,
     Bool,
     Byte,
     ByteArray,
     Choice,
     DecimalField,
     EnumField,
+    Field,
     File,
     Float,
     Folder,
