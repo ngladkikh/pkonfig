@@ -1,5 +1,5 @@
-from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.config import Config
+from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.fields import (
     Bool,
     Byte,

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import IO, Any, Tuple, Union, Iterator
+from typing import IO, Any, Iterator, Tuple, Union
 
 InternalKey = Tuple[str, ...]
 DEFAULT_PREFIX = "APP"

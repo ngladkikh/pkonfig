@@ -13,7 +13,7 @@ class Config:
         alias: str = "",
         fail_fast: bool = True,
     ) -> None:
-        self._storage = ChainMap(*storages)    # type:ignore
+        self._storage = ChainMap(*storages)  # type:ignore
         self._alias = alias
         self._root_path: InternalKey = (alias,) if alias else tuple()
         self._register_inner_configs()
@@ -32,7 +32,9 @@ class Config:
                 yield name, attribute
 
     def _config_attributes(self) -> Generator[Tuple[str, Any], None, None]:
-        for attr_name, attr in filter(self._is_config_attribute, vars(self.__class__).items()):
+        for attr_name, attr in filter(
+            self._is_config_attribute, vars(self.__class__).items()
+        ):
             yield attr_name, attr
 
     @staticmethod
