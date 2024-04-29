@@ -3,7 +3,7 @@ from abc import abstractmethod
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Optional, Sequence, Type, TypeVar, Union
 
 from pkonfig.config import Config
 from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
@@ -25,62 +25,53 @@ class Field(Generic[T]):
         self.default: Union[T, object] = default
         self.alias: str = alias
         self.nullable = default is None or nullable
-        self._cache: T = NOT_SET    # type:ignore
-        self._path: InternalKey = tuple()
-
-    @property
-    def error_name(self) -> str:
-        return ".".join(self._path)
+        self._cache: Dict[InternalKey, T] = {}
 
     def __set_name__(self, _: Type[Config], name: str) -> None:
         self.alias = self.alias or name
 
-    def __set__(self, instance: Config, value) -> None:
+    def __set__(self, instance: Config, value: Any) -> None:
         value = self._cast(value)
         self._validate(value)
-        self._cache = value
+        self._cache[self._get_path(instance)] = value
+
+    def _get_path(self, config: Config) -> InternalKey:
+        return *config.get_roo_path(), self.alias
 
     def __get__(self, instance: Config, _=None) -> T:
-        if self._cache is NOT_SET:
-            self._cache = self.get_from_storage(instance)
-        return self._cache
+        path = self._get_path(instance)
+        if path not in self._cache:
+            raw_value = instance.get_storage().get(path, self.default)
+            try:
+                value = self._cast(raw_value)
+                self._validate(value)
+            except Exception as exc:
+                raise ConfigTypeError(f"{self.key_to_name(path)} config error") from exc
+            self._cache[path] = value
+        return self._cache[path]
 
-    def get_from_storage(self, instance: Config) -> T:
-        value = self._get_from_storage(instance)
-        if value is None and not self.nullable:
-            raise ConfigTypeError(f"Field {self.error_name} is not nullable")
-        if value is not None:
-            value = self._cast(value)
-            self._validate(value)
-        return value
-
-    def _get_from_storage(self, instance: Config) -> Any:
-        storage = instance.get_storage()
-        self._path = (*instance.get_roo_path(), self.alias)
-        if self._path in storage:
-            return storage[self._path]
-        if self.default is NOT_SET:
-            raise ConfigValueNotFoundError(self.error_name)
-        return self.default
+    @staticmethod
+    def key_to_name(key: InternalKey) -> str:
+        return ".".join(key)
 
     def _cast(self, value: Any) -> T:
-        try:
-            return self.cast(value)
-        except (ValueError, TypeError) as exc:
-            raise ConfigTypeError(f"{self.error_name} failed to cast {value}") from exc
+        if value in (NOT_SET, None):
+            return value
+        return self.cast(value)
 
     @abstractmethod
     def cast(self, value: Any) -> T:
         pass
 
     def _validate(self, value: Any) -> None:
-        try:
-            return self.validate(value)
-        except TypeError as exc:
-            raise ConfigTypeError(f"{self.error_name}: {value} invalid") from exc
+        if value is None and not self.nullable:
+            raise ValueError("Not nullable")
+        if value is NOT_SET:
+            raise ConfigValueNotFoundError("Not set")
+        return self.validate(value)
 
     def validate(self, value: Any) -> None:
-        pass
+        """Implement this method to validate value"""
 
 
 class Bool(Field[bool]):

@@ -20,6 +20,11 @@ class BaseStorage(ABC):
     def __iter__(self) -> Iterator[InternalKey]:
         return iter(self._actual_storage)
 
+    def get(self, key: InternalKey, default: Any) -> Any:
+        if key in self._actual_storage:
+            return self._actual_storage[key]
+        return default
+
 
 class FlattenedStorageMixin(ABC):
     _actual_storage: dict[InternalKey, Any]

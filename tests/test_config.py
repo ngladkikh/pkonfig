@@ -55,7 +55,7 @@ def test_root_level_attributes(config):
 
 
 def test_value_from_second_level_attribute(config: AppConfig):
-    assert config.inner_1 == 1234
+    assert config.inner_1.required == 1234
     assert config.inner_2.required == 4321
 
 
