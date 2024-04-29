@@ -33,6 +33,11 @@ def test_app_prefix_ignored(env_file_no_prefix):
     assert storage[("some",)] == "other"
 
 
+def test_missing_dot_env_file_raises_exception():
+    with pytest.raises(FileNotFoundError):
+        DotEnv("not_exists", missing_ok=False)
+
+
 @pytest.fixture
 def env_file_no_prefix(env_file):
     with open(env_file, "w") as fh:

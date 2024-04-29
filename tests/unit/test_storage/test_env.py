@@ -25,3 +25,9 @@ def test_no_prefix_gets_all(monkeypatch):
     monkeypatch.setenv("SOME", "VALUE")
     storage = Env(delimiter="_", prefix="")
     assert storage[("some",)] == "VALUE"
+
+
+def test_lower_case_env_vars_allowed(monkeypatch):
+    monkeypatch.setenv("some", "VALUE")
+    storage = Env(delimiter="_", prefix="")
+    assert storage[("some",)] == "VALUE"
