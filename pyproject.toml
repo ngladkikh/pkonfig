@@ -64,7 +64,7 @@ black = "*"
 pytest-cov = "*"
 pyyaml = "*"
 tomli = "^2.0.1"
-testcontainers = "^4.4.0"
+docker = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core"]
