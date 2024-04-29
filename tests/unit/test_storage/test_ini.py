@@ -7,7 +7,7 @@ from pkonfig.storage import Ini
 
 @pytest.fixture
 def ini_file():
-    return "tests/test_storage/test.ini"
+    return "tests/unit/test_storage/test.ini"
 
 
 def test_ini_storage(ini_file: Path):

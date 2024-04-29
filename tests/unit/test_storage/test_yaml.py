@@ -18,4 +18,4 @@ def test_yaml(path, value, yaml_config_storage):
 
 @pytest.fixture(scope="module")
 def yaml_config_storage():
-    return Yaml("tests/test_storage/test.yaml")
+    return Yaml("tests/unit/test_storage/test.yaml")

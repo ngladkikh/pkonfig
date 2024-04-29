@@ -19,4 +19,4 @@ def test_toml(path, value, toml_storage):
 
 @pytest.fixture(scope="module")
 def toml_storage():
-    return Toml("tests/test_storage/test.toml")
+    return Toml("tests/unit/test_storage/test.toml")
