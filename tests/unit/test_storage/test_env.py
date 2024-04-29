@@ -1,3 +1,5 @@
+import pytest
+
 from pkonfig.storage import Env
 
 
@@ -21,9 +23,10 @@ def test_second_level_variable(monkeypatch):
     assert storage[("key1", "key2")] == "VALUE2"
 
 
-def test_no_prefix_gets_all(monkeypatch):
+@pytest.mark.parametrize("prefix", ("", None))
+def test_no_prefix_gets_all(monkeypatch, prefix):
     monkeypatch.setenv("SOME", "VALUE")
-    storage = Env(delimiter="_", prefix="")
+    storage = Env(delimiter="_", prefix=prefix)
     assert storage[("some",)] == "VALUE"
 
 
