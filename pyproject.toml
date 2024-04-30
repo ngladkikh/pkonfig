@@ -65,6 +65,7 @@ pytest-cov = "*"
 pyyaml = "*"
 tomli = "^2.0.1"
 docker = "^7.0.0"
+coverage = {extras = ["toml"], version = "^7.5.0"}
 
 [build-system]
 requires = ["poetry-core"]
