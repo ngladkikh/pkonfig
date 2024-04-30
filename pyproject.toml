@@ -67,6 +67,10 @@ tomli = "^2.0.1"
 docker = "^7.0.0"
 coverage = {extras = ["toml"], version = "^7.5.0"}
 
+[tool.poetry-dynamic-versioning]
+enable = true
+style = "pep440"  # Ensures the version style conforms to PEP 440
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
