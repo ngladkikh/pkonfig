@@ -25,9 +25,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -46,7 +43,7 @@ classifiers = [
 "repository" = "https://github.com/ngladkikh/pkonfig"
 
 [tool.poetry.dependencies]
-python = "<4.0,>=3.9"
+python = "^3.9 || ^3.10 || ^3.11 || ^3.12"
 pyyaml = { version = "*", optional = true }
 tomli = { version = "*", python = "<3.11", optional = true }
 
