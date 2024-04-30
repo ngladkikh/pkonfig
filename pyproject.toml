@@ -97,10 +97,7 @@ target-version = ["py39", "py310", "py311", "py312"]
 
 [tool.coverage.run]
 include = ["pkonfig/*"]
-omit = [
-    "tests/*",
-    "benchmark/*"
-]
+omit = ["tests/*"]
 
 [tool.pylint.MASTER]
 disable = [
