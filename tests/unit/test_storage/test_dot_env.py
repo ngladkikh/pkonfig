@@ -5,7 +5,7 @@ from pkonfig.storage import DotEnv
 
 def test_ignores_empty_string(env_file_with_empty_line):
     storage = DotEnv(env_file_with_empty_line)
-    assert storage[("DEBUG",)] == "true"
+    assert storage[("debug",)] == "true"
 
 
 @pytest.fixture
@@ -27,17 +27,15 @@ def env_file_with_multiple_eq(env_file):
     return env_file
 
 
-def test_no_prefix_ignored(env_file_no_prefix):
+def test_app_prefix_ignored(env_file_no_prefix):
     storage = DotEnv(env_file_no_prefix)
     assert storage[("env",)] == "local"
-    with pytest.raises(KeyError):
-        assert storage[("some",)]
-
-
-def test_no_prefix_allowed(env_file_no_prefix):
-    storage = DotEnv(env_file_no_prefix, prefix="")
-    assert storage[("app_env",)] == "local"
     assert storage[("some",)] == "other"
+
+
+def test_missing_dot_env_file_raises_exception():
+    with pytest.raises(FileNotFoundError):
+        DotEnv("not_exists", missing_ok=False)
 
 
 @pytest.fixture

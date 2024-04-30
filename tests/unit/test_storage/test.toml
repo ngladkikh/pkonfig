@@ -7,4 +7,4 @@ float = 0.33
 key = "value"
 
 [object.inner]
-test_key = "value"
+test_key = "other"

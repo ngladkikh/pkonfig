@@ -1,44 +1,64 @@
-from decimal import Decimal
-from pathlib import Path
-from typing import Any, Dict, Type
+from collections import ChainMap
+from inspect import isdatadescriptor
+from typing import Any, Generator, Tuple
 
-from pkonfig.base import NOT_SET, BaseConfig, Field, TypeMapper
-from pkonfig.fields import (
-    Bool,
-    Byte,
-    ByteArray,
-    DecimalField,
-    Float,
-    Int,
-    PathField,
-    Str,
-)
+from pkonfig.storage.base import BaseStorage, InternalKey
 
 
-class DefaultMapper(TypeMapper):
-    type_mapping: Dict[Type, Type[Field]] = {
-        bool: Bool,
-        int: Int,
-        float: Float,
-        str: Str,
-        bytes: Byte,
-        bytearray: ByteArray,
-        Path: PathField,
-        Decimal: DecimalField,
-    }
+class Config:
 
-    def descriptor(self, type_, value: Any = NOT_SET) -> Field[Any]:
-        try:
-            cls = self.type_mapping[type_]
-            return cls(value)
-        except KeyError:
-            return value
+    def __init__(
+        self,
+        *storages: BaseStorage,
+        alias: str = "",
+        fail_fast: bool = True,
+    ) -> None:
+        self._storage = ChainMap(*storages)  # type:ignore
+        self._alias = alias
+        self._root_path: InternalKey = (alias,) if alias else tuple()
+        self._register_inner_configs()
+        if fail_fast and self._storage:
+            self.check()
 
+    def _register_inner_configs(self) -> None:
+        for name, config_attribute in self._inner_configs():
+            config_attribute.set_storage(self.get_storage())
+            config_attribute.set_alias(name)
+            config_attribute.set_root_path(self.get_roo_path())
 
-class Config(BaseConfig):
-    _mapper = DefaultMapper()
+    def _inner_configs(self) -> Generator[Tuple[str, "Config"], None, None]:
+        for name, attribute in vars(self.__class__).items():
+            if isinstance(attribute, Config):
+                yield name, attribute
 
+    def _config_attributes(self) -> Generator[Tuple[str, Any], None, None]:
+        for attr_name, attr in filter(
+            self._is_config_attribute, vars(self.__class__).items()
+        ):
+            yield attr_name, attr
 
-class EmbeddedConfig(BaseConfig):
-    _inner: bool = True
-    _mapper = DefaultMapper()
+    @staticmethod
+    def _is_config_attribute(name_value: Tuple[str, Any]) -> bool:
+        attr_name, attribute = name_value
+        return not attr_name.startswith("_") and isdatadescriptor(attribute)
+
+    def check(self) -> None:
+        for attr_name, _ in self._config_attributes():
+            getattr(self, attr_name)
+        for _, inner_config in self._inner_configs():
+            inner_config.check()
+
+    def set_alias(self, alias: str) -> None:
+        self._alias = self._alias or alias
+
+    def set_root_path(self, root_path: InternalKey) -> None:
+        self._root_path = (*root_path, self._alias) if self._alias else root_path
+
+    def get_roo_path(self) -> InternalKey:
+        return self._root_path
+
+    def get_storage(self) -> ChainMap:
+        return self._storage
+
+    def set_storage(self, storage: ChainMap) -> None:
+        self._storage = storage

@@ -2,7 +2,7 @@ from typing import IO, Any, Dict
 
 import yaml
 
-from pkonfig.storage.file import FileStorage
+from pkonfig.storage.base import FileStorage
 
 
 class Yaml(FileStorage):

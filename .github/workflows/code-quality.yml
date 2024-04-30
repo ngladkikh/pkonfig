@@ -14,26 +14,33 @@ jobs:
 
     strategy:
       matrix:
-        step: [ test, mypy, black, isort, pylint ]
+        step: [test, mypy, black, isort, pylint]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.12
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create false
 
       - name: Install dependencies
         run: |
-          python -m pip install pipenv
-          pipenv install --dev --deploy --system
+          poetry install --with dev --sync
 
       - name: Run tests with pytest
         if: matrix.step == 'test'
         run: |
-          pytest --cov=pkonfig --cov-report=xml tests/
+          poetry run pytest --cov=pkonfig --cov-report=xml tests/
 
       - name: Upload coverage reports to Codecov with GitHub Action
         if: matrix.step == 'test' && github.ref == 'refs/heads/main'
@@ -42,19 +49,19 @@ jobs:
       - name: Check with mypy
         if: matrix.step == 'mypy'
         run: |
-          mypy pkonfig/
+          poetry run mypy pkonfig/
 
       - name: Check imports order
         if: matrix.step == 'isort'
         run: |
-          isort --check-only pkonfig
+          poetry run isort --check-only pkonfig
 
       - name: Format with black
         if: matrix.step == 'black'
         run: |
-          black --check --diff pkonfig
+          poetry run black --check --diff pkonfig
 
       - name: Lint with pylint
         if: matrix.step == 'pylint'
         run: |
-          pylint pkonfig
+          poetry run pylint pkonfig

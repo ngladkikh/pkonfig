@@ -1,8 +1,10 @@
 ARG VERSION
 FROM python:$VERSION-slim
 
-RUN pip install pytest tomli pyyaml typing_extensions
+RUN pip install pytest
 
 COPY . .
 
-CMD python3 -m pytest -q tests
+RUN pip install .[yaml]
+
+CMD python3 -m pytest -q tests/unit
