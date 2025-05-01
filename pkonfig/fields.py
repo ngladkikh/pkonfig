@@ -57,10 +57,22 @@ class Field(Generic[T]):
             ) from exc
         self._cache[path] = value
 
+        # Update the instance cache as well
+        attr_name = f"_cached_{self.alias}"
+        instance.__dict__[attr_name] = value
+
     def _get_path(self, config: Config) -> InternalKey:
         return *config.get_roo_path(), self.alias
 
     def __get__(self, instance: Config, _=None) -> T:
+        # Fast path: check if the value is already cached on the instance
+        instance_dict = instance.__dict__
+        attr_name = f"_cached_{self.alias}"
+
+        if attr_name in instance_dict:
+            return instance_dict[attr_name]
+
+        # Slow path: compute the value and cache it on the instance
         path = self._get_path(instance)
         if path not in self._cache:
             raw_value = instance.get_storage().get(path, self.default)
@@ -72,7 +84,10 @@ class Field(Generic[T]):
             except Exception as exc:
                 raise ConfigTypeError(f"{self.key_to_name(path)} config error") from exc
             self._cache[path] = value
-        return self._cache[path]
+
+        # Cache the value directly on the instance for faster future access
+        instance_dict[attr_name] = self._cache[path]
+        return instance_dict[attr_name]
 
     @staticmethod
     def key_to_name(key: InternalKey) -> str:
