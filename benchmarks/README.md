@@ -1,6 +1,9 @@
-# pkonfig vs Pydantic Settings Benchmarks
+# pkonfig Benchmarks
 
-This directory contains benchmarks comparing the performance of pkonfig and Pydantic Settings in various scenarios.
+This directory contains benchmarks comparing:
+1. The performance of pkonfig and Pydantic Settings in various scenarios
+2. The performance of descriptor-based fields vs attrs-based fields in pkonfig
+3. The performance of attrs-based configs vs pydantic-settings
 
 ## Overview
 
@@ -20,13 +23,35 @@ To run the benchmarks, make sure you have both pkonfig and Pydantic installed:
 pip install pydantic pydantic-settings
 ```
 
-Then run the benchmark script:
+### pkonfig vs Pydantic Settings
+
+To run the benchmarks comparing pkonfig and Pydantic Settings:
 
 ```bash
 python benchmarks/benchmark_pkonfig_vs_pydantic.py
 ```
 
 The script will output the benchmark results to the console and save them to a JSON file (`benchmark_results.json`).
+
+### Descriptor-based vs attrs-based fields
+
+To run the benchmarks comparing descriptor-based fields with attrs-based fields in pkonfig:
+
+```bash
+python benchmarks/benchmark_descriptors_vs_attrs.py
+```
+
+The script will output the benchmark results to the console and save them to a JSON file (`benchmark_descriptors_vs_attrs.json`).
+
+### attrs-based configs vs pydantic-settings
+
+To run the benchmarks comparing attrs-based configs with pydantic-settings:
+
+```bash
+python benchmarks/benchmark_attrs_vs_pydantic.py
+```
+
+The script will output the benchmark results to the console and save them to a JSON file (`benchmark_attrs_vs_pydantic.json`).
 
 ## Methodology
 

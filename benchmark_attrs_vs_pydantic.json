@@ -1,0 +1,21 @@
+{
+  "scenario": "Field Access Performance",
+  "attrs": {
+    "name": "Field Access - Attrs",
+    "average": 2.437591552734375e-07,
+    "median": 0.0,
+    "min": 0.0,
+    "max": 2.193450927734375e-05
+  },
+  "pydantic": {
+    "name": "Field Access - Pydantic",
+    "average": 1.645803451538086e-07,
+    "median": 0.0,
+    "min": 0.0,
+    "max": 1.5974044799804688e-05
+  },
+  "comparison": {
+    "faster": "Pydantic",
+    "times_faster": 1.48109517601043
+  }
+}

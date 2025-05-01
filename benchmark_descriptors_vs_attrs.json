@@ -1,0 +1,21 @@
+{
+  "scenario": "Field Access Performance",
+  "descriptor": {
+    "name": "Field Access - Descriptors",
+    "average": 1.3617777824401856e-06,
+    "median": 1.1920928955078125e-06,
+    "min": 7.152557373046875e-07,
+    "max": 0.0002200603485107422
+  },
+  "attrs": {
+    "name": "Field Access - Attrs",
+    "average": 1.5440702438354493e-07,
+    "median": 0.0,
+    "min": 0.0,
+    "max": 2.4080276489257812e-05
+  },
+  "comparison": {
+    "faster": "Attrs",
+    "times_faster": 8.819403054213053
+  }
+}

@@ -2,6 +2,7 @@ import logging
 from abc import abstractmethod
 from decimal import Decimal
 from enum import Enum
+from functools import cache
 from pathlib import Path
 from typing import (
     Any,
@@ -22,9 +23,14 @@ from pkonfig.storage.base import InternalKey
 NOT_SET = "NOT_SET"
 T = TypeVar("T")
 
+@cache
+def _get_path(config: Config, alias: str) -> InternalKey:
+    return *config.get_roo_path(), alias
+
 
 class Field(Generic[T]):
     """Base config attribute descriptor"""
+    slots = ("default", "alias", "nullable", "_cache")
 
     def __init__(
         self,
@@ -41,7 +47,8 @@ class Field(Generic[T]):
         self.alias = self.alias or name
 
     def __set__(self, instance: Config, value: Any) -> None:
-        path = self._get_path(instance)
+        path = _get_path(instance, self.alias)
+        # path = self._get_path(instance)
         logging.warning(
             "Setting %s config value in runtime, proceed with caution",
             self.key_to_name(path),
@@ -57,11 +64,12 @@ class Field(Generic[T]):
             ) from exc
         self._cache[path] = value
 
-    def _get_path(self, config: Config) -> InternalKey:
-        return *config.get_roo_path(), self.alias
+    # def _get_path(self, config: Config) -> InternalKey:
+    #     return *config._root_path, self.alias
 
     def __get__(self, instance: Config, _=None) -> T:
-        path = self._get_path(instance)
+        path = _get_path(instance, self.alias)
+        # path = self._get_path(instance)
         if path not in self._cache:
             raw_value = instance.get_storage().get(path, self.default)
             try:

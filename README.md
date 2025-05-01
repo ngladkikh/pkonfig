@@ -58,6 +58,43 @@ And if both TOML and YAML is needed:
 pip install pkonfig[toml,yaml]
 ```
 
+### Attrs-based Implementation
+
+PKonfig also provides an alternative implementation using the [attrs](https://www.attrs.org/) library instead of descriptors. This implementation is significantly faster for field access operations (about 8.94x faster based on benchmarks), but may have some limitations compared to the descriptor-based implementation.
+
+To use the attrs-based implementation, install PKonfig with the attrs extra:
+
+```bash
+pip install pkonfig[attrs]
+```
+
+Or combine with other extras:
+
+```bash
+pip install pkonfig[attrs,yaml,toml]
+```
+
+Then import from the `pkonfig.attrs` module instead of directly from `pkonfig`:
+
+```python
+from pkonfig.attrs import Config, Str, Int, Bool
+
+class AppConfig(Config):
+    name = Str("DefaultName")
+    debug = Bool(False)
+    port = Int(8000)
+
+config = AppConfig(Env(prefix="APP"))
+```
+
+The attrs-based implementation provides the same API as the descriptor-based implementation, so you can use it as a drop-in replacement in most cases. However, there are some differences:
+
+1. The attrs-based implementation is significantly faster for field access operations.
+2. The descriptor-based implementation provides more flexibility for implementing custom behavior during field access and assignment.
+3. Both implementations support the same field types and validation logic.
+
+Choose the implementation that best fits your needs based on whether performance or flexibility is more important for your use case.
+
 For production no __.env__ files are needed but proper environment variables should be set.
 In case some of required variables missing __ConfigValueNotFoundError__ exception raised while __AppConfig__
 instantiation.
