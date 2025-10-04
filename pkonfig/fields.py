@@ -13,6 +13,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 from pkonfig.config import Config
@@ -60,7 +61,20 @@ class Field(Generic[T]):
     def _get_path(self, config: Config) -> InternalKey:
         return *config.get_roo_path(), self.alias
 
-    def __get__(self, instance: Config, _=None) -> T:
+    @overload
+    def __get__(self, instance: None, owner: Type[Config]) -> "Field[T]":
+        ...
+
+    @overload
+    def __get__(self, instance: "Config", owner: Type[Config]) -> T:
+        ...
+
+    def __get__(
+        self, instance: Optional["Config"], owner: Optional[Type["Config"]] = None
+    ) -> Union[T, "Field[T]"]:
+        if instance is None:
+            # Accessed through the class: return the descriptor itself
+            return self
         path = self._get_path(instance)
         if path not in self._cache:
             raw_value = instance.get_storage().get(path, self.default)

@@ -1,4 +1,4 @@
-.PHONY: help fmt unit lint check
+.PHONY: help fmt unit compatibility lint check
 
 help: ## Show this help with available targets
 	@echo "Available make targets:" && echo
@@ -9,12 +9,17 @@ fmt: ## Format code with Black and isort
 	isort .
 
 unit: ## Run unit tests
-	pytest tests
+	pytest tests/unit
+
+compatibility: ## Rub compatibility tests
+	pytest tests/compatibility
+
+test: unit compatibility ## Run all tests
 
 lint: ## Run static analysis (mypy and pylint)
 	mypy pkonfig && pylint pkonfig
 
-check: fmt unit lint ## Run format, tests, and lint
+check: fmt unit lint compatibility ## Run format, tests, and lint
 
 # Include documentation targets from docs/Makefile (if present)
 -include docs/Makefile
