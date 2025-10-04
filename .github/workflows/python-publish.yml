@@ -34,8 +34,15 @@ jobs:
 
       - name: Set package version from Git tag
         run: |
-          POETRY_VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
-          poetry version $POETRY_VERSION
+          TAG_NAME="${GITHUB_REF_NAME:-}"
+          if [ -z "$TAG_NAME" ]; then
+            # Fallback for manual runs or when ref name isn't populated
+            TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || git describe --tags --abbrev=0)
+          fi
+          # Strip a leading 'v' if present (allow tags like v1.2.3)
+          POETRY_VERSION=${TAG_NAME#v}
+          echo "Setting package version to $POETRY_VERSION from tag $TAG_NAME"
+          poetry version "$POETRY_VERSION"
 
       - name: Build package
         run: poetry build
