@@ -1,24 +1,56 @@
-name: Build and Deploy Docs
+name: "Docs: Build and Deploy"
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref (branch or tag) to build docs from'
+        required: false
+        default: 'main'
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  workflows: write
 
 concurrency:
   group: "pages"
   cancel-in-progress: true
 
 jobs:
+  relay_from_release:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch docs build on main for release tag
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = context.payload?.release?.tag_name;
+            if (!tag) {
+              core.setFailed('No tag_name in release payload');
+              return;
+            }
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'docs.yml',
+              ref: 'main',
+              inputs: { ref: tag }
+            });
+
   build:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -44,6 +76,7 @@ jobs:
           path: docs/_build/html
 
   deploy:
+    if: github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
     environment:
