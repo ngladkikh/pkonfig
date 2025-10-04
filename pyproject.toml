@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pkonfig"
-version = "2.0.0"
+version = "2.0.1"
 description = "Pythonic agile application configuration helpers"
 authors = ["Nikita Gladkikh <gladkikh.nikita@gmail.com>"]
 license = "MIT"
