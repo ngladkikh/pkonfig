@@ -39,7 +39,7 @@ classifiers = [
 
 [tool.poetry.urls]
 "homepage" = "https://github.com/ngladkikh/pkonfig"
-"documentation" = "https://github.com/ngladkikh/pkonfig"
+"documentation" = "https://ngladkikh.github.io/pkonfig/"
 "repository" = "https://github.com/ngladkikh/pkonfig"
 
 [tool.poetry.dependencies]
@@ -67,6 +67,15 @@ coverage = {extras = ["toml"], version = "^7.5.0"}
 [tool.poetry.group.benchmark.dependencies]
 pydantic = "*"
 pydantic-settings = "*"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.3.0"
+myst-parser = "^3.0.1"
+furo = "^2024.8.6"
+linkify-it-py = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
