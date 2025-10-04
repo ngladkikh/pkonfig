@@ -17,14 +17,14 @@ P stands for Python.
 - Pythonic configuration management helpers.
 - Multiple sources of configs (environment variables, dotenv files, YAML, JSON, TOML, INI)
   with agile order configuration.
-- Configs validation mechanics based on type hints or user defined classes.
+- Configs validation mechanics based on type hints or user-defined classes.
 - Minimal external dependencies.
-- Follow [Fail-fast](https://en.wikipedia.org/wiki/Fail-fast) principle.
+- Follow [the Fail-fast](https://en.wikipedia.org/wiki/Fail-fast) principle.
 - Autocomplete in modern IDEs.
 
 ## Features
 
-- User defined config source order: Define the order in which PKonfig looks for configuration values.
+- User-defined config source order: Define the order in which PKonfig looks for configuration values.
 - Multilevel configs for environment variables and dotenv config sources: Allows for more granular control over configuration values.
 - Custom aliases for fields or groups of configs: Create custom aliases for configuration values to make them easier to reference in code.
 - Configs type casting: Automatically cast configuration values to the correct data type.
@@ -97,7 +97,7 @@ config = AppConfig(DotEnv(".env"), Env())
 
 For local development create DotEnv file in root app folder `.env`:
 
-```dotenv
+```ini
 APP_DB1_HOST=10.10.10.10
 APP_DB1_USER=user
 APP_DB1_PASSWORD=securedPass
@@ -368,7 +368,7 @@ print(config.redis.host)  # redis
 
 `.env` content:
 
-```dotenv
+```ini
 APP__PG__HOST=db_host
 APP__PG__PORT=6432
 APP__REDIS__HOST=redis
@@ -404,7 +404,7 @@ config = AppConfig(DotEnv(".env", delimiter="__"))
 
 `.env` content:
 
-```dotenv
+```ini
 APP__DB__HOST=db_host
 APP__DB__PORT=6432
 APP__DB__PASS=password
