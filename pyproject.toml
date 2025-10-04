@@ -29,6 +29,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
@@ -43,7 +44,7 @@ classifiers = [
 "repository" = "https://github.com/ngladkikh/pkonfig"
 
 [tool.poetry.dependencies]
-python = "^3.9 || ^3.10 || ^3.11 || ^3.12"
+python = "^3.9 || ^3.10 || ^3.11 || ^3.12 || ^3.13"
 pyyaml = { version = "*", optional = true }
 tomli = { version = "*", python = "<3.11", optional = true }
 
@@ -90,7 +91,7 @@ profile = "black"
 
 [tool.black]
 line-length = 88
-target-version = ["py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312", "py313"]
 
 [tool.coverage.run]
 include = ["pkonfig/*"]

@@ -1695,5 +1695,5 @@ yaml = ["pyyaml"]
 
 [metadata]
 lock-version = "2.1"
-python-versions = "^3.9 || ^3.10 || ^3.11 || ^3.12"
-content-hash = "266e9aa24e02c1c34be96d55611c7928fa73d6f95b5f87667bd57a468c0d06d5"
+python-versions = "^3.9 || ^3.10 || ^3.11 || ^3.12 || ^3.13"
+content-hash = "f1c777270d75a749e5076c41c6b5e05181af72a2669dae6aa184ad234095c68e"
