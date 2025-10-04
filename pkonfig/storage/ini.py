@@ -6,7 +6,7 @@ from pkonfig.storage.base import FileStorage
 
 
 class Ini(FileStorage):
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         file: Union[Path, str],
         missing_ok=False,
