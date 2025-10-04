@@ -1,6 +1,7 @@
 """
 Nested configuration benchmark scenario.
 """
+
 import os
 from typing import Dict, Any
 
@@ -10,10 +11,11 @@ from pydantic_settings import BaseSettings
 from pkonfig import Config, Str, Int, Env
 from benchmarks.utils import run_benchmark
 
+
 def benchmark_nested_config() -> Dict[str, Any]:
     """
     Benchmark scenario: Nested configuration with environment variables.
-    
+
     Returns:
         Dictionary with benchmark results
     """
@@ -55,10 +57,7 @@ def benchmark_nested_config() -> Dict[str, Any]:
         db: PydanticDbConfig = Field(default_factory=PydanticDbConfig)
         redis: PydanticRedisConfig = Field(default_factory=PydanticRedisConfig)
 
-        model_config = {
-            "env_nested_delimiter": "_",
-            "env_prefix": "APP_"
-        }
+        model_config = {"env_nested_delimiter": "_", "env_prefix": "APP_"}
 
     # Benchmark pkonfig
     def create_pkonfig_nested_config():
@@ -68,11 +67,15 @@ def benchmark_nested_config() -> Dict[str, Any]:
     def create_pydantic_nested_config():
         return PydanticNestedConfig()
 
-    pkonfig_result = run_benchmark("Nested Config - pkonfig", create_pkonfig_nested_config, iterations=1000)
-    pydantic_result = run_benchmark("Nested Config - pydantic", create_pydantic_nested_config, iterations=1000)
+    pkonfig_result = run_benchmark(
+        "Nested Config - pkonfig", create_pkonfig_nested_config, iterations=1000
+    )
+    pydantic_result = run_benchmark(
+        "Nested Config - pydantic", create_pydantic_nested_config, iterations=1000
+    )
 
     return {
         "scenario": "Nested Configuration",
         "pkonfig": pkonfig_result,
-        "pydantic": pydantic_result
+        "pydantic": pydantic_result,
     }

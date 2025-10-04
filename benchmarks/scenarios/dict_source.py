@@ -1,6 +1,7 @@
 """
 Dictionary source benchmark scenario.
 """
+
 from typing import Dict, Any
 
 from pydantic_settings import BaseSettings
@@ -8,10 +9,11 @@ from pydantic_settings import BaseSettings
 from pkonfig import Config, Str, Int, Bool, DictStorage
 from benchmarks.utils import run_benchmark
 
+
 def benchmark_dict_source() -> Dict[str, Any]:
     """
     Benchmark scenario: Using dictionary as a configuration source.
-    
+
     Returns:
         Dictionary with benchmark results
     """
@@ -24,8 +26,8 @@ def benchmark_dict_source() -> Dict[str, Any]:
             "host": "localhost",
             "port": 5432,
             "user": "postgres",
-            "password": "password"
-        }
+            "password": "password",
+        },
     }
 
     # pkonfig implementation
@@ -62,11 +64,15 @@ def benchmark_dict_source() -> Dict[str, Any]:
     def create_pydantic_dict_config():
         return PydanticDictConfig(**config_dict)
 
-    pkonfig_result = run_benchmark("Dictionary Source - pkonfig", create_pkonfig_dict_config, iterations=1000)
-    pydantic_result = run_benchmark("Dictionary Source - pydantic", create_pydantic_dict_config, iterations=1000)
+    pkonfig_result = run_benchmark(
+        "Dictionary Source - pkonfig", create_pkonfig_dict_config, iterations=1000
+    )
+    pydantic_result = run_benchmark(
+        "Dictionary Source - pydantic", create_pydantic_dict_config, iterations=1000
+    )
 
     return {
         "scenario": "Dictionary Source",
         "pkonfig": pkonfig_result,
-        "pydantic": pydantic_result
+        "pydantic": pydantic_result,
     }

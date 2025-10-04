@@ -8,6 +8,7 @@ from benchmarks.scenarios import (
     benchmark_dict_source,
 )
 
+
 def main():
     print("Running benchmarks comparing pkonfig and Pydantic Settings...")
 
@@ -45,6 +46,7 @@ def main():
         json.dump(results, f, indent=2)
 
     print("Benchmark results saved to benchmark_results.json")
+
 
 if __name__ == "__main__":
     main()
