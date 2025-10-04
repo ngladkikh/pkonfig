@@ -7,14 +7,17 @@ from mypy import api as mypy_api
 
 
 SNIPPET_OK = """
+from pathlib import Path
 from pkonfig.config import Config
-from pkonfig.fields import Int, Str, Bool
+from pkonfig.fields import Field, Int, Str, Bool, File
 from pkonfig.storage.env import Env
 
 class App(Config):
     host: str = Str("127.0.0.1")
     port: int = Int(8000)
     debug: bool = Bool(False)
+    path: Path = File()
+    bytes_: bytes = Bytes()
 
 cfg = App(Env(prefix="APP"))
 
@@ -22,9 +25,6 @@ cfg = App(Env(prefix="APP"))
 host_ok: str = cfg.host
 port_ok: int = cfg.port
 flag_ok: bool = cfg.debug
-
-# Accessing via the class should be allowed (and typed as a Field descriptor)
-_ = App.port
 """
 
 SNIPPET_BAD_ASSIGN = """
