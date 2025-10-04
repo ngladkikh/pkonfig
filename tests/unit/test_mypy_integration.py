@@ -2,9 +2,7 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from mypy import api as mypy_api
-
 
 SNIPPET_OK = """
 from pathlib import Path
@@ -47,7 +45,9 @@ bad: str = cfg.port  # E: Incompatible types in assignment
         (SNIPPET_BAD_ASSIGN, False),
     ],
 )
-def test_mypy_understands_field_typing(tmp_path: Path, code: str, expect_ok: bool) -> None:
+def test_mypy_understands_field_typing(
+    tmp_path: Path, code: str, expect_ok: bool
+) -> None:
     test_file = tmp_path / "snippet.py"
     test_file.write_text(code)
 
@@ -69,7 +69,9 @@ def test_mypy_understands_field_typing(tmp_path: Path, code: str, expect_ok: boo
         # Ensure there are no error lines referencing the file
         assert f"{test_file}:" not in stdout
     else:
-        assert exit_status != 0, "mypy should report a type error but exited successfully"
+        assert (
+            exit_status != 0
+        ), "mypy should report a type error but exited successfully"
         # mypy reports error lines prefixed with the file path
         assert f"{test_file}:" in stdout
         # Optional sanity check: the error should be about incompatible assignment
