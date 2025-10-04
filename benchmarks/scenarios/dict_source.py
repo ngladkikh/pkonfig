@@ -2,12 +2,12 @@
 Dictionary source benchmark scenario.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 from pydantic_settings import BaseSettings
 
-from pkonfig import Config, Str, Int, Bool, DictStorage
 from benchmarks.utils import run_benchmark
+from pkonfig import Bool, Config, DictStorage, Int, Str
 
 
 def benchmark_dict_source() -> Dict[str, Any]:

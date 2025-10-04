@@ -3,13 +3,13 @@ Simple configuration benchmark scenario.
 """
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from pkonfig import Config, Str, Int, Bool, Env
 from benchmarks.utils import run_benchmark
+from pkonfig import Bool, Config, Env, Int, Str
 
 
 def benchmark_simple_config() -> Dict[str, Any]:

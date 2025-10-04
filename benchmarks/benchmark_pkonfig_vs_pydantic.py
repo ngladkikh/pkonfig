@@ -1,11 +1,11 @@
 import json
 
 from benchmarks.scenarios import (
-    benchmark_simple_config,
-    benchmark_nested_config,
-    benchmark_large_config,
     benchmark_access_performance,
     benchmark_dict_source,
+    benchmark_large_config,
+    benchmark_nested_config,
+    benchmark_simple_config,
 )
 
 

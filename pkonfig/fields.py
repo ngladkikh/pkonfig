@@ -62,12 +62,10 @@ class Field(Generic[T]):
         return *config.get_roo_path(), self.alias
 
     @overload
-    def __get__(self, instance: None, owner: Type[Config]) -> "Field[T]":
-        ...
+    def __get__(self, instance: None, owner: Type[Config]) -> "Field[T]": ...
 
     @overload
-    def __get__(self, instance: "Config", owner: Type[Config]) -> T:
-        ...
+    def __get__(self, instance: "Config", owner: Type[Config]) -> T: ...
 
     def __get__(
         self, instance: Optional["Config"], owner: Optional[Type["Config"]] = None
