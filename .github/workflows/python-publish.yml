@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.x'
 
       - name: Install dependencies
         run: |
@@ -55,13 +55,10 @@ jobs:
 
       - name: Set up Conda
         uses: conda-incubator/setup-miniconda@v2
-        with:
-          python-version: "3.10"
-          activate-environment: conda-forge
 
       - name: Install conda dependencies
         run: |
-          conda install -y -q anaconda-client conda-build conda-verify setuptools-scm pyyaml pytest
+          conda install -y -q anaconda-client conda-build setuptools-scm pyyaml pytest
 
       - name: Build conda package
         run: |
