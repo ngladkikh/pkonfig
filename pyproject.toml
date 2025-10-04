@@ -75,6 +75,7 @@ optional = true
 sphinx = "^7.3.0"
 myst-parser = "^3.0.1"
 furo = "^2024.8.6"
+linkify-it-py = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
