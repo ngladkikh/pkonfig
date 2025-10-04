@@ -206,7 +206,7 @@ class LogLevel(Field):
 
 
 class Choice(Field[T], Generic[T]):
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         choices: Sequence[T],
         cast_function: Optional[Callable[[Any], T]] = None,
