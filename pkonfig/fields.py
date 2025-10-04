@@ -17,6 +17,7 @@ from typing import (
 )
 
 from pkonfig.config import Config
+from pkonfig.descriptor_helper import _Descriptor
 from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.storage.base import InternalKey
 
@@ -24,7 +25,7 @@ NOT_SET = "NOT_SET"
 T = TypeVar("T")
 
 
-class Field(Generic[T]):
+class Field(Generic[T], _Descriptor[T]):
     """Base config attribute descriptor"""
 
     def __init__(
@@ -143,6 +144,11 @@ class Str(Field[str]):
 class Byte(Field[bytes]):
     def cast(self, value) -> bytes:
         return bytes(value)
+
+
+# Backwards/alternate name often used in docs/tests
+class Bytes(Byte):
+    pass
 
 
 class ByteArray(Field[bytearray]):

@@ -9,7 +9,7 @@ from mypy import api as mypy_api
 SNIPPET_OK = """
 from pathlib import Path
 from pkonfig.config import Config
-from pkonfig.fields import Field, Int, Str, Bool, File
+from pkonfig.fields import Field, Int, Str, Bool, File, Bytes
 from pkonfig.storage.env import Env
 
 class App(Config):
