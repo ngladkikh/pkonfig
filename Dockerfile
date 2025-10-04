@@ -1,7 +1,7 @@
 ARG VERSION
 FROM python:$VERSION-slim
 
-RUN pip install pytest
+RUN pip install pytest mypy
 
 COPY . .
 
