@@ -76,23 +76,6 @@ style = "pep440"  # Ensures the version style conforms to PEP 440
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[project.optional-dependencies]
-yaml = ["pyyaml"]
-toml = ["tomli"]
-
-[tool.setuptools_scm]
-[tool.setuptools.dynamic]
-version = {attr = "setuptools_scm.get_version"}
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["pkonfig*"]
-
-[project.urls]
-homepage = "https://github.com/ngladkikh/pkonfig"
-documentation = "https://github.com/ngladkikh/pkonfig"
-repository = "https://github.com/ngladkikh/pkonfig"
-
 [tool.isort]
 profile = "black"
 
