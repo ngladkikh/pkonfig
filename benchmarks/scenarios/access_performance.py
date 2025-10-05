@@ -3,12 +3,12 @@ Access performance benchmark scenario.
 """
 
 import os
-from typing import Dict, Any, Tuple
+from typing import Any, Dict, Tuple
 
 from pydantic_settings import BaseSettings
 
-from pkonfig import Config, Str, Int, Bool, Env
 from benchmarks.utils import run_benchmark
+from pkonfig import Bool, Config, Env, Int, Str
 
 
 def benchmark_access_performance() -> Dict[str, Any]:

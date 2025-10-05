@@ -13,9 +13,11 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 from pkonfig.config import Config
+from pkonfig.descriptor_helper import _Descriptor
 from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
 from pkonfig.storage.base import InternalKey
 
@@ -23,7 +25,7 @@ NOT_SET = "NOT_SET"
 T = TypeVar("T")
 
 
-class Field(Generic[T]):
+class Field(Generic[T], _Descriptor[T]):
     """Base config attribute descriptor"""
 
     def __init__(
@@ -60,7 +62,18 @@ class Field(Generic[T]):
     def _get_path(self, config: Config) -> InternalKey:
         return *config.get_roo_path(), self.alias
 
-    def __get__(self, instance: Config, _=None) -> T:
+    @overload
+    def __get__(self, instance: None, owner: Type[Config]) -> "Field[T]": ...
+
+    @overload
+    def __get__(self, instance: "Config", owner: Type[Config]) -> T: ...
+
+    def __get__(
+        self, instance: Optional["Config"], owner: Optional[Type["Config"]] = None
+    ) -> Union[T, "Field[T]"]:
+        if instance is None:
+            # Accessed through the class: return the descriptor itself
+            return self
         path = self._get_path(instance)
         if path not in self._cache:
             raw_value = instance.get_storage().get(path, self.default)
@@ -131,6 +144,11 @@ class Str(Field[str]):
 class Byte(Field[bytes]):
     def cast(self, value) -> bytes:
         return bytes(value)
+
+
+# Backwards/alternate name often used in docs/tests
+class Bytes(Byte):
+    pass
 
 
 class ByteArray(Field[bytearray]):

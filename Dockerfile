@@ -1,10 +1,11 @@
 ARG VERSION
 FROM python:$VERSION-slim
 
-RUN pip install pytest
+RUN pip install pytest mypy types-PyYAML
 
 COPY . .
 
-RUN pip install .[yaml]
+# Install package with all extras needed by unit tests across Python versions
+RUN pip install .[yaml,toml]
 
-CMD python3 -m pytest -q tests/unit
+CMD sh -c "python3 -m pytest -q tests/unit 2>&1"

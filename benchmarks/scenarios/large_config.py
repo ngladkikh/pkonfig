@@ -3,12 +3,12 @@ Large configuration benchmark scenario.
 """
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 from pydantic_settings import BaseSettings
 
-from pkonfig import Config, Str, Env
 from benchmarks.utils import run_benchmark
+from pkonfig import Config, Env, Str
 
 
 def benchmark_large_config() -> Dict[str, Any]:

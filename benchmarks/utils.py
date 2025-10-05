@@ -2,8 +2,8 @@
 Utility functions for benchmarking.
 """
 
-import time
 import statistics
+import time
 from typing import Any, Callable, Dict, List, Tuple, TypeVar
 
 T = TypeVar("T")

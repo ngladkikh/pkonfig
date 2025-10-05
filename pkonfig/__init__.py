@@ -36,6 +36,7 @@ __all__ = [
     "ByteArray",
     "Choice",
     "DecimalField",
+    "DictStorage",
     "EnumField",
     "Field",
     "File",

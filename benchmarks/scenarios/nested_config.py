@@ -3,13 +3,13 @@ Nested configuration benchmark scenario.
 """
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from pkonfig import Config, Str, Int, Env
 from benchmarks.utils import run_benchmark
+from pkonfig import Config, Env, Int, Str
 
 
 def benchmark_nested_config() -> Dict[str, Any]:
