@@ -1,0 +1,117 @@
+[
+  {
+    "scenario": "Simple Configuration",
+    "pkonfig": {
+      "name": "Simple Config - pkonfig",
+      "average": 4.428101907251403e-06,
+      "median": 4.292000085115433e-06,
+      "min": 4.2079773265868425e-06,
+      "max": 1.6709003830328584e-05,
+      "iterations": 1000,
+      "warmup": 10,
+      "gc_disabled": true
+    },
+    "pydantic": {
+      "name": "Simple Config - pydantic",
+      "average": 7.43842955562286e-05,
+      "median": 7.179199019446969e-05,
+      "min": 7.066698162816465e-05,
+      "max": 0.0002159999858122319,
+      "iterations": 1000,
+      "warmup": 10,
+      "gc_disabled": true
+    }
+  },
+  {
+    "scenario": "Nested Configuration",
+    "pkonfig": {
+      "name": "Nested Config - pkonfig",
+      "average": 1.0130365757504478e-05,
+      "median": 9.749986929818988e-06,
+      "min": 9.457988198846579e-06,
+      "max": 5.6666991440579295e-05,
+      "iterations": 1000,
+      "warmup": 10,
+      "gc_disabled": true
+    },
+    "pydantic": {
+      "name": "Nested Config - pydantic",
+      "average": 0.000336577792535536,
+      "median": 0.0003335840010549873,
+      "min": 0.00032816699240356684,
+      "max": 0.00044320800225250423,
+      "iterations": 1000,
+      "warmup": 10,
+      "gc_disabled": true
+    }
+  },
+  {
+    "scenario": "Large Configuration",
+    "pkonfig": {
+      "name": "Large Config - pkonfig",
+      "average": 6.243587966309861e-05,
+      "median": 6.129150278866291e-05,
+      "min": 6.0708000091835856e-05,
+      "max": 7.01249809935689e-05,
+      "iterations": 100,
+      "warmup": 10,
+      "gc_disabled": true
+    },
+    "pydantic": {
+      "name": "Large Config - pydantic",
+      "average": 8.910118922358378e-05,
+      "median": 8.64375033415854e-05,
+      "min": 8.583400631323457e-05,
+      "max": 0.00017320801271125674,
+      "iterations": 100,
+      "warmup": 10,
+      "gc_disabled": true
+    }
+  },
+  {
+    "scenario": "Access Performance",
+    "pkonfig": {
+      "name": "Access Performance - pkonfig",
+      "average": 6.942907406482845e-07,
+      "median": 6.67001586407423e-07,
+      "min": 6.249756552278996e-07,
+      "max": 5.954198422841728e-05,
+      "iterations": 10000,
+      "warmup": 10,
+      "gc_disabled": true
+    },
+    "pydantic": {
+      "name": "Access Performance - pydantic",
+      "average": 1.0828244849108159e-07,
+      "median": 8.40227585285902e-08,
+      "min": 4.100729711353779e-08,
+      "max": 8.041010005399585e-06,
+      "iterations": 10000,
+      "warmup": 10,
+      "gc_disabled": true
+    }
+  },
+  {
+    "scenario": "Dictionary Source",
+    "pkonfig": {
+      "name": "Dictionary Source - pkonfig",
+      "average": 1.1288587120361627e-05,
+      "median": 1.070898724719882e-05,
+      "min": 1.0457995813339949e-05,
+      "max": 4.979199729859829e-05,
+      "iterations": 1000,
+      "warmup": 10,
+      "gc_disabled": true
+    },
+    "pydantic": {
+      "name": "Dictionary Source - pydantic",
+      "average": 0.0002732364676194265,
+      "median": 0.00026983299176208675,
+      "min": 0.000264959002379328,
+      "max": 0.0003481250023469329,
+      "iterations": 1000,
+      "warmup": 10,
+      "gc_disabled": true
+    }
+  }
+]
