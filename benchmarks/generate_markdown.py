@@ -39,11 +39,11 @@ def _format_row(scenario: str, pkonfig_avg: float, pydantic_avg: float) -> str:
             faster = "equal"
             times = "1.00x"
 
-    # Convert seconds to milliseconds for display
-    pkonfig_ms = pkonfig_avg * 1000.0
-    pydantic_ms = pydantic_avg * 1000.0
+    # Convert seconds to microseconds for display
+    pkonfig_us = pkonfig_avg * 1_000_000.0
+    pydantic_us = pydantic_avg * 1_000_000.0
 
-    return f"| {scenario} | {pkonfig_ms:.3f} | {pydantic_ms:.3f} | {faster} | {times} |"
+    return f"| {scenario} | {pkonfig_us:.3f} | {pydantic_us:.3f} | {faster} | {times} |"
 
 
 def main() -> None:
@@ -66,8 +66,8 @@ def main() -> None:
         "# pkonfig vs Pydantic Settings Benchmark Results\n\n"
         "This document presents the results of benchmarking pkonfig against Pydantic Settings in various scenarios.\n\n"
         "## Summary\n\n"
-        "| Scenario | pkonfig (ms) | Pydantic (ms) | Faster | Times Faster |\n"
-        "|----------|---------------|---------------|--------|--------------|\n"
+        "| Scenario | pkonfig (µs) | Pydantic (µs) | Faster | Times Faster |\n"
+        "|----------|----------------|----------------|--------|--------------|\n"
     )
     body = "\n".join(rows) + "\n\n"
 

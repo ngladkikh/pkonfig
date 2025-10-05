@@ -4,13 +4,13 @@ This document presents the results of benchmarking pkonfig against Pydantic Sett
 
 ## Summary
 
-| Scenario | pkonfig (ms) | Pydantic (ms) | Faster | Times Faster |
-|----------|---------------|---------------|--------|--------------|
-| Simple Configuration | 0.004 | 0.074 | pkonfig | 16.80x |
-| Nested Configuration | 0.010 | 0.337 | pkonfig | 33.22x |
-| Large Configuration | 0.062 | 0.089 | pkonfig | 1.43x |
-| Access Performance | 0.001 | 0.000 | pydantic | 6.41x |
-| Dictionary Source | 0.011 | 0.273 | pkonfig | 24.20x |
+| Scenario | pkonfig (µs) | Pydantic (µs) | Faster | Times Faster |
+|----------|----------------|----------------|--------|--------------|
+| Simple Configuration | 4.384 | 74.141 | pkonfig | 16.91x |
+| Nested Configuration | 10.178 | 338.947 | pkonfig | 33.30x |
+| Large Configuration | 60.752 | 87.165 | pkonfig | 1.43x |
+| Access Performance | 0.701 | 0.104 | pydantic | 6.71x |
+| Dictionary Source | 11.055 | 273.161 | pkonfig | 24.71x |
 
 ## Methodology
 
