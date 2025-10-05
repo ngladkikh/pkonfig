@@ -792,5 +792,6 @@ See Benchmarks for performance comparisons and up-to-date results.
 :hidden:
 :maxdepth: 1
 
+api
 benchmarks
 ```
