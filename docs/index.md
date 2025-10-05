@@ -1,6 +1,6 @@
 # PKonfig
 
-P stands for Python.
+_Configs for humans_
 
 [![pypi](https://img.shields.io/pypi/v/pkonfig.svg)](https://pypi.python.org/pypi/pkonfig)
 [![downloads](https://img.shields.io/pypi/dm/pkonfig)](https://pepy.tech/project/pkonfig)
