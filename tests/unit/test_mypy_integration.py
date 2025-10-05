@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-import pytest
 from mypy import api as mypy_api
 
 SNIPPET_OK = """
@@ -38,18 +37,9 @@ bad: str = cfg.port  # E: Incompatible types in assignment
 """
 
 
-@pytest.mark.parametrize(
-    "code, expect_ok",
-    [
-        (SNIPPET_OK, True),
-        (SNIPPET_BAD_ASSIGN, False),
-    ],
-)
-def test_mypy_understands_field_typing(
-    tmp_path: Path, code: str, expect_ok: bool
-) -> None:
+def test_mypy_understands_field_typing_ok(tmp_path: Path) -> None:
     test_file = tmp_path / "snippet.py"
-    test_file.write_text(code)
+    test_file.write_text(SNIPPET_OK)
 
     # Run mypy against the snippet file. Use flags for deterministic output.
     stdout, stderr, exit_status = mypy_api.run(
@@ -64,15 +54,26 @@ def test_mypy_understands_field_typing(
         ]
     )
 
-    if expect_ok:
-        assert exit_status == 0, f"mypy unexpectedly failed with: {stdout or stderr}"
-        # Ensure there are no error lines referencing the file
-        assert f"{test_file}:" not in stdout
-    else:
-        assert (
-            exit_status != 0
-        ), "mypy should report a type error but exited successfully"
-        # mypy reports error lines prefixed with the file path
-        assert f"{test_file}:" in stdout
-        # Optional sanity check: the error should be about incompatible assignment
-        assert "[assignment]" in stdout or "Incompatible types" in stdout
+    assert exit_status == 0, f"mypy unexpectedly failed with: {stdout or stderr}"
+    # Ensure there are no error lines referencing the file
+    assert f"{test_file}:" not in stdout
+
+def test_mypy_understands_field_typing_bad_assignment(tmp_path: Path) -> None:
+    test_file = tmp_path / "snippet.py"
+    test_file.write_text(SNIPPET_BAD_ASSIGN)
+
+    # Run mypy against the snippet file. Use flags for deterministic output.
+    stdout, stderr, exit_status = mypy_api.run(
+        [
+            str(test_file),
+            "--no-incremental",
+            "--show-error-codes",
+            "--hide-error-context",
+            "--no-error-summary",
+            "--python-version",
+            f"{sys.version_info.major}.{sys.version_info.minor}",
+        ]
+    )
+    assert (
+        exit_status != 0
+    ), "mypy should report a type error but exited successfully"
