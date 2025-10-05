@@ -45,6 +45,8 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
 ]
+html_logo = "_static/pkonfig_logo_2.png"
+html_static_path = ["_static"]
 
 # -- Options for HTML output -------------------------------------------------
 

@@ -5,6 +5,10 @@ description = "Pythonic agile application configuration helpers"
 authors = ["Nikita Gladkikh <gladkikh.nikita@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+include = [
+    # Ensure README images used on PyPI are included in the distribution
+    "docs/_static/pkonfig_logo_2.png",
+]
 keywords = [
     "config",
     "configuration",
