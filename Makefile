@@ -21,5 +21,11 @@ lint: ## Run static analysis (mypy and pylint)
 
 check: fmt unit lint compatibility ## Run format, tests, and lint
 
+bench: ## Run benchmarks and update RESULTS.md
+	poetry run python benchmarks/benchmark_pkonfig_vs_pydantic.py && \
+	poetry run python benchmarks/generate_markdown.py
+
+bench-docs: bench docs-build ## Run benchmarks, update results, and rebuild docs
+
 # Include documentation targets from docs/Makefile (if present)
 -include docs/Makefile

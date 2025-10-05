@@ -42,7 +42,7 @@ def main():
         print()
 
     # Save results to JSON file
-    with open("benchmark_results.json", "w") as f:
+    with open("benchmarks/benchmark_results.json", "w") as f:
         json.dump(results, f, indent=2)
 
     print("Benchmark results saved to benchmark_results.json")

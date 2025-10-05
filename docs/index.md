@@ -778,3 +778,19 @@ except ConfigValueNotFoundError as exc:
 config = AppConfig(DotEnv(".env"), fail_fast=False) # No error raised
 config.foo  # This line actually causes `config.foo not found` exception
 ```
+
+
+## Benchmarks
+
+See Benchmarks for performance comparisons and up-to-date results.
+
+- Benchmarks docs: [Benchmarks](./benchmarks.md)
+- How to run and methodology: included from `benchmarks/README.md` on that page
+
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+benchmarks
+```
