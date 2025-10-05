@@ -24,6 +24,12 @@ def test_python_version_compatibility(version, client):
         image=image_tag,
         remove=True,
     )
-    out = logs.decode("utf-8", errors="replace") if isinstance(logs, (bytes, bytearray)) else str(logs)
+    out = (
+        logs.decode("utf-8", errors="replace")
+        if isinstance(logs, (bytes, bytearray))
+        else str(logs)
+    )
     # Ensure there are no failures reported by pytest inside the container
-    assert "failed" not in out.lower(), f"Unit tests reported failures in Python {version}:\n{out}"
+    assert (
+        "failed" not in out.lower()
+    ), f"Unit tests reported failures in Python {version}:\n{out}"

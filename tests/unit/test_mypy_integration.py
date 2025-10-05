@@ -58,6 +58,7 @@ def test_mypy_understands_field_typing_ok(tmp_path: Path) -> None:
     # Ensure there are no error lines referencing the file
     assert f"{test_file}:" not in stdout
 
+
 def test_mypy_understands_field_typing_bad_assignment(tmp_path: Path) -> None:
     test_file = tmp_path / "snippet.py"
     test_file.write_text(SNIPPET_BAD_ASSIGN)
@@ -74,6 +75,4 @@ def test_mypy_understands_field_typing_bad_assignment(tmp_path: Path) -> None:
             f"{sys.version_info.major}.{sys.version_info.minor}",
         ]
     )
-    assert (
-        exit_status != 0
-    ), "mypy should report a type error but exited successfully"
+    assert exit_status != 0, "mypy should report a type error but exited successfully"
