@@ -21,18 +21,27 @@ api
 benchmarks
 ```
 
-## Prerequisites
+Pragmatic, type-safe configuration for Python apps. 
+PKonfig turns scattered env vars and config files into one clean, validated object with predictable precedence and great DX.
 
-- Pythonic configuration management helpers.
-- Multiple sources of configs (environment variables, dotenv files, YAML, JSON, TOML, INI)
-  with agile order configuration.
-- Configs validation mechanics based on type hints or user-defined classes.
-- Minimal external dependencies.
-- Follow [the Fail-fast](https://en.wikipedia.org/wiki/Fail-fast) principle.
-- Autocomplete in modern IDEs.
+### Why PKonfig
+- Avoid config spaghetti: declare your config as code, not as ad‑hoc parsing scattered around the app.
+- Fail fast: catch missing or invalid values at startup, not at 2 a.m. in production.
+- Predictable precedence: layer env vars, .env, YAML/JSON/TOML/INI in the order you choose.
+- Type-safe by default: fields convert and validate values; your IDE autocompletion just works.
+- Fast and lightweight: minimal dependencies, small surface area, no magic.
+- Framework-agnostic: works equally well in CLIs, services, scripts, and jobs.
 
-## Features
+### What problems it solves
+- “Where does this setting come from?” → Single source of truth with clear precedence.
+- “Why did prod behave differently?” → Explicit, validated defaults and fail-fast checks.
+- “Why is this a string not an int?” → Built-in casting and validation for common types.
 
+### Features
+- Typed, validated configuration objects
+- Multiple sources (env vars, .env, YAML, JSON, TOML, INI) with flexible precedence
+- Minimal dependencies, fail-fast checks, and great IDE autocompletion
+- Extensible API with high performance
 - User-defined config source order: Define the order in which PKonfig looks for configuration values.
 - Multilevel configs for environment variables and dotenv config sources: Allows for more granular control over configuration values.
 - Custom aliases for fields or groups of configs: Create custom aliases for configuration values to make them easier to reference in code.
