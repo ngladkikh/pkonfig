@@ -12,6 +12,17 @@ _Configs for humans_
 [![Code Style - isort](https://img.shields.io/badge/Code%20Style-isort-%231674b1)](https://pycqa.github.io/isort/)
 [![codecov](https://codecov.io/github/ngladkikh/pkonfig/branch/main/graph/badge.svg?token=VDRSB1XUFH)](https://codecov.io/github/ngladkikh/pkonfig)
 
+```{toctree}
+:maxdepth: 2
+:caption: Contents
+
+installation
+quickstart
+tutorials
+api
+benchmarks
+```
+
 ## Prerequisites
 
 - Pythonic configuration management helpers.
@@ -34,7 +45,7 @@ _Configs for humans_
 
 ## Installation
 
-To install basic PKonfig without YAML and TOML support run:
+To install basic PKonfig without YAML and TOML support, run:
 
 ```bash
 pip install pkonfig
@@ -46,27 +57,27 @@ YAML files parsing is handled with [PyYaml](https://pypi.org/project/PyYAML/):
 pip install pkonfig[yaml]
 ```
 
-TOML files handled with help of [Tomli](https://pypi.org/project/tomli/):
+TOML files are handled with the help of [Tomli](https://pypi.org/project/tomli/):
 
 ```bash
 pip install pkonfig[toml]
 ```
 
-And if both TOML and YAML is needed:
+And if both TOML and YAML are needed:
 
 ```bash
 pip install pkonfig[toml,yaml]
 ```
 
-For production no .env files are needed but proper environment variables should be set.
-In case some of required variables missing `ConfigValueNotFoundError` exception raised while `AppConfig`
+For production no .env files are needed, but proper environment variables should be set.
+In case some of the required variables missing `ConfigValueNotFoundError` exception raised while `AppConfig`
 instantiation.
 
 ## Quickstart
 
 The Config class is a Pythonic configuration management helper designed
 to provide a simple way of managing multiple sources of configuration values in your application.
-The most basic usage example when environment variables are used for production
+The most basic usage example is when environment variables are used for the production
 environment and DotEnv files are used for local development.
 
 Create config module `config.py`:
@@ -139,10 +150,10 @@ print(CONFIG.foo)   # 'baz'
 
 #### Environment variables
 
-The most common way to configure application is environment variables.
+The most common way to configure an application is environment variables.
 To parse environment variables and store values in multilevel structure class `Env` could be used.
-Common pattern is naming variables with multiple words describing the exact purpose
-more precise: __PG_HOST__, __PG_PORT__ and __REDIS_HOST__, __REDIS_PORT__ could be treated as two groups:
+A common pattern is naming variables with multiple words describing the exact purpose
+more precisely: __PG_HOST__, __PG_PORT__ and __REDIS_HOST__, __REDIS_PORT__ could be treated as two groups:
 
 - PG
     - HOST
@@ -172,7 +183,7 @@ print(source[("nope",)])  # raises KeyError
 ```
 
 `Env` ignores key cases and ignores all keys starting not from __prefix__.
-To change this behaviour set __prefix__ to `None` or an empty string.
+To change, this behavior set __prefix__ to `None` or an empty string.
 In this case you will get all key value pairs:
 
 ```python
@@ -188,9 +199,9 @@ print(source[("nope",)])   # qwe
 
 #### DotEnv
 
-In the same manner as environment variables DotEnv files could be used.
+In the same manner as environment variables, DotEnv files could be used.
 `DotEnv` requires file name as a string or a path and also accepts `delimiter` and `prefix` optional arguments.
-`missing_ok` argument defines whether `DotEnv` raises exception when given file not found.
+`missing_ok` argument defines whether `DotEnv` raises exception when a given file not found.
 When file not found and `missing_ok` is set `DotEnv` contains empty dictionary.
 
 ```python
@@ -224,12 +235,12 @@ print(storage[("bitbucket.org", "User")])  # hg
 print(storage[("bitbucket.org", "ServerAliveInterval")])  # 45
 ```
 
-`Ini` also accepts `missing_ok` argument to ignore missing file.
+`Ini` also accepts `missing_ok` argument to ignore a missing file.
 Most of `ConfigParser` arguments are also accepted to modify parser behaviour.
 
 #### Json
 
-`Json` class uses `json.load` to read given JSON file and respects `missing_ok` argument:
+`Json` class uses `json.load` to read a given JSON file and respects `missing_ok` argument:
 
 ```python
 from pkonfig.storage import Json
@@ -239,7 +250,7 @@ storage = Json("config.json", missing_ok=False)
 
 #### Yaml
 
-To parse YAML files [PyYaml](https://pyyaml.org/wiki/PyYAMLDocumentation) could be used wrapped with `Yaml` class:
+To parse YAML files, [PyYaml](https://pyyaml.org/wiki/PyYAMLDocumentation) could be used wrapped with `Yaml` class:
 
 ```python
 from pkonfig import Yaml
@@ -279,7 +290,7 @@ config = AppConfig(
 )
 ```
 
-In this example we created `AppConfig` that looks for key until finds one in the given mappers sequence.
+In this example we created `AppConfig` that looks for a key until finds one in the given mappers sequence.
 The first one source for configs is **test.env** file that might not exist and could be used for local development only.
 Then environment variables are used as the second one config source.
 The last one is **base_config.yaml** that should exist or `FileNotFoundError` exception raised.
@@ -305,7 +316,7 @@ print(config.foo)   # 0.33
 print(config.baz)   # 1
 ```
 
-To build more granular config structure:
+To build a more granular config structure:
 
 ```python
 from pkonfig import Config, DictStorage, Float, Int, Str
@@ -373,12 +384,12 @@ APP__PG__HOST=db_host
 APP__PG__PORT=6432
 APP__REDIS__HOST=redis
 ```
-In this example we customized delimiter with two underscores, default is '_'.
+In this example we customized a delimiter with two underscores, default is '_'.
 
 ### Aliases
 
 All __Config__ fields accept __alias__ argument.
-When storage class searches for config attribute in its source either attribute
+When storage class searches for config attribute in its source, either attribute
 name is used or alias when it is set.
 
 `config.py`:
@@ -412,7 +423,7 @@ APP__DB__USER=postgres
 APP__MY_ALIAS=123
 ```
 
-In this example storage will seek in dotenv file parameters named by given alias.
+In this example storage will seek in dotenv file parameters named by a given alias.
 Elsewhere in the app:
 
 ```python
@@ -426,7 +437,7 @@ print(config.pg.password)   # password
 ### PKonfig fields
 
 All simple Python data types are implemented in field types: `Bool`, `Int`, `Float`, `Str`, `Byte`, `ByteArray`.
-All fields with known type converted to descriptors during class creation.
+All fields with known type are converted to descriptors during class creation.
 Fields in `Config` classes may be defined in several ways:
 
 #### Using types:
@@ -446,12 +457,12 @@ class AppConfig(Config):
 
 All __PKonfig__ field types are Python descriptors that are responsible for type casting and data validation.
 In most cases there is no need to do this job every time the value is accessed.
-To avoid undesirable calculations caching is used.
-So that type casting and validation is done only once during `Config` object initialization.
+To avoid undesirable calculations, caching is used.
+So that type casting and validation are done only once during `Config` object initialization.
 
 #### Default values
 
-If value is not set in config source user can use default value.
+If a value is not set in the config source, the user can use the default value.
 `None` could be used as default value:
 
 ```python
@@ -471,7 +482,7 @@ When `None` is default value the field is treated as nullable.
 
 #### Field nullability
 
-To handle type casting and validation fields should not be nullable.
+To handle type casting and validation, fields should not be nullable.
 In case `None` is a valid value and should be used without casting and validation
 option `nullable` could be set:
 
@@ -521,7 +532,7 @@ print(config.value)  # True
 
 ### Custom field types
 
-User can customize how field validation and casting is done.
+Users can customize how field validation and casting are done.
 The recommended way is to implement `validate` method:
 
 ```python
@@ -539,7 +550,7 @@ class AppConfig(Config):
 ```
 
 Custom type casting is also available.
-To achieve this user should inherit abstract class `Field` and implement method `cast`:
+To achieve, this user should inherit abstract class `Field` and implement method `cast`:
 
 ```python
 from typing import List
@@ -566,7 +577,7 @@ Builtin Python types has appropriate `Field` types:
 #### PathField
 
 Basic path type that is parental for other two types and is used when you define field using `pathlib.Path`.
-This type raises `FileNotFoundError` exception during initialization if given path doesn't exist:
+This type raises `FileNotFoundError` exception during initialization if a given path doesn't exist:
 
 ```python
 from pkonfig import Config, PathField
@@ -581,11 +592,11 @@ In given example field `optional_path` may not exist during initialization.
 
 ##### File
 
-`File` inherits `PathField` but also checks whether given path is a file.
+`File` inherits `PathField` but also checks whether a given path is a file.
 
 #### Folder
 
-`Folder` inherits `PathField` and does checking whether given path is a folder.
+`Folder` inherits `PathField` and does checking whether a given path is a folder.
 
 #### EnumField
 
@@ -661,8 +672,8 @@ When `cast_function` is not given raw values from storage are used.
 
 #### DebugFlag
 
-`DebugFlag` helps to set widely used __debug__ option.
-`DebugFlag` ignores value case and treats `'true'` string as `True` and any other value as `False`:
+`DebugFlag` helps to set a widely used __debug__ option.
+`DebugFlag` ignores a value case and treats `'true'` string as `True` and any other value as `False`:
 
 ```python
 from pkonfig import Config, Bool, DictStorage
@@ -689,7 +700,7 @@ print(config.random_string)     # False
 ### Per-environment config files
 
 When your app is configured with different configuration files
-and each file is used only in an appropriate environment you can create a function
+and each file is used only in an appropriate environment, you can create a function
 to find which file should be used:
 
 ```python
@@ -716,7 +727,7 @@ def get_config_file():
 ```
 
 `get_config_file` uses environment variables and predefined config files paths
-to check whether `APP_ENV` var is set, validate this variable and return appropriate
+to check whether `APP_ENV` var is set, validate this variable and return the appropriate
 config file name.
 Then actual application configuration:
 
@@ -757,10 +768,10 @@ config = AppConfig(Env(), Yaml(get_config_file()))
 
 ### Fail fast
 
-Very often it is helpful to check app configs existence and validate values before the app does something.
+Very often it is helpful to check app configs' existence and validate values before the app does something.
 To achieve this `Config` class runs `check` as the last step in it's `__init__` method.
 `check` recursively gets from storage and verifies all defined config attributes.
-When this behaviour is not desirable for some reason user can set flag `fail_fast` to `False`:
+When this behaviour is not desirable for some reason, user can set flag `fail_fast` to `False`:
 
 ```python
 from pkonfig import Config, DotEnv, ConfigValueNotFoundError
@@ -780,18 +791,3 @@ config.foo  # This line actually causes `config.foo not found` exception
 ```
 
 
-## Benchmarks
-
-See Benchmarks for performance comparisons and up-to-date results.
-
-- Benchmarks docs: [Benchmarks](./benchmarks.md)
-- How to run and methodology: included from `benchmarks/README.md` on that page
-
-
-```{toctree}
-:hidden:
-:maxdepth: 1
-
-api
-benchmarks
-```

@@ -58,3 +58,8 @@ html_title = "PKonfig Documentation"
 myst_enable_extensions = [
     "linkify",
 ]
+
+# Suppress MyST header structure warnings (e.g., non-consecutive header levels)
+suppress_warnings = [
+    "myst.header",
+]
