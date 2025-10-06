@@ -19,7 +19,9 @@ from pkonfig import (
     LogLevel,
     Str,
 )
-from pkonfig.storage import DotEnv, Env, Ini, Json as JsonStorage, Toml, Yaml
+from pkonfig.storage import DotEnv, Env, Ini
+from pkonfig.storage import Json as JsonStorage
+from pkonfig.storage import Toml, Yaml
 
 
 def test_tutorial_dict_storage_example():
@@ -85,7 +87,7 @@ def test_tutorial_structured_file_backends(tmp_path):
     yaml_file.write_text("foo: bar\n", encoding="utf-8")
 
     toml_file = tmp_path / "config.toml"
-    toml_file.write_text("feature = \"enabled\"\n", encoding="utf-8")
+    toml_file.write_text('feature = "enabled"\n', encoding="utf-8")
 
     json_settings = JsonStorage(json_file, missing_ok=True)
     yaml_settings = Yaml(yaml_file, missing_ok=False)
@@ -101,7 +103,9 @@ def test_tutorial_storage_precedence(tmp_path, monkeypatch):
     dotenv_file.write_text("APP_FOO=from_dotenv\n", encoding="utf-8")
 
     base_yaml = tmp_path / "base.yaml"
-    base_yaml.write_text("foo: from_yaml\nbar: from_yaml\nbaz: from_yaml\n", encoding="utf-8")
+    base_yaml.write_text(
+        "foo: from_yaml\nbar: from_yaml\nbaz: from_yaml\n", encoding="utf-8"
+    )
 
     monkeypatch.setenv("APP_BAR", "from_env")
 
@@ -254,7 +258,6 @@ def test_tutorial_custom_fields_and_validators():
     assert cfg.tags == ["alpha", "beta"]
 
 
-
 def test_tutorial_specialised_fields():
     class Mode(Enum):
         prod = "prod"
@@ -289,7 +292,9 @@ def test_tutorial_environment_specific_configuration(monkeypatch):
 
     def resolve_config_path() -> str:
         class _Config(Config):
-            env = Choice(["prod", "local", "staging"], cast_function=str.lower, default="prod")
+            env = Choice(
+                ["prod", "local", "staging"], cast_function=str.lower, default="prod"
+            )
 
         selector = _Config(Env(prefix="APP"))
         return config_files[selector.env]

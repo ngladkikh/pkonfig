@@ -6,7 +6,7 @@ casts it to a Python type, validates it and caches the result.
 """
 
 import logging
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -32,7 +32,7 @@ NOT_SET = "NOT_SET"
 T = TypeVar("T")
 
 
-class Field(Generic[T], _Descriptor[T]):
+class Field(Generic[T], _Descriptor[T], ABC):
     """Base config attribute descriptor.
 
     Field is a data descriptor used as a class attribute of a Config subclass.
