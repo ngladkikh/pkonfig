@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/_static/pkonfig_logo_2.png" alt="PKonfig logo" width="200">
+  <img src="https://raw.githubusercontent.com/ngladkikh/pkonfig/main/docs/_static/pkonfig_logo_2.png" alt="PKonfig logo" width="200">
 </p>
 <p align="center">
   <em>Configs for humans</em>
