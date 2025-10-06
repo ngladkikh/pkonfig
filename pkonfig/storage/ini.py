@@ -34,6 +34,7 @@ class Ini(FileStorage):
             empty_lines_in_values=empty_lines_in_values,
             default_section=default_section,
         )
+        self.parser.optionxform = str  # type: ignore
         super().__init__(file=file, missing_ok=missing_ok, **defaults)
 
     def load_file_content(self, handler: IO) -> dict[str, Any]:
