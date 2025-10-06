@@ -25,9 +25,32 @@ copyright = f"{current_year}, {author}"
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
 ]
+
+# Autodoc/Napoleon settings for clear, human-friendly API pages
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "inherited-members": True,
+    "show-inheritance": True,
+}
+# include class and __init__ docstrings
+autoclass_content = "both"
+# keep methods/properties in the order they appear in the source
+autodoc_member_order = "bysource"
+# move type hints from signatures into the description for readability
+autodoc_typehints = "description"
+
+# Make Napoleon render NumPy/Google param & return sections nicely
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = True
+napoleon_attr_annotations = True
 
 # Support both .rst and .md (MyST) files
 source_suffix = {
@@ -53,10 +76,14 @@ html_static_path = ["_static"]
 html_theme = "furo"
 html_title = "PKonfig Documentation"
 
+# -- Autosummary options ------------------------------------------------------
+autosummary_generate = True
+
 # -- MyST configuration ------------------------------------------------------
 
 myst_enable_extensions = [
     "linkify",
+    "colon_fence",
 ]
 
 # Suppress MyST header structure warnings (e.g., non-consecutive header levels)
