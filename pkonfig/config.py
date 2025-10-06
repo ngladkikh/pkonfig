@@ -46,12 +46,7 @@ class Config:
 
     @classmethod
     def _materialize_annotated_fields(cls) -> None:
-        """Instantiate Field descriptors for bare type-hinted attributes.
-
-        Tutorials rely on declaring attributes with type annotations only.
-        To keep those snippets working, translate recognised type hints into
-        their matching Field descriptors at class creation time.
-        """
+        """Instantiate Field descriptors for bare type-hinted attributes."""
 
         raw_annotations = cls.__dict__.get("__annotations__", {})
         if not raw_annotations:
