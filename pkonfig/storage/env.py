@@ -36,3 +36,24 @@ class Env(BaseStorage):
             return os.environ[str_key]
 
         return self._default[key]
+
+    def get(self, key: InternalKey, default: Any) -> Any:
+        str_key = self._converter.to_key(key)
+        upper_str_key = str_key.upper()
+        if upper_str_key in os.environ:
+            return os.environ[upper_str_key]
+
+        if str_key in os.environ:
+            return os.environ[str_key]
+
+        return self._default.get(key, default)
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, tuple):
+            return False
+        str_key = self._converter.to_key(key)
+        if str_key.upper() in os.environ:
+            return True
+        if str_key in os.environ:
+            return True
+        return key in self._default

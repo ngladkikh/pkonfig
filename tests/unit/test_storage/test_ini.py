@@ -12,8 +12,8 @@ def ini_file():
 
 def test_ini_storage(ini_file: Path):
     storage = Ini(ini_file)
-    assert storage[("bitbucket.org", "user")] == "hg"
-    assert storage[("bitbucket.org", "serveraliveinterval")] == "45"
+    assert storage[("bitbucket.org", "User")] == "hg"
+    assert storage[("bitbucket.org", "ServerAliveInterval")] == "45"
 
 
 def test_ini_storage_respects_defaults(ini_file):

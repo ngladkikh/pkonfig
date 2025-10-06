@@ -1,7 +1,12 @@
 from pathlib import Path
 from typing import IO, Mapping, Tuple, Union
 
-from pkonfig.storage.base import DEFAULT_DELIMITER, DEFAULT_PREFIX, FileStorage
+from pkonfig.storage.base import (
+    DEFAULT_DELIMITER,
+    DEFAULT_PREFIX,
+    FileStorage,
+    InternalKey,
+)
 
 
 class DotEnv(FileStorage):
@@ -43,3 +48,26 @@ class DotEnv(FileStorage):
     @staticmethod
     def filter(param_line: str) -> bool:
         return len(param_line) > 2 and (not param_line.startswith(("#", "//")))
+
+    def __getitem__(self, key: InternalKey):
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            lowered = tuple(segment.lower() for segment in key)
+            return super().__getitem__(lowered)
+
+    def get(self, key: InternalKey, default):
+        if key in self._actual_storage:
+            return self._actual_storage[key]
+        lowered = tuple(segment.lower() for segment in key)
+        if lowered in self._actual_storage:
+            return self._actual_storage[lowered]
+        return default
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, tuple):
+            return False
+        if key in self._actual_storage:
+            return True
+        lowered = tuple(segment.lower() for segment in key if isinstance(segment, str))
+        return lowered in self._actual_storage
