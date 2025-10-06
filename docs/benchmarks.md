@@ -7,7 +7,9 @@ The benchmarks and their methodology live in the repository under the `benchmark
 Below you can find a short description and the latest results.
 
 ```{include} ../benchmarks/README.md
+:heading-offset: 1
 ```
 
 ```{include} ../benchmarks/RESULTS.md
+:heading-offset: 1
 ```
