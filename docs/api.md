@@ -140,18 +140,6 @@ All field classes accept `default`, `required`, and optional validator hooks. Co
 :::
 
 ```{eval-rst}
-.. autosummary::
-   :nosignatures:
-
-   Bool
-   Int
-   Str
-   Choice
-   EnumField
-   PathField
-```
-
-```{eval-rst}
 .. autoclass:: pkonfig.fields.Field
    :show-inheritance:
    :members:
