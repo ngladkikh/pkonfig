@@ -47,7 +47,8 @@ class Config:
     @classmethod
     def _materialize_annotated_fields(cls) -> None:
         """Instantiate Field descriptors for bare type-hinted attributes."""
-
+        # TODO: Fix linting warnings
+        # pylint: disable=R0914,C0415
         raw_annotations = cls.__dict__.get("__annotations__", {})
         if not raw_annotations:
             return
@@ -80,7 +81,9 @@ class Config:
                 continue
 
             annotation = resolved_hints.get(name, raw_annotations[name])
-            target_type, nullable = cls._resolve_annotation_target(annotation, Annotated, Union)
+            target_type, nullable = cls._resolve_annotation_target(
+                annotation, Annotated, Union
+            )
             if target_type is None:
                 continue
 
@@ -90,22 +93,28 @@ class Config:
 
             descriptor = field_factory(nullable)
             setattr(cls, name, descriptor)
-            descriptor.__set_name__(cls, name)
+            descriptor.__set_name__(cls, name)  # type: ignore
 
     @staticmethod
-    def _resolve_annotation_target(annotation: Any, annotated_type: Any, union_type: Any) -> Tuple[Any, bool]:
+    def _resolve_annotation_target(  # pylint: disable=R0911
+        annotation: Any, annotated_type: Any, union_type: Any
+    ) -> Tuple[Any, bool]:
         """Return the underlying Python type and nullability for an annotation."""
 
         origin = get_origin(annotation)
 
         if origin is annotated_type:
             inner_annotation = get_args(annotation)[0]
-            return Config._resolve_annotation_target(inner_annotation, annotated_type, union_type)
+            return Config._resolve_annotation_target(
+                inner_annotation, annotated_type, union_type
+            )
 
         if origin is union_type or getattr(origin, "__name__", None) == "UnionType":
             args = tuple(arg for arg in get_args(annotation) if arg is not type(None))
             if len(args) == 1 and len(get_args(annotation)) == 2:
-                inner_type, _ = Config._resolve_annotation_target(args[0], annotated_type, union_type)
+                inner_type, _ = Config._resolve_annotation_target(
+                    args[0], annotated_type, union_type
+                )
                 return inner_type, True
             return None, False
 
