@@ -131,7 +131,23 @@ class AbstractConfig(ABC):
 
 
 class Config(AbstractConfig):
-    """Concrete Config with type-aware field materialisation support."""
+    """Base configuration container.
+
+    Define your configuration by subclassing Config and declaring Field descriptors
+    (from pkonfig.fields) as class attributes or nested Configs for grouping.
+
+    Parameters
+    ----------
+    *storages : BaseStorage
+        One or more storage backends to read configuration values from, in
+        priority order (leftmost has highest priority).
+    alias : str, optional
+        Optional alias for this config used to build nested keys, by default "".
+    fail_fast : bool, optional
+        If True (default), access all declared fields during initialization to
+        ensure required values are present, and types/validators pass. If False,
+        validation happens lazily on first access.
+    """
 
     _TYPE_FACTORIES: Dict[type[Any], FieldFactory] = {}
 
