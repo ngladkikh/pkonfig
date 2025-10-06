@@ -1,94 +1,102 @@
+
 # Tutorials
 
-This section contains practical, step-by-step guides to using PKonfig beyond the Quickstart.
+Hands-on guides that show how to assemble real PKonfig setups: compose storages, structure nested configs, and extend the library when built-ins are not enough.
 
-### Config sources
+- Understand which storage backend fits each source of truth.
+- Layer storages with predictable precedence and sensible defaults.
+- Model complex configuration trees with nested `Config` classes and aliases.
+- Extend PKonfig with custom fields, descriptors, and convenience helpers.
 
-__PKonfig__ implements several config sources out of the box.
-Use `DictStorage` if some defaults should be stored from code rather than from field default values:
+:::{contents}
+:local:
+:depth: 2
+:::
+
+## Prerequisites
+
+- Install PKonfig with any extras you plan to use (`pip install pkonfig[yaml,toml]`).
+- Activate a virtual environment so examples do not mutate your system interpreter.
+- When examples temporarily mutate `os.environ`, clean up afterwards if you are running them in a long-lived shell.
+
+## Configuration sources
+
+PKonfig ships with several storage backends. They all implement the `Mapping` interface expected by `Config` and flatten nested structures into tuple keys.
+
+### In-memory defaults with `DictStorage`
+
+Use `DictStorage` when you want code-defined defaults or you prefer to keep sensitive values outside the class definition.
 
 ```python
-from pkonfig import Config, Str, DictStorage
+from pkonfig import Config, DictStorage, Str
 
 
 class AppConfig(Config):
-    foo: str = Str()    # foo has no default value and raise an exception if value not found in storage
+    foo = Str()  # raises ConfigValueNotFoundError if not provided
 
 
-CONFIG = AppConfig(DictStorage(foo="baz"))
-print(CONFIG.foo)   # 'baz'
+cfg = AppConfig(DictStorage(foo="baz"))
+print(cfg.foo)  # 'baz'
 ```
 
-#### Environment variables
+:::{tip}
+`DictStorage` is also handy in unit tests because you can inject dictionaries directly instead of touching the filesystem or environment.
+:::
 
-The most common way to configure an application is environment variables.
-To parse environment variables and store values in multilevel structure class `Env` could be used.
-A common pattern is naming variables with multiple words describing the exact purpose
-more precisely: __PG_HOST__, __PG_PORT__ and __REDIS_HOST__, __REDIS_PORT__ could be treated as two groups:
+### Environment variables (`Env`)
 
-- PG
-    - HOST
-    - PORT
-- REDIS
-    - HOST
-    - PORT
-
-PKonfig respects this convention so that `Env` has two optional arguments:
-
-- `delimiter` string that will be used to split configuration levels taken from keys;
-- `prefix` string that is used to identify keys that are related to the given app and omit everything else.
+Environment variables are the most portable way to configure services. `Env` understands prefixes and delimiters so you can group values.
 
 ```python
 from os import environ
 from pkonfig.storage import Env
 
-environ["APP_OUTER"] = "foo"
-environ["APP_INNER_KEY"] = "baz"
-environ["NOPE"] = "qwe"
+environ.update({
+    "APP_OUTER": "foo",
+    "APP_INNER_KEY": "baz",
+    "IGNORED": "value",
+})
 
-source = Env(delimiter="_", prefix="APP")
-
-print(source[("outer",)])  # foo
-print(source[("inner", "key")])  # baz
-print(source[("nope",)])  # raises KeyError
+source = Env(prefix="APP", delimiter="_")
+print(source[("outer",)])          # foo
+print(source[("inner", "key")])   # baz
 ```
 
-`Env` ignores key cases and ignores all keys starting not from __prefix__.
-To change, this behavior set __prefix__ to `None` or an empty string.
-In this case you will get all key value pairs:
+:::{note}
+Keys are matched case-insensitively. Pass `prefix=None` (or `""`) to opt out and read every variable.
+:::
 
 ```python
 from os import environ
-from pkonfig import Env
+from pkonfig.storage import Env
 
-environ["NOPE"] = "qwe"
-
-source = Env(prefix=None)
-
-print(source[("nope",)])   # qwe
+environ["WHATEVER"] = "value"
+print(Env(prefix=None)[("whatever",)])  # value
 ```
 
-#### DotEnv
+### `.env` files (`DotEnv`)
 
-In the same manner as environment variables, DotEnv files could be used.
-`DotEnv` requires file name as a string or a path and also accepts `delimiter` and `prefix` optional arguments.
-`missing_ok` argument defines whether `DotEnv` raises exception when a given file not found.
-When file not found and `missing_ok` is set `DotEnv` contains empty dictionary.
+`.env` files are convenient during local development. `DotEnv` mirrors `Env`, trimming the prefix and delimiter as it loads lines.
+
+```
+# test.env
+APP_DB_HOST=db.local
+APP_DB_PORT=5432
+```
 
 ```python
-from pkonfig import DotEnv
+from pkonfig.storage import DotEnv
 
-config_source = DotEnv("test.env", delimiter="_", prefix="APP", missing_ok=True)
+dev_overrides = DotEnv("test.env", prefix="APP", delimiter="_", missing_ok=True)
+print(dev_overrides[("db", "host")])  # db.local
 ```
 
-#### Ini
+### INI files (`Ini`)
 
-__INI__ files are quite common and class `Ini`
-is build on top of [`configparser.ConfigParser`](https://docs.python.org/3/library/configparser.html).
-
-**config.ini** file example:
+`Ini` wraps `configparser.ConfigParser`, exposing the same configuration knobs.
 
 ```ini
+# config.ini
 [DEFAULT]
 ServerAliveInterval = 45
 
@@ -96,486 +104,297 @@ ServerAliveInterval = 45
 User = hg
 ```
 
-Then in Python code:
-
 ```python
 from pkonfig.storage import Ini
 
 storage = Ini("config.ini", missing_ok=False)
-print(storage[("bitbucket.org", "User")])  # hg
+print(storage[("bitbucket.org", "User")])            # hg
 print(storage[("bitbucket.org", "ServerAliveInterval")])  # 45
 ```
 
-`Ini` also accepts `missing_ok` argument to ignore a missing file.
-Most of `ConfigParser` arguments are also accepted to modify parser behaviour.
+### JSON, YAML, and TOML
 
-#### Json
-
-`Json` class uses `json.load` to read a given JSON file and respects `missing_ok` argument:
+Each structured file format has a dedicated backend. Install the optional extras if you use YAML or TOML.
 
 ```python
-from pkonfig.storage import Json
+from pkonfig.storage import Json, Toml, Yaml
 
-storage = Json("config.json", missing_ok=False)
+json_settings = Json("config.json", missing_ok=True)
+yaml_settings = Yaml("config.yaml", missing_ok=False)
+toml_settings = Toml("config.toml", missing_ok=False)
 ```
 
-#### Yaml
+:::{important}
+`Toml` uses `tomllib` on Python ≥3.11 and falls back to `tomli` on earlier versions. Make sure the `toml` extra is installed if you target Python 3.10 or below.
+:::
 
-To parse YAML files, [PyYaml](https://pyyaml.org/wiki/PyYAMLDocumentation) could be used wrapped with `Yaml` class:
+## Ordering storages for precedence
 
-```python
-from pkonfig import Yaml
-
-storage = Yaml("config.yaml", missing_ok=False)
-```
-
-#### Toml
-
-TOML files are parsed with [tomli](https://pypi.org/project/tomli/) wrapped with `Toml` helper class:
+Storages are evaluated left-to-right, so earlier sources override later ones. Chain together as many as you need.
 
 ```python
-from pkonfig import Toml
-
-
-storage = Toml("config.toml", missing_ok=False)
-```
-
-### Source order
-
-Any source for `BaseConfig` should implement `Mapper` protocol.
-So it is easy to implement custom or combine existing implementations.
-Recommended way to combine multiple sources of configs is `ChainMap`:
-
-```python
-from pkonfig import Config, Env, Yaml, DotEnv, Str
+from pkonfig import Config, DotEnv, Env, Str, Yaml
 
 
 class AppConfig(Config):
-    foo: str = Str()
+    foo = Str()
 
 
-config = AppConfig(
-    DotEnv("test.env", missing_ok=True),
-    Env(),
-    Yaml("base_config.yaml"),
+cfg = AppConfig(
+    DotEnv("test.env", missing_ok=True),  # developer overrides
+    Env(prefix="APP"),                   # runtime overrides
+    Yaml("base.yaml"),                    # defaults committed to the repo
 )
 ```
 
-In this example we created `AppConfig` that looks for a key until finds one in the given mappers sequence.
-The first one source for configs is **test.env** file that might not exist and could be used for local development only.
-Then environment variables are used as the second one config source.
-The last one is **base_config.yaml** that should exist or `FileNotFoundError` exception raised.
-You can customize source order.
+:::{tip}
+Call `cfg.get_storage().maps` to inspect the underlying `ChainMap` if you need to debug which source supplied a value.
+:::
 
-### Config
+## Building configuration classes
 
-To implement application config class user should inherit from `pkonfig.config.Config` class and define
-required fields:
+Declare fields on subclasses of `Config`. PKonfig eagerly validates them (unless you disable `fail_fast`).
 
 ```python
-from pkonfig import Config, Float, Int, DictStorage
+from pkonfig import Config, DictStorage, Float, Int
 
 
 class AppConfig(Config):
-    foo: float = Float()
-    baz: int = Int()
+    ratio = Float()
+    workers = Int(default=1)
 
 
-config = AppConfig(DictStorage(**{"foo": "0.33", "baz": 1}))
-
-print(config.foo)   # 0.33
-print(config.baz)   # 1
+cfg = AppConfig(DictStorage(ratio="0.33"))
+print(cfg.ratio)    # 0.33
+print(cfg.workers)  # 1
 ```
 
-To build a more granular config structure:
+### Nested configs
+
+Group related settings by nesting other `Config` classes.
 
 ```python
-from pkonfig import Config, DictStorage, Float, Int, Str
+from pkonfig import Config, DictStorage, Int, Str
 
 
-class Inner(Config):
-    key: str = Str()
+class Database(Config):
+    host = Str(default="localhost")
+    port = Int(default=5432)
+
+
+class App(Config):
+    db = Database(alias="db")
+    timezone = Str(default="UTC")
+
+
+cfg = App(DictStorage(db={"port": 6432}))
+print(cfg.db.port)   # 6432
+print(cfg.timezone)  # UTC
+```
+
+### Loading multilevel keys from `.env`
+
+```python
+from pkonfig import Config, DotEnv, Int, Str
+
+
+class Pg(Config):
+    host = Str(default="localhost")
+    port = Int(default=5432)
+
+
+class Redis(Config):
+    host = Str(default="localhost")
+    port = Int(default=6379)
 
 
 class AppConfig(Config):
-    inner = Inner()
-    foo: float = Float()
-    baz: int = Int()
+    pg = Pg()
+    redis = Redis()
 
 
-storage = DictStorage(
-    **{
-        "foo": "0.33",
-        "baz": 1,
-        "inner": {"key": "value"}
-    }
-)
-config = AppConfig(storage)
-
-print(config.inner.key)   # value
+cfg = AppConfig(DotEnv(".env", delimiter="__", prefix="APP"))
+print(cfg.pg.host)
+print(cfg.redis.host)
 ```
 
-### Multilevel Config
-
-Grouping might be useful when there are lots of config parameters.
-To achieve this `Config` class should be inherited like:
-
-```python
-from pkonfig import Config, DotEnv, Str, Int
-
-
-class PgConfig(Config):
-    host: str = Str("localhost")
-    port: int = Int(5432)
-
-
-class RedisConfig(Config):
-    host: str = Str("localhost")
-    port: int = Int(6379)
-
-
-class AppConfig(Config):
-    pg = PgConfig()
-    redis = RedisConfig()
-
-
-config = AppConfig(
-    DotEnv(".env", delimiter="__", prefix="APP")
-)
-
-print(config.pg.host)  # db_host
-print(config.pg.port)  # 6432
-print(config.redis.host)  # redis
 ```
-
-`.env` content:
-
-```ini
+# .env
 APP__PG__HOST=db_host
 APP__PG__PORT=6432
 APP__REDIS__HOST=redis
 ```
-In this example we customized a delimiter with two underscores, default is '_'.
 
-### Aliases
+### Aliases for ergonomic keys
 
-All __Config__ fields accept __alias__ argument.
-When storage class searches for config attribute in its source, either attribute
-name is used or alias when it is set.
-
-`config.py`:
+Aliases let storages look up alternative names without changing attribute access in Python.
 
 ```python
-from pkonfig import Config, Int, Str, DotEnv
+from pkonfig import Config, DotEnv, Int, Str
 
 
-class HostConfig(Config):
-    host: str = Str("localhost")
-    port: int = Int(5432)
-    user: str = Str("user")
-    password = Str(alias="pass")
+class Host(Config):
+    host = Str(default="localhost")
+    password = Str(alias="PASS")
 
 
 class AppConfig(Config):
-    pg = HostConfig(alias="db")
-    foo_baz = Int(alias="my_alias")
+    pg = Host(alias="DB")
+    retries = Int(alias="MY_ALIAS", default=1)
 
 
-config = AppConfig(DotEnv(".env", delimiter="__"))
+cfg = AppConfig(DotEnv(".env", delimiter="__", prefix="APP"))
+print(cfg.pg.password)
+print(cfg.retries)
 ```
 
-`.env` content:
-
-```ini
-APP__DB__HOST=db_host
-APP__DB__PORT=6432
+```
+# .env
 APP__DB__PASS=password
-APP__DB__USER=postgres
-APP__MY_ALIAS=123
+APP__MY_ALIAS=5
 ```
 
-In this example storage will seek in dotenv file parameters named by a given alias.
-Elsewhere in the app:
+:::{hint}
+Aliases are especially helpful when migrating from an older configuration naming scheme—you can keep legacy keys alive while exposing clean attribute names in code.
+:::
 
-```python
-from config import config
+## Field behaviour and customization
 
+Fields encapsulate casting, validation, and caching. The snippets below highlight common patterns.
 
-print(config.foo_baz)       # 123
-print(config.pg.password)   # password
-```
+### Type hints and caching
 
-### PKonfig fields
+Declaring type annotations is enough for many cases—PKonfig resolves them to appropriate fields and caches the validated result after the first access.
 
-All simple Python data types are implemented in field types: `Bool`, `Int`, `Float`, `Str`, `Byte`, `ByteArray`.
-All fields with known type are converted to descriptors during class creation.
-Fields in `Config` classes may be defined in several ways:
-
-#### Using types:
 ```python
 from pathlib import Path
-from pkonfig import Config
+from pkonfig import Config, DictStorage
 
 
-class AppConfig(Config):
-    foo: str
-    baz: int
-    flag: bool
-    file: Path
+class Paths(Config):
+    bucket: str
+    log_level: str
+    config_file: Path
+
+
+cfg = Paths(DictStorage(bucket="assets", log_level="INFO", config_file="config.yaml"))
+print(cfg.config_file)
 ```
 
-#### Caching
-
-All __PKonfig__ field types are Python descriptors that are responsible for type casting and data validation.
-In most cases there is no need to do this job every time the value is accessed.
-To avoid undesirable calculations, caching is used.
-So that type casting and validation are done only once during `Config` object initialization.
-
-#### Default values
-
-If a value is not set in the config source, the user can use the default value.
-`None` could be used as default value:
+### Default values and nullability
 
 ```python
-from pkonfig import Config, Int, Str, DictStorage
+from pkonfig import Config, DictStorage, Int, Str
 
 
-class AppConfig(Config):
-    int_attr = Int(None)
-    str_attr = Str(None)
+class MaybeConfig(Config):
+    retries = Int(default=3)
+    optional_token = Str(default=None)
 
-config = AppConfig(DictStorage())
-print(config.str_attr)    # None
-print(config.int_attr)    # None
+
+cfg = MaybeConfig(DictStorage(optional_token=None))
+print(cfg.retries)         # 3
+print(cfg.optional_token)  # None
 ```
 
-When `None` is default value the field is treated as nullable.
-
-#### Field nullability
-
-To handle type casting and validation, fields should not be nullable.
-In case `None` is a valid value and should be used without casting and validation
-option `nullable` could be set:
+Set `nullable=True` to allow `None` without casting.
 
 ```python
-from pkonfig import Int, Config, DictStorage
+from pkonfig import Config, DictStorage, Int
 
 
-class AppConfig(Config):
-    int_attr = Int(nullable=True)
+class NullableExample(Config):
+    retries = Int(nullable=True)
 
-config = AppConfig(DictStorage(int_attr=None))
-print(config.int_attr)    # None
+
+cfg = NullableExample(DictStorage(retries=None))
+print(cfg.retries is None)  # True
 ```
 
-In this example when `None` comes from storage type casting and validation is omitted.
-
-By default, fields are treated as not nullable:
+### Custom computed properties
 
 ```python
-from pkonfig import Int, Config, DictStorage
+from pkonfig import Bool, Config, DictStorage, Str
 
 
-class AppConfig(Config):
-    int_attr = Int(default=1)
-
-config = AppConfig(DictStorage(int_attr=None))  # ValueError("Not nullable") is raised here
-```
-
-### Custom descriptor or property
-
-```python
-from pkonfig import Config, Bool, DictStorage, Str
-
-
-class AppConfig(Config):
-    flag: bool = Bool(True)
-    baz: str = Str("test")
+class FeatureFlags(Config):
+    enabled = Bool(default=True)
+    environment = Str(default="test")
 
     @property
-    def value(self):
-        return self.flag and self.baz == "test"
+    def is_prod(self) -> bool:
+        return self.enabled and self.environment == "prod"
 
 
-config = AppConfig(DictStorage())
-print(config.value)  # True
+cfg = FeatureFlags(DictStorage(environment="prod"))
+print(cfg.is_prod)
 ```
 
-### Custom field types
+### Custom fields and validators
 
-Users can customize how field validation and casting are done.
-The recommended way is to implement `validate` method:
+Extend built-in fields when you need bespoke validation or casting.
 
 ```python
-from pkonfig import Config, Int
+from pkonfig import Config, Field, Int
 
 
-class OnlyPositive(Int):
-    def validate(self, value) -> None:
+class PositiveInt(Int):
+    def validate(self, value: int) -> None:
         if value < 0:
             raise ValueError("Only positive values accepted")
 
 
-class AppConfig(Config):
-    positive = OnlyPositive()
+class CommaSeparated(Field[list[str]]):
+    def cast(self, raw: str) -> list[str]:
+        return [part.strip() for part in raw.split(",") if part]
+
+
+class CustomConfig(Config):
+    ports = PositiveInt()
+    tags = CommaSeparated(default="alpha,beta")
 ```
 
-Custom type casting is also available.
-To achieve, this user should inherit abstract class `Field` and implement method `cast`:
+## Specialised fields
 
-```python
-from typing import List
-from pkonfig import Field
-
-
-class ListOfStrings(Field):
-    def cast(self, value: str) -> List[str]:
-        return value.split(",")
-```
-
-### Available fields
-
-Builtin Python types has appropriate `Field` types:
-
-- bool -> `Bool`
-- int -> `Int`
-- float -> `Float`
-- Decimal -> `DecimalField`
-- str -> `Str`
-- bytes -> `Byte`
-- bytearray -> `ByteArray`
-
-#### PathField
-
-Basic path type that is parental for other two types and is used when you define field using `pathlib.Path`.
-This type raises `FileNotFoundError` exception during initialization if a given path doesn't exist:
-
-```python
-from pkonfig import Config, PathField
-
-
-class AppConfig(Config):
-    mandatory_existing_path = PathField()
-    optional_path = PathField(missing_ok=True)
-```
-
-In given example field `optional_path` may not exist during initialization.
-
-##### File
-
-`File` inherits `PathField` but also checks whether a given path is a file.
-
-#### Folder
-
-`Folder` inherits `PathField` and does checking whether a given path is a folder.
-
-#### EnumField
-
-This field uses custom enum to validate input and cast it to given `Enum`:
+PKonfig includes helpers for filesystem paths, enums, log levels, and constrained choices.
 
 ```python
 from enum import Enum
-from pkonfig import Config, EnumField, DictStorage, Int
-
-
-class UserType(Enum):
-    guest = Int(1)
-    user = Int(2)
-    admin = Int(3)
-
-
-class AppConfig(Config):
-    user_type = EnumField(UserType)
-
-
-config = AppConfig(DictStorage(user_type="admin"))
-print(config.user_type is UserType.admin)  # True
-```
-
-#### LogLevel
-
-`LogLevel` field is useful to define `logging` level through configs.
-`LogLevel` accepts strings that define log level and casts
-that string to `logging` level integer value:
-
-```python
+from pathlib import Path
 import logging
-from pkonfig import Config, LogLevel, DictStorage
+
+from pkonfig import Choice, Config, DictStorage, EnumField, File, LogLevel, PathField
 
 
-class AppConfig(Config):
-    some_level = LogLevel()
-    another_level = LogLevel()
+class Mode(Enum):
+    prod = "prod"
+    staging = "staging"
 
 
-config = AppConfig(
+class App(Config):
+    mode = EnumField(Mode)
+    config_path = File()
+    debug_level = LogLevel(default="INFO")
+    region = Choice(["us-east-1", "eu-west-1"])
+
+
+cfg = App(
     DictStorage(
-        some_level="info",
-        another_level="Debug",
+        mode="prod",
+        config_path=__file__,
+        debug_level="warning",
+        region="us-east-1",
     )
 )
-
-print(config.some_level)        # 20
-print(config.another_level)     # 10
-
-print(config.another_level is logging.DEBUG)     # True
+print(cfg.mode, cfg.config_path, cfg.debug_level)
 ```
 
-#### Choice
+## Environment-specific configuration files
 
-`Choice` field validates that config value is a member of the given sequence and also does optional type casting:
-
-```python
-from pkonfig import Config, Choice, DictStorage
-
-
-class AppConfig(Config):
-    one_of_attr = Choice([10, 100], cast_function=int)
-
-
-config = AppConfig(DictStorage(one_of_attr="10"))
-print(config.one_of_attr == 10)  # True
-
-config = AppConfig(DictStorage(one_of_attr="2"))    # raises TypeError exception
-```
-
-When `cast_function` is not given raw values from storage are used.
-
-#### DebugFlag
-
-`DebugFlag` helps to set a widely used __debug__ option.
-`DebugFlag` ignores a value case and treats `'true'` string as `True` and any other value as `False`:
+Select configuration files dynamically by reading a simple config first.
 
 ```python
-from pkonfig import Config, Bool, DictStorage
-
-
-class AppConfig(Config):
-    lower_case = Bool()
-    upper_case = Bool()
-    random_string = Bool()
-
-
-config = AppConfig(
-    DictStorage(
-        lower_case="true",
-        upper_case="TRUE",
-        random_string="foo",
-    )
-)
-print(config.lower_case)        # True
-print(config.upper_case)        # True
-print(config.random_string)     # False
-```
-
-### Per-environment config files
-
-When your app is configured with different configuration files
-and each file is used only in an appropriate environment, you can create a function
-to find which file should be used:
-
-```python
-from pkonfig import Env, Config, Choice
+from pkonfig import Choice, Config, Env
 
 
 CONFIG_FILES = {
@@ -585,78 +404,16 @@ CONFIG_FILES = {
 }
 
 
-def get_config_file():
+def resolve_config_path() -> str:
     class _Config(Config):
-        env = Choice(
-            ["prod", "local", "staging"],
-            cast_function=str.lower,
-            default="prod"
-        )
+        env = Choice(["prod", "local", "staging"], cast_function=str.lower, default="prod")
 
-    _config = _Config(Env())
-    return CONFIG_FILES[_config.env]
+    selector = _Config(Env(prefix="APP"))
+    return CONFIG_FILES[selector.env]
 ```
 
-`get_config_file` uses environment variables and predefined config files paths
-to check whether `APP_ENV` var is set, validate this variable and return the appropriate
-config file name.
-Then actual application configuration:
+## Where to go next
 
-```python
-from pkonfig import Env, Yaml, Config, Choice
-
-
-CONFIG_FILES = {
-    "prod": "configs/prod.yaml",
-    "staging": "configs/staging.yaml",
-    "local": "configs/local.yaml",
-}
-
-
-def get_config_file():
-    class _Config(Config):
-        env = Choice(
-            ["prod", "local", "staging"],
-            cast_function=str.lower,
-            default="prod"
-        )
-
-    _config = _Config(Env())
-    return CONFIG_FILES[_config.env]
-
-
-class AppConfig(Config):
-    env = Choice(
-        ["prod", "local", "staging"],
-        cast_function=str.lower,
-        default="prod"
-    )
-    ...
-
-
-config = AppConfig(Env(), Yaml(get_config_file()))
-```
-
-### Fail fast
-
-Very often it is helpful to check app configs' existence and validate values before the app does something.
-To achieve this `Config` class runs `check` as the last step in it's `__init__` method.
-`check` recursively gets from storage and verifies all defined config attributes.
-When this behaviour is not desirable for some reason, user can set flag `fail_fast` to `False`:
-
-```python
-from pkonfig import Config, DotEnv, ConfigValueNotFoundError
-
-
-class AppConfig(Config):
-    foo: str
-
-
-try:
-    config = AppConfig(DotEnv(".env"))
-except ConfigValueNotFoundError as exc:
-    print(exc)  # config.foo not found
-
-config = AppConfig(DotEnv(".env"), fail_fast=False) # No error raised
-config.foo  # This line actually causes `config.foo not found` exception
-```
+- Revisit the [API reference](api.md) for detailed signatures and extension points.
+- Skim the [Quickstart](quickstart.md) if you want a linear setup guide.
+- Explore the `tests/` directory for executable examples that pair with these tutorials.
