@@ -1,3 +1,10 @@
+"""Field descriptors used to declare configuration schema.
+
+This module provides the Field base descriptor and concrete field types (Str, Int,
+Bool, etc.) used inside Config subclasses. A Field reads a raw value from storage,
+casts it to a Python type, validates it and caches the result.
+"""
+
 import logging
 from abc import abstractmethod
 from decimal import Decimal
@@ -26,7 +33,23 @@ T = TypeVar("T")
 
 
 class Field(Generic[T], _Descriptor[T]):
-    """Base config attribute descriptor"""
+    """Base config attribute descriptor.
+
+    Field is a data descriptor used as a class attribute of a Config subclass.
+    On first access it retrieves a raw value from the attached storage, casts it
+    to the target Python type and validates it. The result is cached per-field key.
+
+    Parameters
+    ----------
+    default : Any, optional
+        Default value if the key is not found in storage. If left as NOT_SET
+        a ConfigValueNotFoundError will be raised on access. If default is None
+        the field becomes nullable.
+    alias : str, optional
+        Name to use in storage instead of the attribute name, by default "".
+    nullable : bool, optional
+        Whether None is accepted as a value, by default False.
+    """
 
     def __init__(
         self,
@@ -112,6 +135,8 @@ class Field(Generic[T], _Descriptor[T]):
 
 
 class Bool(Field[bool]):
+    """Boolean field that accepts typical truthy strings and ints (e.g. 'true', '1')."""
+
     def cast(self, value: str) -> bool:
         if isinstance(value, bool):
             return value
@@ -122,41 +147,61 @@ class Bool(Field[bool]):
 
 
 class Int(Field[int]):
+    """Integer field."""
+
     def cast(self, value) -> int:
         return int(value)
 
 
 class Float(Field[float]):
+    """Floating point number field."""
+
     def cast(self, value) -> float:
         return float(value)
 
 
 class DecimalField(Field[Decimal]):
+    """Decimal field stored as Decimal."""
+
     def cast(self, value) -> Decimal:
         return Decimal(float(value))
 
 
 class Str(Field[str]):
+    """String field."""
+
     def cast(self, value) -> str:
         return str(value)
 
 
 class Byte(Field[bytes]):
+    """Bytes field (immutable)."""
+
     def cast(self, value) -> bytes:
         return bytes(value)
 
 
 # Backwards/alternate name often used in docs/tests
 class Bytes(Byte):
-    pass
+    """Alias for Byte field."""
 
 
 class ByteArray(Field[bytearray]):
+    """Mutable bytearray field."""
+
     def cast(self, value) -> bytearray:
         return bytearray(value)
 
 
 class PathField(Field[Path]):
+    """Filesystem path field.
+
+    Parameters
+    ----------
+    missing_ok : bool
+        If True, skip existence checks in validate().
+    """
+
     value: Path
     missing_ok: bool
 
@@ -179,6 +224,8 @@ class PathField(Field[Path]):
 
 
 class File(PathField):
+    """File path field that validates the path points to a file."""
+
     def validate(self, value):
         if (value.exists() and value.is_file()) or self.missing_ok:
             return
@@ -186,6 +233,8 @@ class File(PathField):
 
 
 class Folder(PathField):
+    """Directory path field that validates the path points to a folder."""
+
     def validate(self, value):
         if (value.exists() and value.is_dir()) or self.missing_ok:
             return
@@ -196,6 +245,14 @@ EnumT = TypeVar("EnumT", bound=Enum)
 
 
 class EnumField(Field[EnumT], Generic[EnumT]):
+    """Enum field that maps string names to an Enum value.
+
+    Parameters
+    ----------
+    enum_cls : Type[Enum]
+        Enum class to use for casting/validation.
+    """
+
     def __init__(
         self,
         enum_cls: Type[EnumT],
@@ -211,6 +268,8 @@ class EnumField(Field[EnumT], Generic[EnumT]):
 
 
 class LogLevel(Field):
+    """Logging level field that accepts names like 'INFO', 'DEBUG', etc."""
+
     class Levels(Enum):
         NOTSET = logging.NOTSET
         DEBUG = logging.DEBUG

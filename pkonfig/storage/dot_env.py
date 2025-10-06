@@ -5,6 +5,11 @@ from pkonfig.storage.base import DEFAULT_DELIMITER, DEFAULT_PREFIX, FileStorage
 
 
 class DotEnv(FileStorage):
+    """Load configuration from a classic ``.env`` file.
+
+    Lines are parsed into key/value pairs with optional prefix trimming before
+    being normalized into the internal key format.
+    """
 
     def __init__(
         self,

@@ -130,3 +130,7 @@ dmypy.json
 
 # PyCharm
 .idea/
+
+# AI
+AGENTS.md
+.serena/

@@ -15,6 +15,12 @@ def _load(file_handler: BinaryIO) -> Dict[str, Any]:
 
 
 class Toml(FileStorage):
+    """Load TOML configuration using ``tomllib``/``tomli`` depending on Python.
+
+    Files are opened in binary mode so both loaders can operate without extra
+    wrapping.
+    """
+
     mode = "rb"
 
     def load_file_content(self, handler: BinaryIO) -> Dict[str, Any]:  # type: ignore
