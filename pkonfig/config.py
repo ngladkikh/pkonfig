@@ -1,28 +1,28 @@
+import types
+from abc import ABC, abstractmethod
 from collections import ChainMap
 from inspect import isdatadescriptor
-from typing import Any, ClassVar, Generator, Tuple, get_args, get_origin, get_type_hints
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generator,
+    Tuple,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from pkonfig.storage.base import BaseStorage, InternalKey
 
+FieldFactory = Callable[[bool], Any]
 
-class Config:
-    """Base configuration container.
 
-    Define your configuration by subclassing Config and declaring Field descriptors
-    (from pkonfig.fields) as class attributes, or nested Configs for grouping.
-
-    Parameters
-    ----------
-    *storages : BaseStorage
-        One or more storage backends to read configuration values from, in
-        priority order (leftmost has highest priority).
-    alias : str, optional
-        Optional alias for this config used to build nested keys, by default "".
-    fail_fast : bool, optional
-        If True (default), access all declared fields during initialization to
-        ensure required values are present and types/validators pass. If False,
-        validation happens lazily on first access.
-    """
+class AbstractConfig(ABC):
+    """Base configuration container without type-aware field materialisation."""
 
     def __init__(
         self,
@@ -30,7 +30,7 @@ class Config:
         alias: str = "",
         fail_fast: bool = True,
     ) -> None:
-        self._storage = ChainMap(*storages)  # type:ignore
+        self._storage = ChainMap(*storages)  # type: ignore
         self._alias = alias
         self._root_path: InternalKey = (alias,) if alias else tuple()
         self._register_inner_configs()
@@ -45,76 +45,27 @@ class Config:
             config_attribute.set_root_path(self.get_roo_path())
 
     @classmethod
+    @abstractmethod
     def _materialize_annotated_fields(cls) -> None:
-        """Instantiate Field descriptors for bare type-hinted attributes."""
-        # TODO: Fix linting warnings
-        # pylint: disable=R0914,C0415
-        raw_annotations = cls.__dict__.get("__annotations__", {})
-        if not raw_annotations:
-            return
+        """Hook for subclasses to instantiate descriptors from type annotations."""
 
-        try:
-            resolved_hints = get_type_hints(cls, include_extras=True)
-        except TypeError:
-            # Fallback on Python <3.11 where include_extras is not supported.
-            resolved_hints = get_type_hints(cls)
-
-        # Late import to avoid circular dependency during module import.
-        from pathlib import Path
-        from typing import Annotated, Union
-
-        from pkonfig.fields import Bool, Field, Float, Int, PathField, Str
-
-        type_map = {
-            str: lambda nullable: Str(nullable=nullable),
-            int: lambda nullable: Int(nullable=nullable),
-            float: lambda nullable: Float(nullable=nullable),
-            bool: lambda nullable: Bool(nullable=nullable),
-            Path: lambda nullable: PathField(nullable=nullable, missing_ok=True),
-        }
-
-        for name in raw_annotations:
-            # Skip attributes that already provide a descriptor/value.
-            if name in cls.__dict__ and isinstance(cls.__dict__[name], Field):
-                continue
-            if name in cls.__dict__ and not isinstance(cls.__dict__[name], Field):
-                continue
-
-            annotation = resolved_hints.get(name, raw_annotations[name])
-            target_type, nullable = cls._resolve_annotation_target(
-                annotation, Annotated, Union
-            )
-            if target_type is None:
-                continue
-
-            field_factory = type_map.get(target_type)
-            if field_factory is None:
-                continue
-
-            descriptor = field_factory(nullable)
-            setattr(cls, name, descriptor)
-            descriptor.__set_name__(cls, name)  # type: ignore
-
-    @staticmethod
-    def _resolve_annotation_target(  # pylint: disable=R0911
-        annotation: Any, annotated_type: Any, union_type: Any
+    @classmethod
+    def _resolve_annotation_target(  # pylint: disable=too-many-return-statements
+        cls, annotation: Any
     ) -> Tuple[Any, bool]:
         """Return the underlying Python type and nullability for an annotation."""
 
         origin = get_origin(annotation)
 
-        if origin is annotated_type:
+        if origin is Annotated:
             inner_annotation = get_args(annotation)[0]
-            return Config._resolve_annotation_target(
-                inner_annotation, annotated_type, union_type
-            )
+            return cls._resolve_annotation_target(inner_annotation)
 
-        if origin is union_type or getattr(origin, "__name__", None) == "UnionType":
+        union_types = (Union, getattr(types, "UnionType", Union))
+        if origin in union_types:
             args = tuple(arg for arg in get_args(annotation) if arg is not type(None))
             if len(args) == 1 and len(get_args(annotation)) == 2:
-                inner_type, _ = Config._resolve_annotation_target(
-                    args[0], annotated_type, union_type
-                )
+                inner_type, _ = cls._resolve_annotation_target(args[0])
                 return inner_type, True
             return None, False
 
@@ -124,7 +75,7 @@ class Config:
         if isinstance(annotation, str):
             return None, False
 
-        if isinstance(annotation, type) and issubclass(annotation, Config):
+        if isinstance(annotation, type) and issubclass(annotation, AbstractConfig):
             return None, False
 
         if isinstance(annotation, type):
@@ -132,10 +83,10 @@ class Config:
 
         return None, False
 
-    def _inner_configs(self) -> Generator[Tuple[str, "Config"], None, None]:
+    def _inner_configs(self) -> Generator[Tuple[str, "AbstractConfig"], None, None]:
         """Yield pairs of (name, Config) for nested Config attributes."""
         for name, attribute in vars(self.__class__).items():
-            if isinstance(attribute, Config):
+            if isinstance(attribute, AbstractConfig):
                 yield name, attribute
 
     def _config_attributes(self) -> Generator[Tuple[str, Any], None, None]:
@@ -147,23 +98,12 @@ class Config:
 
     @staticmethod
     def _is_config_attribute(name_value: Tuple[str, Any]) -> bool:
-        """Return True if attribute looks like a public Field descriptor.
-
-        An attribute is considered a config attribute if it does not start with an
-        underscore and is a data descriptor (i.e., implements the descriptor protocol).
-        """
+        """Return True if attribute looks like a public Field descriptor."""
         attr_name, attribute = name_value
         return not attr_name.startswith("_") and isdatadescriptor(attribute)
 
     def check(self) -> None:
-        """Eagerly access all declared fields to validate presence and types.
-
-        This will also recursively validate nested Configs.
-        Raises
-        ------
-        ConfigError
-            If any required value is missing or fails type/validation in underlying fields.
-        """
+        """Eagerly access all declared fields to validate presence and types."""
         for attr_name, _ in self._config_attributes():
             getattr(self, attr_name)
         for _, inner_config in self._inner_configs():
@@ -188,6 +128,48 @@ class Config:
     def set_storage(self, storage: ChainMap) -> None:
         """Set the storage ChainMap. Used internally when nesting configs."""
         self._storage = storage
+
+
+class Config(AbstractConfig):
+    """Concrete Config with type-aware field materialisation support."""
+
+    _TYPE_FACTORIES: Dict[type[Any], FieldFactory] = {}
+
+    @classmethod
+    def register_type_factory(
+        cls, python_type: type[Any], factory: FieldFactory
+    ) -> None:
+        cls._TYPE_FACTORIES[python_type] = factory
+
+    @classmethod
+    def _materialize_annotated_fields(cls) -> None:
+        raw_annotations = cls.__dict__.get("__annotations__", {})
+        if not raw_annotations:
+            return
+
+        try:
+            resolved_hints = get_type_hints(cls, include_extras=True)
+        except TypeError:
+            resolved_hints = get_type_hints(cls)
+
+        for name in raw_annotations:
+            if name in cls.__dict__:
+                # Attribute already provided explicitly; do not replace it.
+                continue
+
+            annotation = resolved_hints.get(name, raw_annotations[name])
+            target_type, nullable = cls._resolve_annotation_target(annotation)
+            if target_type is None:
+                continue
+
+            factory = cls._TYPE_FACTORIES.get(target_type)
+            if factory is None:
+                continue
+
+            descriptor = factory(nullable)
+            setattr(cls, name, descriptor)
+            if hasattr(descriptor, "__set_name__"):
+                descriptor.__set_name__(cls, name)
 
     def __init_subclass__(cls, **kwargs) -> None:  # type: ignore[override]
         super().__init_subclass__(**kwargs)
