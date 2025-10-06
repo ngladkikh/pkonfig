@@ -12,6 +12,12 @@ from pkonfig.storage.base import (
 
 
 class Env(BaseStorage):
+    """Read configuration values from environment variables.
+
+    Values are looked up using an optional prefix/delimiter pairing. Defaults
+    fall back to an in-memory mapping if a given key is not present in the
+    environment.
+    """
 
     def __init__(
         self, delimiter=DEFAULT_DELIMITER, prefix=DEFAULT_PREFIX, **defaults

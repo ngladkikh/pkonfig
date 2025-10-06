@@ -36,6 +36,7 @@ autodoc_default_options = {
     "undoc-members": True,
     "inherited-members": True,
     "show-inheritance": True,
+    "exclude-members": "with_traceback, add_note, args",
 }
 # include class and __init__ docstrings
 autoclass_content = "both"
