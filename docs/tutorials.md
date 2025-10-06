@@ -11,6 +11,7 @@ Hands-on guides that show how to assemble real PKonfig setups: compose storages,
 :::{contents}
 :local:
 :depth: 2
+:class: this-will-duplicate-information-and-it-is-still-useful-here
 :::
 
 ## Prerequisites
