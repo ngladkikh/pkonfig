@@ -1,5 +1,4 @@
 import types
-from abc import ABC, abstractmethod
 from collections import ChainMap
 from inspect import isdatadescriptor
 from typing import (
@@ -21,8 +20,26 @@ from pkonfig.storage.base import BaseStorage, InternalKey
 FieldFactory = Callable[[bool], Any]
 
 
-class AbstractConfig(ABC):
-    """Base configuration container without type-aware field materialisation."""
+class Config:
+    """Base configuration container.
+
+    Define your configuration by subclassing Config and declaring Field descriptors
+    (from pkonfig.fields) as class attributes or nested Configs for grouping.
+
+    Parameters
+    ----------
+    *storages : BaseStorage
+        One or more storage backends to read configuration values from, in
+        priority order (leftmost has highest priority).
+    alias : str, optional
+        Optional alias for this config used to build nested keys, by default "".
+    fail_fast : bool, optional
+        If True (default), access all declared fields during initialization to
+        ensure required values are present, and types/validators pass. If False,
+        validation happens lazily on first access.
+    """
+
+    _TYPE_FACTORIES: Dict[type[Any], FieldFactory] = {}
 
     def __init__(
         self,
@@ -43,11 +60,6 @@ class AbstractConfig(ABC):
             config_attribute.set_storage(self.get_storage())
             config_attribute.set_alias(name)
             config_attribute.set_root_path(self.get_roo_path())
-
-    @classmethod
-    @abstractmethod
-    def _materialize_annotated_fields(cls) -> None:
-        """Hook for subclasses to instantiate descriptors from type annotations."""
 
     @classmethod
     def _resolve_annotation_target(  # pylint: disable=too-many-return-statements
@@ -75,7 +87,7 @@ class AbstractConfig(ABC):
         if isinstance(annotation, str):
             return None, False
 
-        if isinstance(annotation, type) and issubclass(annotation, AbstractConfig):
+        if isinstance(annotation, type) and issubclass(annotation, Config):
             return None, False
 
         if isinstance(annotation, type):
@@ -83,10 +95,10 @@ class AbstractConfig(ABC):
 
         return None, False
 
-    def _inner_configs(self) -> Generator[Tuple[str, "AbstractConfig"], None, None]:
+    def _inner_configs(self) -> Generator[Tuple[str, "Config"], None, None]:
         """Yield pairs of (name, Config) for nested Config attributes."""
         for name, attribute in vars(self.__class__).items():
-            if isinstance(attribute, AbstractConfig):
+            if isinstance(attribute, Config):
                 yield name, attribute
 
     def _config_attributes(self) -> Generator[Tuple[str, Any], None, None]:
@@ -103,7 +115,14 @@ class AbstractConfig(ABC):
         return not attr_name.startswith("_") and isdatadescriptor(attribute)
 
     def check(self) -> None:
-        """Eagerly access all declared fields to validate presence and types."""
+        """Eagerly access all declared fields to validate presence and types.
+
+        This will also recursively validate nested Configs.
+        Raises
+        ------
+        ConfigError
+            If any required value is missing or fails type/validation in underlying fields.
+        """
         for attr_name, _ in self._config_attributes():
             getattr(self, attr_name)
         for _, inner_config in self._inner_configs():
@@ -128,28 +147,6 @@ class AbstractConfig(ABC):
     def set_storage(self, storage: ChainMap) -> None:
         """Set the storage ChainMap. Used internally when nesting configs."""
         self._storage = storage
-
-
-class Config(AbstractConfig):
-    """Base configuration container.
-
-    Define your configuration by subclassing Config and declaring Field descriptors
-    (from pkonfig.fields) as class attributes or nested Configs for grouping.
-
-    Parameters
-    ----------
-    *storages : BaseStorage
-        One or more storage backends to read configuration values from, in
-        priority order (leftmost has highest priority).
-    alias : str, optional
-        Optional alias for this config used to build nested keys, by default "".
-    fail_fast : bool, optional
-        If True (default), access all declared fields during initialization to
-        ensure required values are present, and types/validators pass. If False,
-        validation happens lazily on first access.
-    """
-
-    _TYPE_FACTORIES: Dict[type[Any], FieldFactory] = {}
 
     @classmethod
     def register_type_factory(
