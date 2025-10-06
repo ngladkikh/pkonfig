@@ -13,6 +13,7 @@ build:
 requirements:
   host:
     - python
+    - poetry-core
     - setuptools >=42
     - wheel
     - pip
