@@ -185,8 +185,6 @@ class Byte(Field[bytes]):
 class Bytes(Byte):
     """Alias for Byte field."""
 
-    pass
-
 
 class ByteArray(Field[bytearray]):
     """Mutable bytearray field."""
