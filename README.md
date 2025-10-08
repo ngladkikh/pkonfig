@@ -42,14 +42,13 @@ Key features
 Quick start
 ```python
 from pkonfig.config import Config
-from pkonfig.fields import Str, Int, Bool
 from pkonfig.storage.env import Env
 from pkonfig.storage.yaml_ import Yaml
 
 class App(Config):
-    host = Str(default="127.0.0.1")
-    port = Int(default=8000)
-    debug = Bool(default=False)
+    host: str = "127.0.0.1"
+    port: int = 8000
+    debug = False
 
 # Highest precedence first
 cfg = App(
@@ -71,6 +70,7 @@ pip install pkonfig[toml]
 
 Documentation
 - https://ngladkikh.github.io/pkonfig/
+- For AI Agents and LLMs: https://ngladkikh.github.io/pkonfig/agents.html
 
 Links
 - PyPI: https://pypi.org/project/pkonfig/

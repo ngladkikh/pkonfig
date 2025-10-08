@@ -46,17 +46,16 @@ Nest `Config` subclasses as class attributes to create structured groups. Aliase
 Usage example
 
 ```python
-from pkonfig import fields as f
 from pkonfig import storage
 from pkonfig.config import Config
 
 class Database(Config):
-    host = f.Str(default="localhost")
-    port = f.Int(default=5432)
+    host: str = "localhost"
+    port: int = 5432
 
 class App(Config):
-    debug = f.Bool(default=False)
-    db = Database(alias="db")
+    debug: bool = False
+    db: Database
 
 cfg = App(storage.Env(prefix="APP"))
 print(cfg.debug, cfg.db.port)
@@ -139,11 +138,10 @@ Field descriptors define types, casting, and validation for config values.
 : Parse lists from strings or iterables. Useful for values like "a,b,c" or when storages return arrays. Use `cast_function` to convert each element:
 ```python
 from pkonfig import Config, DictStorage
-from pkonfig.fields import ListField
 
 class C(Config):
-    tags = ListField(cast_function=str)
-    ids = ListField(cast_function=int)
+    tags: list[str]
+    ids: list[int]
 
 cfg = C(DictStorage(tags="a, b, c", ids="1,2,3"))
 assert cfg.tags == ["a", "b", "c"]
@@ -187,7 +185,7 @@ from pkonfig.config import Config
 from pkonfig.fields import Str
 
 class Service(Config):
-    name = Str(default="api")
+    name = Str("api")
 
 cfg = Service(
     storage.Env(prefix="SERVICE"),
