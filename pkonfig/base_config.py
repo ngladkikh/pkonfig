@@ -24,6 +24,10 @@ class BaseConfig:
             raise ConfigValueNotFoundError(f"'{'.'.join(path)}' not found in {self._storage.maps}")
         return self._storage[path]
 
+    def __setitem__(self, key: str, value: Any) -> None:
+        """Set item from storage."""
+        self._storage[self.internal_key(key)] = value
+
     def get(self, item: str, default: Any = NOT_SET) -> Any:
         """Get item from storage or return default."""
         return self._storage.get(self.internal_key(item), default)
@@ -40,6 +44,10 @@ class BaseConfig:
         """Set the storage ChainMap. Used internally when nesting configs."""
         self._storage = storage
 
+    def set_alias(self, alias: str) -> None:
+        """Set alias if it wasn't already defined."""
+        self._alias = self._alias or alias
+
 
 class CachedBaseConfig(BaseConfig):
     """Base config with a local cache."""
@@ -55,6 +63,10 @@ class CachedBaseConfig(BaseConfig):
         value = super().__getitem__(item)
         self.__cache[item] = value
         return value
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """Set item from storage."""
+        self.__cache[key] = value
 
     def get(self, item: str, default: Any = NOT_SET) -> Any:
         """Get item from storage or return default."""

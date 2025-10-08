@@ -68,6 +68,7 @@ class Field(Generic[T], _Descriptor[T], ABC):
         try:
             value = self._cast(value)
             self.validate(value)
+            instance[self.alias] = value
         except ConfigError:
             raise
         except Exception as exc:
@@ -85,6 +86,9 @@ class Field(Generic[T], _Descriptor[T], ABC):
         if instance is None:
             # Accessed through the class: return the descriptor itself
             return self
+        return self.get(instance)
+
+    def get(self, instance: BaseConfig) -> T:
         if self.default != NOT_SET:
             raw_value = instance.get(self.alias, self.default)
         else:
@@ -92,14 +96,14 @@ class Field(Generic[T], _Descriptor[T], ABC):
 
         try:
             value = self._cast(raw_value)
-            self.validate(value)
+            self._validate(value)
             return value
         except NullTypeError as exc:
             path = ".".join(instance.internal_key(self.alias))
             raise ConfigTypeError(f"{path} value is not nullable. received None.") from exc
         except Exception as exc:
             path = ".".join(instance.internal_key(self.alias))
-            raise ConfigTypeError(f"{path} config error") from exc
+            raise ConfigTypeError(f"'{path}' validation error error") from exc
 
     def _cast(self, value: Any) -> T:
         if value in (NOT_SET, None):
@@ -112,7 +116,7 @@ class Field(Generic[T], _Descriptor[T], ABC):
 
     def _validate(self, value: Any) -> None:
         if value is None and not self.nullable:
-            raise ValueError("Not nullable")
+            raise NullTypeError("Not nullable")
         return self.validate(value)
 
     def validate(self, value: Any) -> None:

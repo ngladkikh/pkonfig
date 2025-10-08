@@ -40,14 +40,16 @@ def test_app_config_fails_on_root_level_attr_missing():
 
 
 def test_app_config_fails_on_inner_level_attr_missing():
+
+    class FooConfig(Config):
+        foo: int
+
+
+    class BarConfig(Config):
+        foo: FooConfig
+
     with pytest.raises(ConfigValueNotFoundError):
-        AppConfig(
-            DictStorage(
-                foo=0,
-                inner_1={},
-                inner_2={"required": 4321, "fiz": 321},
-            )
-        )
+        BarConfig(DictStorage(foo={}))
 
 
 def test_root_level_attributes(config):
@@ -59,8 +61,16 @@ def test_value_from_second_level_attribute(config: AppConfig):
     assert config.inner_2.required == 4321
 
 
-def test_default_value_used_when_not_set(config):
-    assert config.inner_1.foo == "baz"
+def test_default_value_used_when_not_set():
+    config = AppConfig(DictStorage(
+        foo=0,
+        inner_1={"required": 1234, "foo": "biz"},
+        inner_2={"required": 4321},
+    ))
+    # Value taken from config
+    assert config.inner_1.foo == "biz"
+    # Default value is used
+    assert config.inner_2.foo == "baz"
 
 
 def test_inheritance():
