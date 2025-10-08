@@ -12,7 +12,7 @@ from typing import (
 from pkonfig.base_config import CachedBaseConfig
 from pkonfig.errors import ConfigTypeError
 from pkonfig.fields import Field, ListField
-from pkonfig.storage.base import NOT_SET, BaseStorage
+from pkonfig.storage.base import NOT_SET, BaseStorage, DictStorage
 
 
 class Config(CachedBaseConfig):
