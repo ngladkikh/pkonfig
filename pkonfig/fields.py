@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
     Optional,
     Sequence,
@@ -23,12 +22,11 @@ from typing import (
     overload,
 )
 
-from pkonfig.config import Config
+from pkonfig.base_config import BaseConfig
 from pkonfig.descriptor_helper import _Descriptor
-from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
-from pkonfig.storage.base import InternalKey
+from pkonfig.errors import ConfigError, ConfigTypeError, NullTypeError
+from pkonfig.storage.base import NOT_SET
 
-NOT_SET = "NOT_SET"
 T = TypeVar("T")
 
 
@@ -37,18 +35,18 @@ class Field(Generic[T], _Descriptor[T], ABC):
 
     Field is a data descriptor used as a class attribute of a Config subclass.
     On first access it retrieves a raw value from the attached storage, casts it
-    to the target Python type and validates it. The result is cached per-field key.
+    to the target Python type and validates it. The result is cached a per-field key.
 
     Parameters
     ----------
     default : Any, optional
-        Default value if the key is not found in storage. If left as NOT_SET
-        a ConfigValueNotFoundError will be raised on access. If default is None
+        Default value if the key is not found in storage. If left as NOT_SET,
+        a ConfigValueNotFoundError will be raised on access. If the default is None,
         the field becomes nullable.
     alias : str, optional
         Name to use in storage instead of the attribute name, by default "".
     nullable : bool, optional
-        Whether None is accepted as a value, by default False.
+        Whether None is accepted as a value, by default, False.
     """
 
     def __init__(
@@ -60,59 +58,56 @@ class Field(Generic[T], _Descriptor[T], ABC):
         self.default: Union[T, object] = default
         self.alias: str = alias
         self.nullable = default is None or nullable
-        self._cache: Dict[InternalKey, T] = {}
 
-    def __set_name__(self, _: Type[Config], name: str) -> None:
+    def __set_name__(self, _: Type[BaseConfig], name: str) -> None:
         self.alias = self.alias or name
 
-    def __set__(self, instance: Config, value: Any) -> None:
-        path = self._get_path(instance)
+    def __set__(self, instance: BaseConfig, value: Any) -> None:
+        path = ".".join(instance.internal_key(self.alias))
         logging.warning(
-            "Setting %s config value in runtime, proceed with caution",
-            self.key_to_name(path),
+            "Setting %s config value in runtime, proceed with caution", path
         )
         try:
             value = self._cast(value)
-            self._validate(value)
+            self.validate(value)
+            instance[self.alias] = value
         except ConfigError:
             raise
         except Exception as exc:
-            raise ConfigTypeError(
-                f"set {self.key_to_name(path)} to {value} not allowed"
-            ) from exc
-        self._cache[path] = value
-
-    def _get_path(self, config: Config) -> InternalKey:
-        return *config.get_roo_path(), self.alias
+            raise ConfigTypeError(f"set {path} to {value} not allowed") from exc
 
     @overload
-    def __get__(self, instance: None, owner: Type[Config]) -> "Field[T]": ...
+    def __get__(self, instance: None, owner: Type[BaseConfig]) -> "Field[T]": ...
 
     @overload
-    def __get__(self, instance: "Config", owner: Type[Config]) -> T: ...
+    def __get__(self, instance: BaseConfig, owner: Type[BaseConfig]) -> T: ...
 
     def __get__(
-        self, instance: Optional["Config"], owner: Optional[Type["Config"]] = None
+        self, instance: Optional[BaseConfig], owner: Optional[Type[BaseConfig]] = None
     ) -> Union[T, "Field[T]"]:
         if instance is None:
             # Accessed through the class: return the descriptor itself
             return self
-        path = self._get_path(instance)
-        if path not in self._cache:
-            raw_value = instance.get_storage().get(path, self.default)
-            try:
-                value = self._cast(raw_value)
-                self._validate(value)
-            except ConfigError:
-                raise
-            except Exception as exc:
-                raise ConfigTypeError(f"{self.key_to_name(path)} config error") from exc
-            self._cache[path] = value
-        return self._cache[path]
+        return self.get(instance)
 
-    @staticmethod
-    def key_to_name(key: InternalKey) -> str:
-        return ".".join(key)
+    def get(self, instance: BaseConfig) -> T:
+        if self.default != NOT_SET:
+            raw_value = instance.get(self.alias, self.default)
+        else:
+            raw_value = instance[self.alias]
+
+        try:
+            value = self._cast(raw_value)
+            self._validate(value)
+            return value
+        except NullTypeError as exc:
+            path = ".".join(instance.internal_key(self.alias))
+            raise ConfigTypeError(
+                f"{path} value is not nullable. received None."
+            ) from exc
+        except Exception as exc:
+            path = ".".join(instance.internal_key(self.alias))
+            raise ConfigTypeError(f"'{path}' validation error error") from exc
 
     def _cast(self, value: Any) -> T:
         if value in (NOT_SET, None):
@@ -121,13 +116,11 @@ class Field(Generic[T], _Descriptor[T], ABC):
 
     @abstractmethod
     def cast(self, value: Any) -> T:
-        pass
+        """Cast value to a Python type."""
 
     def _validate(self, value: Any) -> None:
         if value is None and not self.nullable:
-            raise ValueError("Not nullable")
-        if value is NOT_SET:
-            raise ConfigValueNotFoundError("Not set")
+            raise NullTypeError("Not nullable")
         return self.validate(value)
 
     def validate(self, value: Any) -> None:
@@ -303,12 +296,3 @@ class Choice(Field[T], Generic[T]):
     def validate(self, value):
         if value not in self.choices:
             raise ConfigTypeError(f"'{value}' is not in {self.choices}")
-
-
-Config.register_type_factory(str, lambda nullable: Str(nullable=nullable))
-Config.register_type_factory(int, lambda nullable: Int(nullable=nullable))
-Config.register_type_factory(float, lambda nullable: Float(nullable=nullable))
-Config.register_type_factory(bool, lambda nullable: Bool(nullable=nullable))
-Config.register_type_factory(
-    Path, lambda nullable: PathField(nullable=nullable, missing_ok=True)
-)

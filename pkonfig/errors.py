@@ -3,8 +3,12 @@ class ConfigError(Exception):
 
 
 class ConfigValueNotFoundError(ConfigError):
-    """Failed to find value in given storage(s)"""
+    """Failed to find value in a given storage (s)"""
 
 
 class ConfigTypeError(ConfigError):
-    """Value has wrong type"""
+    """Value has the wrong type"""
+
+
+class NullTypeError(ConfigError):
+    """Non nullable value is None"""

@@ -6,6 +6,7 @@ from typing import IO, Any, Iterator, Tuple, Union
 InternalKey = Tuple[str, ...]
 DEFAULT_PREFIX = "APP"
 DEFAULT_DELIMITER = "_"
+NOT_SET = "NOT_SET"
 
 
 class BaseStorage(ABC):
@@ -24,6 +25,9 @@ class BaseStorage(ABC):
         if key in self._actual_storage:
             return self._actual_storage[key]
         return default
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
 
 
 class FlattenedStorageMixin(ABC):
@@ -63,6 +67,9 @@ class FileStorage(BaseStorage, FlattenedStorageMixin, ABC):
         self.flatten(defaults, tuple())
         self.load()
 
+    def __repr__(self) -> str:
+        return str(self.file.absolute())
+
     def load(self) -> None:
         if self.file.exists() and self.file.is_file():
             self.flatten(self._load(), tuple())
@@ -76,7 +83,7 @@ class FileStorage(BaseStorage, FlattenedStorageMixin, ABC):
 
     @abstractmethod
     def load_file_content(self, handler: IO) -> Mapping[str, Any]:
-        pass
+        """Load file content and return a mapping from keys to values."""
 
 
 class DictStorage(BaseStorage, FlattenedStorageMixin):
@@ -87,6 +94,9 @@ class DictStorage(BaseStorage, FlattenedStorageMixin):
 
     def __getitem__(self, key: InternalKey) -> Any:
         return self._actual_storage[key]
+
+    def __repr__(self) -> str:
+        return str(self._actual_storage)
 
 
 class EnvKeyConverter:

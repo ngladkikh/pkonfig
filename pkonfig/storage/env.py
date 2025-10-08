@@ -48,6 +48,9 @@ class Env(BaseStorage):
 
         return self._default.get(key, default)
 
+    def __repr__(self) -> str:
+        return "EnvVars"
+
     def __contains__(self, key: object) -> bool:
         if not isinstance(key, tuple):
             return False

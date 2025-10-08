@@ -198,14 +198,12 @@ def test_tutorial_type_hints_and_caching():
     class Paths(Config):
         bucket: str
         log_level: str
-        config_file: Path
+        counter: int
 
-    cfg = Paths(
-        DictStorage(bucket="assets", log_level="INFO", config_file="config.yaml")
-    )
+    cfg = Paths(DictStorage(bucket="assets", log_level="INFO", counter="10"))
     assert cfg.bucket == "assets"
     assert cfg.log_level == "INFO"
-    assert cfg.config_file == Path("config.yaml")
+    assert cfg.counter == 10
 
 
 def test_tutorial_default_values_and_nullability():
