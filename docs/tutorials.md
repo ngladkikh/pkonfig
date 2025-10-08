@@ -40,6 +40,26 @@ cfg = AppConfig(DictStorage(foo="baz"))
 print(cfg.foo)  # 'baz'
 ```
 
+You can also pass values as keyword arguments directly to Config. 
+They are automatically wrapped into a DictStorage and composed with any other storages you pass.
+
+```python
+from pkonfig import Config, Str
+from pkonfig.storage import Env
+
+
+class AppConfig(Config):
+    foo = Str()
+
+
+# simplest form — values via kwargs
+cfg = AppConfig(foo="baz")
+print(cfg.foo)  # 'baz'
+
+# when combined with other storages, kwargs are appended as the last (lowest-priority) DictStorage
+cfg = AppConfig(Env(prefix="APP"), foo="fallback")
+```
+
 :::{tip}
 `DictStorage` is also handy in unit tests because you can inject dictionaries directly instead of touching the filesystem or environment.
 :::
@@ -150,6 +170,7 @@ cfg = AppConfig(
 
 :::{tip}
 Call `cfg.get_storage().maps` to inspect the underlying `ChainMap` if you need to debug which source supplied a value.
+When you provide values via keyword arguments to Config(...), they are wrapped into a DictStorage and appended as the last (lowest-priority) source in the chain.
 :::
 
 ## Building configuration classes
@@ -157,7 +178,7 @@ Call `cfg.get_storage().maps` to inspect the underlying `ChainMap` if you need t
 Declare fields on subclasses of `Config`. PKonfig eagerly validates them (unless you disable `fail_fast`).
 
 ```python
-from pkonfig import Config, DictStorage, Float, Int
+from pkonfig import Config, Float, Int
 
 
 class AppConfig(Config):
@@ -165,7 +186,7 @@ class AppConfig(Config):
     workers = Int(default=1)
 
 
-cfg = AppConfig(DictStorage(ratio="0.33"))
+cfg = AppConfig(ratio="0.33")
 print(cfg.ratio)    # 0.33
 print(cfg.workers)  # 1
 ```
@@ -175,7 +196,7 @@ print(cfg.workers)  # 1
 Group related settings by nesting other `Config` classes.
 
 ```python
-from pkonfig import Config, DictStorage, Int, Str
+from pkonfig import Config, Int, Str
 
 
 class Database(Config):
@@ -188,7 +209,7 @@ class App(Config):
     timezone = Str(default="UTC")
 
 
-cfg = App(DictStorage(db={"port": 6432}))
+cfg = App(db={"port": 6432})
 print(cfg.db.port)   # 6432
 print(cfg.timezone)  # UTC
 ```
@@ -269,7 +290,7 @@ Declaring type annotations is enough for many cases—PKonfig resolves them to a
 
 ```python
 from pathlib import Path
-from pkonfig import Config, DictStorage
+from pkonfig import Config
 
 
 class Paths(Config):
@@ -278,7 +299,7 @@ class Paths(Config):
     config_file: Path
 
 
-cfg = Paths(DictStorage(bucket="assets", log_level="INFO", config_file="config.yaml"))
+cfg = Paths(bucket="assets", log_level="INFO", config_file="config.yaml")
 print(cfg.config_file)
 ```
 
@@ -338,7 +359,7 @@ assert AnnotatedWithField().foo == Path("foo")
 Nested configuration groups can be declared purely via type annotations by referencing other `Config` subclasses as types:
 
 ```python
-from pkonfig import Config, DictStorage
+from pkonfig import Config
 
 
 class Inner(Config):
@@ -349,7 +370,7 @@ class App(Config):
     inner: Inner  # required group
 
 
-cfg = App(DictStorage(inner={"required": 1234}))
+cfg = App(inner={"required": 1234})
 assert cfg.inner["required"] == 1234
 ```
 
@@ -447,7 +468,7 @@ print(cfg.retries is None)  # True
 ### Custom computed properties
 
 ```python
-from pkonfig import Bool, Config, DictStorage, Str
+from pkonfig import Bool, Config, Str
 
 
 class FeatureFlags(Config):
@@ -459,7 +480,7 @@ class FeatureFlags(Config):
         return self.enabled and self.environment == "prod"
 
 
-cfg = FeatureFlags(DictStorage(environment="prod"))
+cfg = FeatureFlags(environment="prod")
 print(cfg.is_prod)
 ```
 
