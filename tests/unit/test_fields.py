@@ -203,10 +203,7 @@ def test_cache_used():
     assert config.attr == 1
 
 
-@pytest.mark.parametrize(
-    "raw_value",
-    ("1, 2, 3", [1, 2, 3], [1, "2", 3], "1,2,3")
-)
+@pytest.mark.parametrize("raw_value", ("1, 2, 3", [1, 2, 3], [1, "2", 3], "1,2,3"))
 def test_list_fields_cast(raw_value, config_factory):
     field = ListField(alias="attr", cast_function=int)
 

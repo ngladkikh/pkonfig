@@ -8,11 +8,11 @@ from pkonfig.storage.base import FileStorage
 class Ini(FileStorage):
     """Parse INI configuration files using ``configparser``.
 
-    Supports the full ``ConfigParser`` tuning knobs so behaviour mirrors the
+    Supports the full ``ConfigParser`` tuning knobs, so the behavior mirrors the
     Python standard library.
     """
 
-    def __init__(  # pylint: disable=too-many-positional-arguments
+    def __init__(
         self,
         file: Union[Path, str],
         missing_ok=False,

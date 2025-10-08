@@ -276,7 +276,7 @@ class LogLevel(Field):
 
 
 class Choice(Field[T], Generic[T]):
-    def __init__(  # pylint: disable=too-many-positional-arguments
+    def __init__(
         self,
         choices: Sequence[T],
         cast_function: Optional[Callable[[Any], T]] = None,
@@ -307,7 +307,7 @@ class ListField(Field[T], Generic[T]):
         alias: str = "",
         nullable: bool = False,
         separator: str = ",",
-        cast_function: Optional[Callable[[Any], T]] = str,
+        cast_function: Optional[Callable[[Any], T]] = str,  # type: ignore[assignment]
     ):
         super().__init__(default=default, alias=alias, nullable=nullable)
         self.separator = separator
@@ -316,5 +316,5 @@ class ListField(Field[T], Generic[T]):
     def cast(self, value: Any) -> T:
         if isinstance(value, str):
             value = list(map(str.strip, value.split(self.separator)))
-        value = list(map(self.cast_function, value))
+        value = list(map(self.cast_function, value))  # type: ignore[arg-type]
         return value
