@@ -508,7 +508,7 @@ class CustomConfig(Config):
     tags = CommaSeparated(default="alpha,beta")
 ```
 
-## Specialised fields
+## Specialized fields
 
 PKonfig includes helpers for filesystem paths, enums, log levels, and constrained choices.
 
@@ -541,6 +541,61 @@ cfg = App(
     )
 )
 print(cfg.mode, cfg.config_path, cfg.debug_level)
+```
+
+### Working with lists (ListField and type hints)
+
+PKonfig can parse comma-separated strings or existing iterables into Python lists. There are two convenient ways to use lists:
+
+- Explicitly declare a `ListField` with a `cast_function` that converts each element.
+- Use Python type hints like `list[int]`/`list[str]`; PKonfig will internally create a `ListField` for you.
+
+#### Explicit ListField
+
+```python
+from pkonfig import Config, DictStorage
+from pkonfig.fields import ListField
+
+class C(Config):
+    ids = ListField(cast_function=int)
+
+cfg = C(DictStorage(ids="1, 2, 3"))
+assert cfg.ids == [1, 2, 3]
+```
+
+Use a custom separator and element type:
+
+```python
+from pkonfig import Config, DictStorage
+from pkonfig.fields import ListField
+
+class Csv(Config):
+    floats = ListField(separator=";", cast_function=float)
+
+assert Csv(DictStorage(floats="1.0; 2.5; 3")).floats == [1.0, 2.5, 3.0]
+```
+
+#### Type-hinted lists
+
+```python
+from pkonfig import Config, DictStorage
+
+class App(Config):
+    ports: list[int]
+
+cfg = App(DictStorage(ports="8000,8001,8002"))
+assert cfg.ports == [8000, 8001, 8002]
+```
+
+You can also provide a default value:
+
+```python
+from pkonfig import Config
+
+class Defaults(Config):
+    tags: list[str] = ["latest", "prod"]
+
+assert Defaults().tags == ["latest", "prod"]
 ```
 
 ## Environment-specific configuration files

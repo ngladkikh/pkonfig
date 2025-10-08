@@ -299,7 +299,7 @@ class Choice(Field[T], Generic[T]):
 
 
 class ListField(Field[T], Generic[T]):
-    """List field that accepts names like '[]', etc."""
+    """Field for parsing sequences from strings or iterables."""
 
     def __init__(
         self,
