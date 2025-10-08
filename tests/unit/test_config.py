@@ -173,3 +173,17 @@ def test_config_instance_cache_is_unique(inner_cls):
 
     assert config.i1["required"] == 1234
     assert config.i2["required"] == 4321
+
+
+def test_config_instance_uses_kwargs_as_dict_config(app_config_cls):
+    config = app_config_cls(
+        foo=1,
+        inner_1={"required": 1234},
+        inner_2={"required": 4321},
+    )
+
+    assert config.foo == 1
+    assert config.inner_1["required"] == 1234
+    assert config.inner_2["required"] == 4321
+    assert config.inner_1.foo == "baz"
+    assert config.inner_2.foo == "baz"

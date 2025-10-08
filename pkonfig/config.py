@@ -10,7 +10,7 @@ from typing import (
 from pkonfig.base_config import CachedBaseConfig
 from pkonfig.errors import ConfigTypeError
 from pkonfig.fields import Field
-from pkonfig.storage.base import NOT_SET, BaseStorage
+from pkonfig.storage.base import NOT_SET, BaseStorage, DictStorage
 
 
 class Config(CachedBaseConfig):
@@ -30,13 +30,21 @@ class Config(CachedBaseConfig):
         If True (default), access all declared fields during initialization to
         ensure required values are present, and types/validators pass. If False,
         validation happens lazily on first access.
+    kwargs : dict, optional
+        Keyword arguments transformed into a DictStorage
     """
 
     _TYPE_FACTORIES: Dict[type[Any], Type[Field]] = {}
 
     def __init__(
-        self, *storages: BaseStorage, alias: str = "", fail_fast: bool = True
+        self,
+        *storages: BaseStorage,
+        alias: str = "",
+        fail_fast: bool = True,
+        **kwargs: Any,
     ) -> None:
+        if kwargs:
+            storages = (*storages, DictStorage(**kwargs))
         super().__init__(*storages, alias=alias)
         self._register_inner_configs()
         if fail_fast and self._storage:
