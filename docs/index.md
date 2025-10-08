@@ -1,5 +1,11 @@
 # PKonfig
 
+```{eval-rst}
+.. meta::
+   :description: PKonfig is a pragmatic, type-safe Python configuration library. Merge env vars and files (YAML/JSON/TOML/INI) into one validated object with predictable precedence.
+   :keywords: pkonfig, python config, configuration library, env vars, dotenv, yaml, toml, ini, validated config, typed config
+```
+
 [![pypi](https://img.shields.io/pypi/v/pkonfig.svg)](https://pypi.python.org/pypi/pkonfig)
 [![downloads](https://img.shields.io/pypi/dm/pkonfig)](https://pepy.tech/project/pkonfig)
 [![versions](https://img.shields.io/pypi/pyversions/pkonfig.svg)](https://github.com/ngladkikh/pkonfig)
@@ -17,7 +23,12 @@
 installation
 quickstart
 tutorials
+concepts
+recipes
+examples
 api
+faq
+agents
 benchmarks
 ```
 

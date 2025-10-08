@@ -603,7 +603,7 @@ assert Defaults().tags == ["latest", "prod"]
 Select configuration files dynamically by reading a simple config first.
 
 ```python
-from pkonfig import Choice, Config, Env
+from pkonfig import Choice, Config, Env, Yaml
 
 
 CONFIG_FILES = {
@@ -619,6 +619,13 @@ def resolve_config_path() -> str:
 
     selector = _Config(Env(prefix="APP"))
     return CONFIG_FILES[selector.env]
+
+
+class AppConfig(Config):
+    ...
+
+
+config = AppConfig(Env(), Yaml(resolve_config_path()))
 ```
 
 ## Where to go next

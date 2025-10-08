@@ -75,7 +75,12 @@ html_static_path = ["_static"]
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "furo"
-html_title = "PKonfig Documentation"
+# Strengthen the SEO title to include keyword and purpose
+html_title = "PKonfig – Python configuration library (env, YAML, TOML, INI)"
+# Base URL for canonical links on GitHub Pages (used by some crawlers)
+html_baseurl = "https://ngladkikh.github.io/pkonfig/"
+# Include extra static files like robots.txt
+html_extra_path = ["_extra"]
 
 # -- Autosummary options ------------------------------------------------------
 autosummary_generate = True
