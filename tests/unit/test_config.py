@@ -146,3 +146,30 @@ def test_pkonfig_type_annotation():
         foo: Str = "foo"
 
     assert C().foo == "foo"
+
+
+def test_value_is_cached():
+    class C(Config):
+        foo: str
+
+    storage = DictStorage(foo="bar")
+    config = C(storage)
+
+    assert config.foo == "bar"
+
+    # Change the value in storage
+    storage._actual_storage[("foo",)] = "baz"
+
+    # The retrieved value is cached
+    assert config.foo == "bar"
+
+
+def test_config_instance_cache_is_unique(inner_cls):
+    class C(Config):
+        i1: inner_cls
+        i2: inner_cls
+
+    config = C(DictStorage(i1={"required": 1234}, i2={"required": 4321}))
+
+    assert config.i1["required"] == 1234
+    assert config.i2["required"] == 4321
