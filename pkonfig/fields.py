@@ -94,9 +94,9 @@ class Field(Generic[T], _Descriptor[T], ABC):
             value = self._cast(raw_value)
             self.validate(value)
             return value
-        except NullTypeError:
+        except NullTypeError as exc:
             path = ".".join(instance.internal_key(self.alias))
-            raise ConfigTypeError(f"{path} value is not nullable. received None.")
+            raise ConfigTypeError(f"{path} value is not nullable. received None.") from exc
         except Exception as exc:
             path = ".".join(instance.internal_key(self.alias))
             raise ConfigTypeError(f"{path} config error") from exc

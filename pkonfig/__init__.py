@@ -27,13 +27,11 @@ try:
 except _metadata.PackageNotFoundError:  # pragma: no cover - not in an installed context
     __version__ = "0.0.0"
 
-Config.register_type_factory(str, lambda nullable: Str(nullable=nullable))
-Config.register_type_factory(int, lambda nullable: Int(nullable=nullable))
-Config.register_type_factory(float, lambda nullable: Float(nullable=nullable))
-Config.register_type_factory(bool, lambda nullable: Bool(nullable=nullable))
-Config.register_type_factory(
-    Path, lambda nullable: PathField(nullable=nullable, missing_ok=True)
-)
+Config.register_type_factory(str, Str)
+Config.register_type_factory(int, Int)
+Config.register_type_factory(float, Float)
+Config.register_type_factory(bool, Bool)
+Config.register_type_factory(Path, PathField)
 
 __all__ = [
     "Config",

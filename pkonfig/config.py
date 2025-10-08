@@ -3,7 +3,6 @@ from inspect import isdatadescriptor
 from typing import (
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Dict,
     Generator,
@@ -17,9 +16,7 @@ from typing import (
 
 from pkonfig.fields import Field
 from pkonfig.base_config import CachedBaseConfig
-from pkonfig.storage.base import BaseStorage, InternalKey
-
-FieldFactory = Callable[[bool], Any]
+from pkonfig.storage.base import BaseStorage
 
 
 class Config(CachedBaseConfig):
@@ -41,7 +38,7 @@ class Config(CachedBaseConfig):
         validation happens lazily on first access.
     """
 
-    _TYPE_FACTORIES: Dict[type[Any], FieldFactory] = {}
+    _TYPE_FACTORIES: Dict[type[Any], Type[Field]] = {}
 
     def __init__(self, *storages: BaseStorage, alias: str = "", fail_fast: bool = True) -> None:
         super().__init__(*storages, alias=alias)
