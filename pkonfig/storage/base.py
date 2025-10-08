@@ -6,6 +6,7 @@ from typing import IO, Any, Iterator, Tuple, Union
 InternalKey = Tuple[str, ...]
 DEFAULT_PREFIX = "APP"
 DEFAULT_DELIMITER = "_"
+NOT_SET = "NOT_SET"
 
 
 class BaseStorage(ABC):

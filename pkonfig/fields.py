@@ -26,9 +26,8 @@ from typing import (
 from pkonfig.config import Config
 from pkonfig.descriptor_helper import _Descriptor
 from pkonfig.errors import ConfigError, ConfigTypeError, ConfigValueNotFoundError
-from pkonfig.storage.base import InternalKey
+from pkonfig.storage.base import InternalKey, NOT_SET
 
-NOT_SET = "NOT_SET"
 T = TypeVar("T")
 
 

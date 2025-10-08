@@ -15,12 +15,13 @@ from typing import (
     get_type_hints,
 )
 
+from pkonfig.base_config import BaseConfig
 from pkonfig.storage.base import BaseStorage, InternalKey
 
 FieldFactory = Callable[[bool], Any]
 
 
-class Config:
+class Config(BaseConfig):
     """Base configuration container.
 
     Define your configuration by subclassing Config and declaring Field descriptors
@@ -30,7 +31,7 @@ class Config:
     ----------
     *storages : BaseStorage
         One or more storage backends to read configuration values from, in
-        priority order (leftmost has highest priority).
+        priority order (leftmost has the highest priority).
     alias : str, optional
         Optional alias for this config used to build nested keys, by default "".
     fail_fast : bool, optional
@@ -41,15 +42,8 @@ class Config:
 
     _TYPE_FACTORIES: Dict[type[Any], FieldFactory] = {}
 
-    def __init__(
-        self,
-        *storages: BaseStorage,
-        alias: str = "",
-        fail_fast: bool = True,
-    ) -> None:
-        self._storage = ChainMap(*storages)  # type: ignore
-        self._alias = alias
-        self._root_path: InternalKey = (alias,) if alias else tuple()
+    def __init__(self, *storages: BaseStorage, alias: str = "", fail_fast: bool = True) -> None:
+        super().__init__(*storages, alias=alias)
         self._register_inner_configs()
         if fail_fast and self._storage:
             self.check()
