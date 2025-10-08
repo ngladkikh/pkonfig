@@ -282,6 +282,138 @@ cfg = Paths(DictStorage(bucket="assets", log_level="INFO", config_file="config.y
 print(cfg.config_file)
 ```
 
+#### Defining configs using only type hints
+
+You can define required fields by annotating attributes without assigning field instances. 
+PKonfig will infer sensible field types from the annotations and validate/cast values from storages.
+
+```python
+from pkonfig import Config, DictStorage
+
+
+class Simple(Config):
+    host: str      # required
+    port: int      # required
+
+
+cfg = Simple(DictStorage(host="localhost", port=5432))
+assert cfg.host == "localhost"
+assert cfg.port == 5432
+```
+
+Provide defaults by assigning plain Python literals to typed attributes. 
+The default will be used if the value is not found in storages.
+
+```python
+from pkonfig import Config
+
+class WithDefaults(Config):
+    retries: int = 3
+    region: str = "us-east-1"
+
+
+cfg = WithDefaults()
+
+assert cfg.retries == 3
+assert cfg.region == "us-east-1"
+```
+
+You can also annotate with PKonfig field classes and still assign plain literals as defaults. 
+This is useful when you want the behavior of a specific field (e.g., `File`, `Decimal`) while keeping a concise declaration.
+
+```python
+from pathlib import Path
+from pkonfig import File, Config
+
+
+class AnnotatedWithField(Config):
+    foo: File = "foo.txt"
+
+
+assert AnnotatedWithField().foo == Path("foo")
+```
+
+#### Nested configs with type hints
+
+Nested configuration groups can be declared purely via type annotations by referencing other `Config` subclasses as types:
+
+```python
+from pkonfig import Config, DictStorage
+
+
+class Inner(Config):
+    required: int
+
+
+class App(Config):
+    inner: Inner  # required group
+
+
+cfg = App(DictStorage(inner={"required": 1234}))
+assert cfg.inner["required"] == 1234
+```
+
+You can mix instance-style and type-hint-style declarations side by side:
+
+```python
+from pkonfig import Int, Str, Config
+
+
+class Inner(Config):
+    foo = Str("baz", nullable=False)
+    fiz = Int(123, nullable=False)
+    required = Int()
+
+
+class App(Config):
+    inner_1 = Inner()   # instance declaration
+    inner_2: Inner      # type-hint declaration
+    foo = Int()
+```
+
+Each nested config attribute maintains its own independent cache even if they share the same type:
+
+```python
+from pkonfig import Config, DictStorage
+
+class Inner(Config):
+    required: int
+
+class Duo(Config):
+    i1: Inner
+    i2: Inner
+
+
+cfg = Duo(DictStorage(i1={"required": 1234}, i2={"required": 4321}))
+assert cfg.i1["required"] == 1234
+assert cfg.i2["required"] == 4321
+```
+
+#### Caching semantics for type-hinted fields
+
+PKonfig caches the validated value after the first access. 
+Subsequent changes in the underlying storage won’t affect already accessed attributes until you reconstruct the config object.
+
+```python
+from pkonfig import Config, DictStorage
+
+
+class CacheDemo(Config):
+    foo: str
+
+
+storage = DictStorage(foo="bar")
+cfg = CacheDemo(storage)
+
+assert cfg.foo == "bar"
+
+# Mutate the storage after access
+storage._actual_storage[("foo",)] = "baz"
+
+# Value is cached on the config instance
+assert cfg.foo == "bar"
+```
+
 ### Default values and nullability
 
 ```python
