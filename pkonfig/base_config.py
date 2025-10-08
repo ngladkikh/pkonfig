@@ -1,6 +1,7 @@
 from collections import ChainMap
-from typing import Any
+from typing import Any, Dict
 
+from pkonfig.errors import ConfigValueNotFoundError
 from pkonfig.storage.base import BaseStorage, InternalKey, NOT_SET
 
 
@@ -12,9 +13,20 @@ class BaseConfig:
         self._alias = alias
         self._root_path: InternalKey = (alias,) if alias else tuple()
 
-    def __getitem__(self, item: InternalKey) -> Any:
+    def internal_key(self, item: str) -> InternalKey:
+        """Prepend an item with self._root_path."""
+        return *self._root_path, item
+
+    def __getitem__(self, item: str) -> Any:
         """Get item from storage."""
-        return self._storage.get(item, NOT_SET)
+        path = self.internal_key(item)
+        if path not in self._storage:
+            raise ConfigValueNotFoundError(f"'{'.'.join(path)}' not found in {self._storage.maps}")
+        return self._storage[path]
+
+    def get(self, item: str, default: Any = NOT_SET) -> Any:
+        """Get item from storage or return default."""
+        return self._storage.get(self.internal_key(item), default)
 
     def __contains__(self, item: InternalKey) -> bool:
         """Check if an item is in storage."""
@@ -27,3 +39,27 @@ class BaseConfig:
     def set_storage(self, storage: ChainMap) -> None:
         """Set the storage ChainMap. Used internally when nesting configs."""
         self._storage = storage
+
+
+class CachedBaseConfig(BaseConfig):
+    """Base config with a local cache."""
+
+    def __init__(self, *storages: BaseStorage, alias: str = "") -> None:
+        super().__init__(*storages, alias=alias)
+        self.__cache: Dict[str, Any] = {}
+
+    def __getitem__(self, item: str) -> Any:
+        """Get item from storage."""
+        if item in self.__cache:
+            return self.__cache[item]
+        value = super().__getitem__(item)
+        self.__cache[item] = value
+        return value
+
+    def get(self, item: str, default: Any = NOT_SET) -> Any:
+        """Get item from storage or return default."""
+        if item in self.__cache:
+            return self.__cache[item]
+        value = super().get(item, default)
+        self.__cache[item] = value
+        return value

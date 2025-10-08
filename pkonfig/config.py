@@ -15,13 +15,13 @@ from typing import (
     get_type_hints,
 )
 
-from pkonfig.base_config import BaseConfig
+from pkonfig.base_config import CachedBaseConfig
 from pkonfig.storage.base import BaseStorage, InternalKey
 
 FieldFactory = Callable[[bool], Any]
 
 
-class Config(BaseConfig):
+class Config(CachedBaseConfig):
     """Base configuration container.
 
     Define your configuration by subclassing Config and declaring Field descriptors

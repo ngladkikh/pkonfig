@@ -8,3 +8,7 @@ class ConfigValueNotFoundError(ConfigError):
 
 class ConfigTypeError(ConfigError):
     """Value has the wrong type"""
+
+
+class NullTypeError(ConfigError):
+    """Non nullable value is None"""
