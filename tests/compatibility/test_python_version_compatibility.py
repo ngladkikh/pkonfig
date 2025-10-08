@@ -7,7 +7,7 @@ def client():
     return docker.from_env()
 
 
-@pytest.mark.parametrize("version", ("3.9", "3.10", "3.11", "3.12", "3.13"))
+@pytest.mark.parametrize("version", ("3.9", "3.10", "3.11", "3.12", "3.13", "3.14"))
 def test_python_version_compatibility(version, client):
     image_tag = f"pkonfig:{version}"
     # Build the image for the specific Python version
