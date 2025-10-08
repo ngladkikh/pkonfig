@@ -46,6 +46,19 @@ def test_app_config_fails_on_inner_level_attr_missing():
 
 
     class BarConfig(Config):
+        foo = FooConfig()
+
+    with pytest.raises(ConfigValueNotFoundError):
+        BarConfig(DictStorage(foo={}))
+
+
+def test_app_config_fails_on_inner_defined_with_type_level_attr_missing():
+
+    class FooConfig(Config):
+        foo: int
+
+
+    class BarConfig(Config):
         foo: FooConfig
 
     with pytest.raises(ConfigValueNotFoundError):
