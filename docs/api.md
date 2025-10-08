@@ -135,6 +135,21 @@ Field descriptors define types, casting, and validation for config values.
 `Choice`
 : Validates membership within a predefined set of allowed values.
 
+`ListField`
+: Parse lists from strings or iterables. Useful for values like "a,b,c" or when storages return arrays. Use `cast_function` to convert each element:
+```python
+from pkonfig import Config, DictStorage
+from pkonfig.fields import ListField
+
+class C(Config):
+    tags = ListField(cast_function=str)
+    ids = ListField(cast_function=int)
+
+cfg = C(DictStorage(tags="a, b, c", ids="1,2,3"))
+assert cfg.tags == ["a", "b", "c"]
+assert cfg.ids == [1, 2, 3]
+```
+
 :::{tip}
 All field classes accept `default`, `required`, and optional validator hooks. Compose them to keep environment parsing declarative.
 :::

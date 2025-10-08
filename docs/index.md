@@ -49,5 +49,6 @@ PKonfig turns scattered env vars and config files into one clean, validated obje
 - Config values validation based on type and/or value: Validate configuration values to ensure they meet specific requirements.
 - High performance: Designed to be fast and efficient.
 - Extendable API: Easily extend PKonfig to meet your specific needs.
+- List values parsing with validation
 
 

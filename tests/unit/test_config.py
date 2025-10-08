@@ -187,3 +187,21 @@ def test_config_instance_uses_kwargs_as_dict_config(app_config_cls):
     assert config.inner_2["required"] == 4321
     assert config.inner_1.foo == "baz"
     assert config.inner_2.foo == "baz"
+
+
+def test_config_casts_list_type_hint_attribute():
+    class C(Config):
+        foo: list[int]
+
+    config = C(DictStorage(foo="1,2,3"))
+
+    assert config.foo == [1, 2, 3]
+
+
+def test_config_with_list_attribute_and_default_value():
+    class C(Config):
+        foo: list[int] = [1, 2]
+
+    config = C()
+
+    assert config.foo == [1, 2]

@@ -37,6 +37,7 @@ Key features
 - Multiple sources (env vars, .env, YAML, JSON, TOML, INI) with flexible precedence
 - Minimal dependencies, fail-fast checks, and great IDE autocompletion
 - Extensible API with high performance
+- List values parsing with validation
 
 Quick start
 ```python

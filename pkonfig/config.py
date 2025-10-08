@@ -4,12 +4,14 @@ from typing import (
     Generator,
     Type,
     Union,
+    get_args,
+    get_origin,
     get_type_hints,
 )
 
 from pkonfig.base_config import CachedBaseConfig
 from pkonfig.errors import ConfigTypeError
-from pkonfig.fields import Field
+from pkonfig.fields import Field, ListField
 from pkonfig.storage.base import NOT_SET, BaseStorage, DictStorage
 
 
@@ -108,7 +110,17 @@ class Config(CachedBaseConfig):
 
     @classmethod
     def _resolve_descriptor(cls, annotation, attribute) -> Union["Config", Field]:
-        if issubclass(annotation, Config):
+        origin = get_origin(annotation)
+        if origin and issubclass(origin, list):
+            inner_types = get_args(annotation)
+            if inner_types:
+                field_cls = cls._TYPE_FACTORIES[inner_types[0]]
+                cast_function = field_cls().cast
+            else:
+                cast_function = str  # type: ignore[assignment]
+            descriptor = ListField(default=attribute, cast_function=cast_function)
+
+        elif issubclass(annotation, Config):
             descriptor = annotation()
         elif issubclass(annotation, Field):
             descriptor = annotation(default=attribute)
