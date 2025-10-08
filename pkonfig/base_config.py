@@ -2,7 +2,7 @@ from collections import ChainMap
 from typing import Any, Dict
 
 from pkonfig.errors import ConfigValueNotFoundError
-from pkonfig.storage.base import BaseStorage, InternalKey, NOT_SET
+from pkonfig.storage.base import NOT_SET, BaseStorage, InternalKey
 
 
 class BaseConfig:
@@ -21,7 +21,9 @@ class BaseConfig:
         """Get item from storage."""
         path = self.internal_key(item)
         if path not in self._storage:
-            raise ConfigValueNotFoundError(f"'{'.'.join(path)}' not found in {self._storage.maps}")
+            raise ConfigValueNotFoundError(
+                f"'{'.'.join(path)}' not found in {self._storage.maps}"
+            )
         return self._storage[path]
 
     def __setitem__(self, key: str, value: Any) -> None:

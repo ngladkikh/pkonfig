@@ -152,10 +152,7 @@ def enum_attr_config():
 
 def test_enum_param_returns_value(enum_attr_config, config_factory):
     config = config_factory(attr="red")
-    assert (
-        EnumField(enum_attr_config, alias="attr").get(config)
-        is enum_attr_config.red
-    )
+    assert EnumField(enum_attr_config, alias="attr").get(config) is enum_attr_config.red
 
 
 def test_enum_raises_error(enum_attr_config, config_factory):

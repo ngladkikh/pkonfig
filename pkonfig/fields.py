@@ -64,7 +64,9 @@ class Field(Generic[T], _Descriptor[T], ABC):
 
     def __set__(self, instance: BaseConfig, value: Any) -> None:
         path = ".".join(instance.internal_key(self.alias))
-        logging.warning("Setting %s config value in runtime, proceed with caution", path)
+        logging.warning(
+            "Setting %s config value in runtime, proceed with caution", path
+        )
         try:
             value = self._cast(value)
             self.validate(value)
@@ -100,7 +102,9 @@ class Field(Generic[T], _Descriptor[T], ABC):
             return value
         except NullTypeError as exc:
             path = ".".join(instance.internal_key(self.alias))
-            raise ConfigTypeError(f"{path} value is not nullable. received None.") from exc
+            raise ConfigTypeError(
+                f"{path} value is not nullable. received None."
+            ) from exc
         except Exception as exc:
             path = ".".join(instance.internal_key(self.alias))
             raise ConfigTypeError(f"'{path}' validation error error") from exc

@@ -13,9 +13,9 @@ from typing import (
     get_type_hints,
 )
 
-from pkonfig.fields import Field
 from pkonfig.base_config import CachedBaseConfig
-from pkonfig.storage.base import BaseStorage, NOT_SET
+from pkonfig.fields import Field
+from pkonfig.storage.base import NOT_SET, BaseStorage
 
 
 class Config(CachedBaseConfig):
@@ -39,7 +39,9 @@ class Config(CachedBaseConfig):
 
     _TYPE_FACTORIES: Dict[type[Any], Type[Field]] = {}
 
-    def __init__(self, *storages: BaseStorage, alias: str = "", fail_fast: bool = True) -> None:
+    def __init__(
+        self, *storages: BaseStorage, alias: str = "", fail_fast: bool = True
+    ) -> None:
         super().__init__(*storages, alias=alias)
         self._register_inner_configs()
         if fail_fast and self._storage:
@@ -99,7 +101,7 @@ class Config(CachedBaseConfig):
             default = NOT_SET
             if name in cls.__dict__:
                 attr = cls.__dict__[name]
-                if isinstance(attr, Config) or isinstance(attr, Field):
+                if isinstance(attr, (Config, Field)):
                     continue
                 default = attr
 

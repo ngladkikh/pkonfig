@@ -44,7 +44,6 @@ def test_app_config_fails_on_inner_level_attr_missing():
     class FooConfig(Config):
         foo: int
 
-
     class BarConfig(Config):
         foo = FooConfig()
 
@@ -56,7 +55,6 @@ def test_app_config_fails_on_inner_defined_with_type_level_attr_missing():
 
     class FooConfig(Config):
         foo: int
-
 
     class BarConfig(Config):
         foo: FooConfig
@@ -75,11 +73,13 @@ def test_value_from_second_level_attribute(config: AppConfig):
 
 
 def test_default_value_used_when_not_set():
-    config = AppConfig(DictStorage(
-        foo=0,
-        inner_1={"required": 1234, "foo": "biz"},
-        inner_2={"required": 4321},
-    ))
+    config = AppConfig(
+        DictStorage(
+            foo=0,
+            inner_1={"required": 1234, "foo": "biz"},
+            inner_2={"required": 4321},
+        )
+    )
     # Value taken from config
     assert config.inner_1.foo == "biz"
     # Default value is used

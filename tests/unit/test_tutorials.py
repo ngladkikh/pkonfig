@@ -200,9 +200,7 @@ def test_tutorial_type_hints_and_caching():
         log_level: str
         counter: int
 
-    cfg = Paths(
-        DictStorage(bucket="assets", log_level="INFO", counter="10")
-    )
+    cfg = Paths(DictStorage(bucket="assets", log_level="INFO", counter="10"))
     assert cfg.bucket == "assets"
     assert cfg.log_level == "INFO"
     assert cfg.counter == 10
