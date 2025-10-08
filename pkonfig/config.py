@@ -1,5 +1,4 @@
 import types
-from collections import ChainMap
 from inspect import isdatadescriptor
 from typing import (
     Annotated,
@@ -9,12 +8,14 @@ from typing import (
     Dict,
     Generator,
     Tuple,
+    Type,
     Union,
     get_args,
     get_origin,
     get_type_hints,
 )
 
+from pkonfig.fields import Field
 from pkonfig.base_config import CachedBaseConfig
 from pkonfig.storage.base import BaseStorage, InternalKey
 
@@ -51,9 +52,15 @@ class Config(CachedBaseConfig):
     def _register_inner_configs(self) -> None:
         """Propagate storage and naming to nested Configs declared as attributes."""
         for name, config_attribute in self._inner_configs():
-            config_attribute.set_storage(self.get_storage())
+            config_attribute.set_storage(self._storage)
             config_attribute.set_alias(name)
-            config_attribute.set_root_path(self.get_roo_path())
+            config_attribute.set_root_path(self._root_path)
+
+    def _public_attributes(self) -> Generator[Any, None, None]:
+        """Generator that yields all attributes declared as public attributes."""
+        for name, config_attribute in vars(self.__class__).items():
+            if not name.startswith("_"):
+                yield name, config_attribute
 
     @classmethod
     def _resolve_annotation_target(  # pylint: disable=too-many-return-statements
@@ -90,23 +97,16 @@ class Config(CachedBaseConfig):
         return None, False
 
     def _inner_configs(self) -> Generator[Tuple[str, "Config"], None, None]:
-        """Yield pairs of (name, Config) for nested Config attributes."""
-        for name, attribute in vars(self.__class__).items():
+        """Yield a (name, Config) pair for nested Config attributes."""
+        for name, attribute in self._public_attributes():
             if isinstance(attribute, Config):
                 yield name, attribute
 
     def _config_attributes(self) -> Generator[Tuple[str, Any], None, None]:
         """Yield (name, descriptor) for public Field descriptors declared on the class."""
-        for attr_name, attr in filter(
-            self._is_config_attribute, vars(self.__class__).items()
-        ):
-            yield attr_name, attr
-
-    @staticmethod
-    def _is_config_attribute(name_value: Tuple[str, Any]) -> bool:
-        """Return True if attribute looks like a public Field descriptor."""
-        attr_name, attribute = name_value
-        return not attr_name.startswith("_") and isdatadescriptor(attribute)
+        for attr_name, attr in self._public_attributes():
+            if isdatadescriptor(attr):
+                yield attr_name, attr
 
     def check(self) -> None:
         """Eagerly access all declared fields to validate presence and types.
@@ -126,25 +126,9 @@ class Config(CachedBaseConfig):
         """Set alias if it wasn't already defined."""
         self._alias = self._alias or alias
 
-    def set_root_path(self, root_path: InternalKey) -> None:
-        """Set the root path prefix used to build full keys for nested configs."""
-        self._root_path = (*root_path, self._alias) if self._alias else root_path
-
-    def get_roo_path(self) -> InternalKey:
-        """Return the root path (tuple of key segments) for this Config."""
-        return self._root_path
-
-    def get_storage(self) -> ChainMap:
-        """Return the combined ChainMap of storages used by this Config."""
-        return self._storage
-
-    def set_storage(self, storage: ChainMap) -> None:
-        """Set the storage ChainMap. Used internally when nesting configs."""
-        self._storage = storage
-
     @classmethod
     def register_type_factory(
-        cls, python_type: type[Any], factory: FieldFactory
+        cls, python_type: type[Any], factory: Type[Field]
     ) -> None:
         cls._TYPE_FACTORIES[python_type] = factory
 

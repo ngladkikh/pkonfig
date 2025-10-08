@@ -288,12 +288,3 @@ class Choice(Field[T], Generic[T]):
     def validate(self, value):
         if value not in self.choices:
             raise ConfigTypeError(f"'{value}' is not in {self.choices}")
-
-
-# Config.register_type_factory(str, lambda nullable: Str(nullable=nullable))
-# Config.register_type_factory(int, lambda nullable: Int(nullable=nullable))
-# Config.register_type_factory(float, lambda nullable: Float(nullable=nullable))
-# Config.register_type_factory(bool, lambda nullable: Bool(nullable=nullable))
-# Config.register_type_factory(
-#     Path, lambda nullable: PathField(nullable=nullable, missing_ok=True)
-# )
