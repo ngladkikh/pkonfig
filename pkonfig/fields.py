@@ -296,3 +296,25 @@ class Choice(Field[T], Generic[T]):
     def validate(self, value):
         if value not in self.choices:
             raise ConfigTypeError(f"'{value}' is not in {self.choices}")
+
+
+class ListField(Field[T], Generic[T]):
+    """List field that accepts names like '[]', etc."""
+
+    def __init__(
+        self,
+        default=NOT_SET,
+        alias: str = "",
+        nullable: bool = False,
+        separator: str = ",",
+        cast_function: Optional[Callable[[Any], T]] = str,
+    ):
+        super().__init__(default=default, alias=alias, nullable=nullable)
+        self.separator = separator
+        self.cast_function = cast_function
+
+    def cast(self, value: Any) -> T:
+        if isinstance(value, str):
+            value = list(map(str.strip, value.split(self.separator)))
+        value = list(map(self.cast_function, value))
+        return value

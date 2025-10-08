@@ -1,20 +1,21 @@
 from enum import Enum
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
-from pkonfig import DictStorage
-from pkonfig.config import Config
-from pkonfig.errors import ConfigTypeError, ConfigValueNotFoundError
-from pkonfig.fields import (
+from pkonfig import (
     Bool,
     Choice,
+    Config,
+    ConfigTypeError,
+    ConfigValueNotFoundError,
+    DictStorage,
     EnumField,
     File,
     Float,
     Folder,
     Int,
+    ListField,
     LogLevel,
     PathField,
     Str,
@@ -200,3 +201,14 @@ def test_cache_used():
 
     config._storage = DictStorage(attr=2)
     assert config.attr == 1
+
+
+@pytest.mark.parametrize(
+    "raw_value",
+    ("1, 2, 3", [1, 2, 3], [1, "2", 3], "1,2,3")
+)
+def test_list_fields_cast(raw_value, config_factory):
+    field = ListField(alias="attr", cast_function=int)
+
+    config = config_factory(attr=raw_value)
+    assert field.get(config) == [1, 2, 3]
