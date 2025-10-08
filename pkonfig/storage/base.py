@@ -83,7 +83,7 @@ class FileStorage(BaseStorage, FlattenedStorageMixin, ABC):
 
     @abstractmethod
     def load_file_content(self, handler: IO) -> Mapping[str, Any]:
-        pass
+        """Load file content and return a mapping from keys to values."""
 
 
 class DictStorage(BaseStorage, FlattenedStorageMixin):
