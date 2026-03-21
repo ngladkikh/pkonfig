@@ -134,3 +134,4 @@ dmypy.json
 # AI
 AGENTS.md
 .serena/
+.ai/
