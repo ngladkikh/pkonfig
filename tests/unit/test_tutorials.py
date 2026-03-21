@@ -61,15 +61,13 @@ def test_tutorial_dotenv_file(tmp_path):
 def test_tutorial_ini_storage(tmp_path):
     ini_file = tmp_path / "config.ini"
     ini_file.write_text(
-        dedent(
-            """
+        dedent("""
             [DEFAULT]
             ServerAliveInterval = 45
 
             [bitbucket.org]
             User = hg
-            """
-        ),
+            """),
         encoding="utf-8",
     )
 
