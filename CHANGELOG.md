@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-## [2.1.0] - 2026-03-21
+## [2.2.0] - 2026-03-21
 
 ### Added
 
@@ -30,15 +30,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [2.1.1] - 2025-10-08
+
+### Added
+
+- Add documentation for LLMs and robots
+
+## [2.1.0] - 2025-10-08
+
+### Added
+
+- Create dict config from kwargs
+- Implement list field wrapper
+
+### Changed
+
+- Refactor config internals
+
+## [2.0.3] - 2025-10-06
+
+### Added
+
+- Add tutorial regression tests and support their API expectations
+
+### Changed
+
+- Fix GitHub Pages docs
+- Fix `DotEnv` and `Env` storages caching bug
+- Fix annotation-based type creation
+
+## [2.0.2] - 2025-10-06
+
+### Added
+
+- Add Python 3.13 support
+
+### Changed
+
+- Improve type hints
+- Improve documentation
+
 ## [2.0.1] - 2025-10-04
 
 ### Added
 
-- Benchmarking code that compares PKonfig performance with Pydantic Settings
+- Add a benchmarking framework and initial scenarios
+- Add Sphinx documentation
 
 ### Changed
 
-- Bumped dependencies
+- Take the package version from the git tag
 
 ## [2.0.0] - 2024-04-30
 
