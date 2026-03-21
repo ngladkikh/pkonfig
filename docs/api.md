@@ -197,3 +197,35 @@ print(cfg.name)
 Base protocol and concrete backends
 
 This page shows a brief index. Follow the links in the overview to get detailed documentation for each storage backend and the BaseStorage protocol.
+
+## Integrations
+
+### Pydantic Settings
+
+Use `PKonfigBaseSettings` when you want PKonfig storages to stay responsible for source precedence while Pydantic handles schema validation and parsing.
+
+```python
+from pydantic import BaseModel
+
+from pkonfig import DictStorage
+from pkonfig.pydantic_settings import PKonfigBaseSettings, pkonfig_settings_config
+
+
+class Database(BaseModel):
+    host: str
+    port: int
+
+
+class Settings(PKonfigBaseSettings):
+    model_config = pkonfig_settings_config(
+        DictStorage(database={"host": "db.internal", "port": "5432"}),
+    )
+
+    database: Database
+```
+
+Key takeaways
+- Attach one or more PKonfig storages through `pkonfig_settings_config(...)`.
+- Leftmost PKonfig storage keeps the highest precedence, matching the rest of PKonfig.
+- Init kwargs still win by default.
+- Native Pydantic env, dotenv, and file-secret sources stay disabled unless you opt in with `use_native_sources=True`.

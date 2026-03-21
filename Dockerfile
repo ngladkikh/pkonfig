@@ -6,6 +6,6 @@ RUN pip install pytest mypy types-PyYAML
 COPY . .
 
 # Install package with all extras needed by unit tests across Python versions
-RUN pip install .[yaml,toml]
+RUN pip install .[yaml,toml,pydantic]
 
 CMD sh -c "python3 -m pytest -q tests/unit 2>&1"

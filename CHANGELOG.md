@@ -12,9 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Removed
+
+## [2.1.0] - 2026-03-21
+
+### Added
+
+- Add `PKonfigBaseSettings` and `pkonfig_settings_config(...)` for using PKonfig storages directly with `pydantic-settings`
+- Add tests and documentation for nested models, alias support, PKonfig precedence, and opt-in native Pydantic sources
+
+### Changed
+
 - Add Python 3.14 support across package metadata, CI, and docs
 - Make benchmark dependencies optional and refresh benchmark dependency versions for Python 3.14
 - Upgrade the lint toolchain to Python 3.14-compatible versions while keeping package runtime support on Python 3.9+
+- Add optional `pydantic` install extras and dev dependencies for the new integration
 
 ### Removed
 

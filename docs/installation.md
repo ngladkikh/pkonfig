@@ -24,5 +24,13 @@ And if both TOML and YAML are needed:
 pip install pkonfig[toml,yaml]
 ```
 
+To use PKonfig storages with `pydantic-settings`:
+
+```bash
+pip install pkonfig[pydantic]
+```
+
+This integration requires Python 3.10+ because `pydantic-settings` does.
+
 For production no .env files are needed, but proper environment variables should be set.
 In case some of the required variables are missing, `ConfigValueNotFoundError` exception is raised while `AppConfig` instantiation.

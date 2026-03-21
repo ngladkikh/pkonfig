@@ -35,6 +35,7 @@ What problems it solves
 Key features
 - Typed, validated configuration objects
 - Multiple sources (env vars, .env, YAML, JSON, TOML, INI) with flexible precedence
+- Pydantic Settings integration through `PKonfigBaseSettings`
 - Minimal dependencies, fail-fast checks, and great IDE autocompletion
 - Extensible API with high performance
 - List values parsing with validation
@@ -66,6 +67,34 @@ pip install pkonfig
 # extras for file formats
 pip install pkonfig[yaml]
 pip install pkonfig[toml]
+pip install pkonfig[pydantic]
+```
+
+`pydantic-settings` integration is available on Python 3.10+.
+
+Pydantic Settings integration
+```python
+from pydantic import BaseModel
+
+from pkonfig import DictStorage
+from pkonfig.pydantic_settings import PKonfigBaseSettings, pkonfig_settings_config
+
+
+class Database(BaseModel):
+    host: str
+    port: int
+
+
+class Settings(PKonfigBaseSettings):
+    model_config = pkonfig_settings_config(
+        DictStorage(database={"host": "db.internal", "port": "5432"}),
+    )
+
+    database: Database
+
+
+settings = Settings()
+assert settings.database.port == 5432
 ```
 
 Documentation

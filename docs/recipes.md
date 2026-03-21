@@ -84,3 +84,25 @@
   # ... later
   cfg.check()
   ```
+
+- Use PKonfig storages with Pydantic Settings
+  ```python
+  from pydantic import BaseModel
+
+  from pkonfig import DictStorage
+  from pkonfig.pydantic_settings import PKonfigBaseSettings, pkonfig_settings_config
+
+  class Database(BaseModel):
+      host: str
+      port: int
+
+  class Settings(PKonfigBaseSettings):
+      model_config = pkonfig_settings_config(
+          DictStorage(database={"host": "db.internal", "port": "5432"}),
+      )
+
+      database: Database
+
+  settings = Settings()
+  assert settings.database.port == 5432
+  ```
