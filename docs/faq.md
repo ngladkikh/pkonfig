@@ -17,7 +17,7 @@
   - With extras: `pip install pkonfig[yaml]` or `pip install pkonfig[toml]`
 
 - What Python versions are supported?
-  - Python 3.9–3.13 (tested). See our CI matrix for details.
+  - Python 3.9–3.14 (tested). See our CI matrix for details.
 
 - Where does PKonfig look for values?
   - In the order of the storages you pass: leftmost storage has the highest priority. Example: `Env(prefix="APP")` overrides `Yaml("config.yaml")`, which overrides defaults.
