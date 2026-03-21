@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Add Python 3.14 support across package metadata, CI, and docs
+- Make benchmark dependencies optional and refresh benchmark dependency versions for Python 3.14
+- Upgrade the lint toolchain to Python 3.14-compatible versions while keeping package runtime support on Python 3.9+
+
 ### Removed
 
 ## [2.0.1] - 2025-10-04
