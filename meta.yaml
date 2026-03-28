@@ -25,10 +25,13 @@ test:
   requires:
     - pytest
     - pyyaml
+    - mypy
+    - pydantic
+    - pydantic-settings
   source_files:
-    ./tests/*
+    - tests/unit
   commands:
-    - python -m pytest tests
+    - python -m pytest tests/unit
 
 about:
   home: https://github.com/ngladkikh/pkonfig
