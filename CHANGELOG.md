@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - YYYY-mm-dd
 
 ### Added
+
+### Changed
+
+### Removed
+
+## [2.3.0] - 2026-03-28
+
+### Added
 - Add `SecretFile` storage for loading one secret per file from a directory or single file with normal PKonfig precedence semantics
 
 ### Changed
