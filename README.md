@@ -22,7 +22,7 @@ Pragmatic, type-safe configuration for Python apps. PKonfig turns scattered env 
 Why PKonfig
 - Avoid config spaghetti: declare your config as code, not as ad‑hoc parsing scattered around the app.
 - Fail fast: catch missing or invalid values at startup, not at 2 a.m. in production.
-- Predictable precedence: layer env vars, .env, YAML/JSON/TOML/INI in the order you choose.
+- Predictable precedence: layer env vars, `.env`, secret files, YAML/JSON/TOML/INI in the order you choose.
 - Type-safe by default: fields convert and validate values; your IDE autocompletion just works.
 - Fast and lightweight: minimal dependencies, small surface area, no magic.
 - Framework-agnostic: works equally well in CLIs, services, scripts, and jobs.
@@ -34,7 +34,7 @@ What problems it solves
 
 Key features
 - Typed, validated configuration objects
-- Multiple sources (env vars, .env, YAML, JSON, TOML, INI) with flexible precedence
+- Multiple sources (env vars, `.env`, secret files, YAML, JSON, TOML, INI) with flexible precedence
 - Pydantic Settings integration through `PKonfigBaseSettings`
 - Minimal dependencies, fail-fast checks, and great IDE autocompletion
 - Extensible API with high performance
@@ -44,6 +44,7 @@ Quick start
 ```python
 from pkonfig.config import Config
 from pkonfig.storage.env import Env
+from pkonfig.storage.secret_file import SecretFile
 from pkonfig.storage.yaml_ import Yaml
 
 class App(Config):
@@ -54,11 +55,13 @@ class App(Config):
 # Highest precedence first
 cfg = App(
     Env(prefix="APP"),
+    SecretFile("secrets", missing_ok=True),
     Yaml("config.yaml", missing_ok=True),
 )
 
 print(cfg.host, cfg.port, cfg.debug)
 # Env example: APP_PORT=9000 python app.py → 9000 overrides file/defaults
+# SecretFile example: secrets/api_key.txt → cfg.api_key == file contents
 ```
 
 Install

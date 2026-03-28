@@ -3,12 +3,14 @@ from pkonfig.storage.dot_env import DotEnv
 from pkonfig.storage.env import Env
 from pkonfig.storage.ini import Ini
 from pkonfig.storage.json import Json
+from pkonfig.storage.secret_file import SecretFile
 
 __all__ = [
     "Env",
     "DotEnv",
     "Ini",
     "Json",
+    "SecretFile",
     "DictStorage",
 ]
 

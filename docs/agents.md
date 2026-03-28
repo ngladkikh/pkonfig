@@ -12,7 +12,7 @@ This page gives machine-readable context and stable patterns to help agents use 
   - Package import: `import pkonfig`
   - Config base class: `from pkonfig import Config`
   - Fields: `from pkonfig import fields as f` or `from pkonfig import Str, Int, Bool, Choice, ListField, LogLevel`
-  - Storages: `from pkonfig import storage` or `from pkonfig import Env, DotEnv, Yaml, Json, Toml, Ini`
+  - Storages: `from pkonfig import storage` or `from pkonfig import Env, DotEnv, SecretFile, Yaml, Json, Toml, Ini`
 
 - Typical task: build a config from env + file
   - Input
