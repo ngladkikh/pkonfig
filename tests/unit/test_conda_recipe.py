@@ -14,3 +14,13 @@ def test_conda_recipe_runs_unit_tests_only() -> None:
 
     assert "    - python -m pytest tests/unit" in recipe
     assert "    - python -m pytest tests\n" not in recipe
+
+
+def test_conda_recipe_copies_meta_yaml_for_recipe_regression_checks() -> None:
+    recipe = Path("meta.yaml").read_text(encoding="utf-8")
+
+    assert "    - meta.yaml" in recipe
+
+
+def test_package_declares_py_typed_marker() -> None:
+    assert Path("pkonfig/py.typed").is_file()

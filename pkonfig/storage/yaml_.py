@@ -1,6 +1,6 @@
 from typing import IO, Any, Dict
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from pkonfig.storage.base import FileStorage
 
