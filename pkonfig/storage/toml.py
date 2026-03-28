@@ -9,7 +9,7 @@ def _load(file_handler: BinaryIO) -> Dict[str, Any]:
         import tomllib  # pylint: disable=import-outside-toplevel
 
         return tomllib.load(file_handler)
-    import tomli  # pylint: disable=import-outside-toplevel
+    import tomli  # pylint: disable=import-outside-toplevel  # type: ignore[import-not-found]
 
     return tomli.load(file_handler)
 

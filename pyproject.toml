@@ -8,6 +8,7 @@ readme = "README.md"
 include = [
     # Ensure README images used on PyPI are included in the distribution
     "docs/_static/pkonfig_logo_2.png",
+    "pkonfig/py.typed",
 ]
 keywords = [
     "config",

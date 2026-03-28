@@ -30,6 +30,7 @@ test:
     - pydantic-settings
   source_files:
     - tests/unit
+    - meta.yaml
   commands:
     - python -m pytest tests/unit
 
