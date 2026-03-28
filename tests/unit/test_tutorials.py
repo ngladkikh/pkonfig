@@ -21,7 +21,7 @@ from pkonfig import (
 )
 from pkonfig.storage import DotEnv, Env, Ini
 from pkonfig.storage import Json as JsonStorage
-from pkonfig.storage import Toml, Yaml
+from pkonfig.storage import SecretFile, Toml, Yaml
 
 
 def test_tutorial_dict_storage_example():
@@ -96,14 +96,28 @@ def test_tutorial_structured_file_backends(tmp_path):
     assert toml_settings[("feature",)] == "enabled"
 
 
+def test_tutorial_secret_file_storage(tmp_path):
+    secrets_dir = tmp_path / "secrets"
+    secrets_dir.mkdir()
+    (secrets_dir / "api_key.txt").write_text("super-secret", encoding="utf-8")
+
+    storage = SecretFile(secrets_dir, missing_ok=True)
+
+    assert storage[("api_key",)] == "super-secret"
+
+
 def test_tutorial_storage_precedence(tmp_path, monkeypatch):
     dotenv_file = tmp_path / "test.env"
     dotenv_file.write_text("APP_FOO=from_dotenv\n", encoding="utf-8")
 
     base_yaml = tmp_path / "base.yaml"
     base_yaml.write_text(
-        "foo: from_yaml\nbar: from_yaml\nbaz: from_yaml\n", encoding="utf-8"
+        "foo: from_yaml\nbar: from_yaml\nbaz: from_yaml\nsecret: from_yaml\n",
+        encoding="utf-8",
     )
+    secrets_dir = tmp_path / "secrets"
+    secrets_dir.mkdir()
+    (secrets_dir / "secret").write_text("from_secret_file", encoding="utf-8")
 
     monkeypatch.setenv("APP_BAR", "from_env")
 
@@ -111,16 +125,19 @@ def test_tutorial_storage_precedence(tmp_path, monkeypatch):
         foo = Str()
         bar = Str()
         baz = Str()
+        secret = Str()
 
     cfg = AppConfig(
         DotEnv(dotenv_file, missing_ok=True),
         Env(prefix="APP"),
+        SecretFile(secrets_dir, missing_ok=True),
         Yaml(base_yaml),
     )
 
     assert cfg.foo == "from_dotenv"
     assert cfg.bar == "from_env"
     assert cfg.baz == "from_yaml"
+    assert cfg.secret == "from_secret_file"
 
 
 def test_tutorial_building_configuration_classes():

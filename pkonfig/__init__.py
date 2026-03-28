@@ -54,6 +54,7 @@ __all__ = [
     "ListField",
     "LogLevel",
     "PathField",
+    "SecretFile",
     "Str",
     "__version__",
 ]

@@ -13,7 +13,7 @@
   - Descriptor that defines type, default, and validation. Examples: `Str`, `Int`, `Bool`, `Choice`, `ListField`, `LogLevel`.
 
 - Storage
-  - Source of values. Implementations flatten keys into tuples, e.g., `("db", "host")`. Built-ins: `Env`, `DotEnv`, `Yaml`, `Json`, `Toml`, `Ini`, plus `DictStorage` for in-memory values.
+  - Source of values. Implementations flatten keys into tuples, e.g., `("db", "host")`. Built-ins: `Env`, `DotEnv`, `SecretFile`, `Yaml`, `Json`, `Toml`, `Ini`, plus `DictStorage` for in-memory values.
 
 - Precedence
   - Storages are checked left-to-right. The first storage holding a key wins.

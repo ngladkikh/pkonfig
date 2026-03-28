@@ -173,6 +173,7 @@ Choose one or more storages and pass them to your Config. Leftmost storage has h
 | `Env` | Runtime overrides via `os.environ` | Optional prefix/delimiter helpers mirror Twelve-Factor style deployment. |
 | `DotEnv` | Local developer overrides | Parses `.env` files with comment and prefix handling. |
 | `Ini` | Legacy INI configuration | Exposes advanced `configparser` tuning knobs. |
+| `SecretFile` | Secrets mounted as files | Reads either one file or every file in a directory; each filename stem becomes a key and the file content becomes the value. |
 | `Json` | Simple machine-generated settings | Uses `json.load` and preserves nested structures. |
 | `Toml` | Modern app configs | Works with `tomllib`/`tomli` automatically. |
 | `Yaml` | Verbose hierarchical configs | Uses `yaml.safe_load`; beware implicit type coercion. |
@@ -189,6 +190,7 @@ class Service(Config):
 
 cfg = Service(
     storage.Env(prefix="SERVICE"),
+    storage.SecretFile("secrets", missing_ok=True),
     storage.Yaml("settings.yaml", missing_ok=True),
 )
 print(cfg.name)

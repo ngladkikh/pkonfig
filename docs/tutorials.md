@@ -149,12 +149,24 @@ toml_settings = Toml("config.toml", missing_ok=False)
 `Toml` uses `tomllib` on Python ≥3.11 and falls back to `tomli` on earlier versions. Make sure the `toml` extra is installed if you target Python 3.10 or below.
 :::
 
+### Secrets mounted as files (`SecretFile`)
+
+`SecretFile` reads either a single file or every file in a directory. Each filename stem becomes the config key and the raw file content becomes the value, which makes it a good fit for mounted secret volumes.
+
+```python
+from pkonfig.storage import SecretFile
+
+secrets = SecretFile("secrets", missing_ok=True)
+
+print(secrets[("api_key",)])  # reads secrets/api_key or secrets/api_key.txt
+```
+
 ## Ordering storages for precedence
 
 Storages are evaluated left-to-right, so earlier sources override later ones. Chain together as many as you need.
 
 ```python
-from pkonfig import Config, DotEnv, Env, Str, Yaml
+from pkonfig import Config, DotEnv, Env, SecretFile, Str, Yaml
 
 
 class AppConfig(Config):
@@ -163,7 +175,8 @@ class AppConfig(Config):
 
 cfg = AppConfig(
     DotEnv("test.env", missing_ok=True),  # developer overrides
-    Env(prefix="APP"),                   # runtime overrides
+    Env(prefix="APP"),                    # runtime overrides
+    SecretFile("secrets", missing_ok=True),  # mounted secrets
     Yaml("base.yaml"),                    # defaults committed to the repo
 )
 ```
