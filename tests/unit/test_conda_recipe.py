@@ -1,3 +1,4 @@
+from importlib.resources import files
 from pathlib import Path
 
 
@@ -23,4 +24,4 @@ def test_conda_recipe_copies_meta_yaml_for_recipe_regression_checks() -> None:
 
 
 def test_package_declares_py_typed_marker() -> None:
-    assert Path("pkonfig/py.typed").is_file()
+    assert (files("pkonfig") / "py.typed").is_file()

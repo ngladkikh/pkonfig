@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Vault-native JSON support to `SecretFile` so `vault kv get -format=json` exports can be read and flattened directly
 
 ### Changed
+- Fix the conda recipe regression test to check the installed `pkonfig` package for `py.typed` instead of assuming the source tree is present during conda test runs
 
 ### Removed
 
