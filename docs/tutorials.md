@@ -151,7 +151,7 @@ toml_settings = Toml("config.toml", missing_ok=False)
 
 ### Secrets mounted as files (`SecretFile`)
 
-`SecretFile` reads either a single file or every file in a directory. Each filename stem becomes the config key and the raw file content becomes the value, which makes it a good fit for mounted secret volumes.
+`SecretFile` reads either a single file or every file in a directory. For normal secret files, each filename stem becomes the config key and the raw file content becomes the value, which makes it a good fit for mounted secret volumes.
 
 ```python
 from pkonfig.storage import SecretFile
@@ -159,6 +159,17 @@ from pkonfig.storage import SecretFile
 secrets = SecretFile("secrets", missing_ok=True)
 
 print(secrets[("api_key",)])  # reads secrets/api_key or secrets/api_key.txt
+```
+
+It also understands Vault-native JSON exported by `vault kv get -format=json`. In that case PKonfig reads the secret payload directly and flattens nested objects into dotted config paths instead of using the filename stem.
+
+```python
+from pkonfig.storage import SecretFile
+
+vault_export = SecretFile("vault-export.json")
+
+print(vault_export[("database", "password")])  # reads data.data.database.password from Vault KV v2 JSON
+print(vault_export[("api_key",)])              # reads top-level secret keys as config entries
 ```
 
 ## Ordering storages for precedence
