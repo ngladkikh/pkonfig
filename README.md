@@ -62,6 +62,8 @@ cfg = App(
 print(cfg.host, cfg.port, cfg.debug)
 # Env example: APP_PORT=9000 python app.py → 9000 overrides file/defaults
 # SecretFile example: secrets/api_key.txt → cfg.api_key == file contents
+# Vault export example: SecretFile("vault-export.json") reads vault kv get -format=json output
+# and exposes nested keys like cfg.database.password
 ```
 
 Install

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - YYYY-mm-dd
 
 ### Added
+- Add Vault-native JSON support to `SecretFile` so `vault kv get -format=json` exports can be read and flattened directly
 
 ### Changed
 
